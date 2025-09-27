@@ -1,0 +1,281 @@
+openapi: 3.0.0
+info:
+  title: Git Repository Metrics Collection CLI
+  version: 1.0.0
+  description: Command-line interface for collecting code quality metrics from Git repositories
+
+paths:
+  /cli/analyze:
+    post:
+      summary: Analyze Git Repository Metrics
+      description: Execute metrics collection for a specified Git repository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - repository_url
+              properties:
+                repository_url:
+                  type: string
+                  format: uri
+                  description: Public Git repository URL
+                  example: "https://github.com/user/repo.git"
+                commit_sha:
+                  type: string
+                  pattern: "^[a-f0-9]{40}$"
+                  description: Specific commit SHA to analyze
+                  example: "a1b2c3d4e5f6789012345678901234567890abcd"
+                output_directory:
+                  type: string
+                  description: Directory for output files
+                  default: "./output"
+                output_format:
+                  type: string
+                  enum: ["json", "markdown", "both"]
+                  default: "both"
+                timeout_minutes:
+                  type: integer
+                  minimum: 1
+                  maximum: 30
+                  default: 5
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '400':
+          description: Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Analysis execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    AnalysisResult:
+      type: object
+      required:
+        - repository
+        - metrics
+        - execution
+      properties:
+        repository:
+          $ref: '#/components/schemas/RepositoryInfo'
+        metrics:
+          $ref: '#/components/schemas/MetricsData'
+        execution:
+          $ref: '#/components/schemas/ExecutionMetadata'
+
+    RepositoryInfo:
+      type: object
+      required:
+        - url
+        - commit
+        - language
+        - timestamp
+      properties:
+        url:
+          type: string
+          format: uri
+        commit:
+          type: string
+          pattern: "^[a-f0-9]{40}$"
+        language:
+          type: string
+          enum: ["python", "javascript", "typescript", "java", "go", "unknown"]
+        timestamp:
+          type: string
+          format: date-time
+        size_mb:
+          type: number
+          minimum: 0
+
+    MetricsData:
+      type: object
+      required:
+        - code_quality
+        - testing
+        - documentation
+      properties:
+        code_quality:
+          $ref: '#/components/schemas/CodeQualityMetrics'
+        testing:
+          $ref: '#/components/schemas/TestingMetrics'
+        documentation:
+          $ref: '#/components/schemas/DocumentationMetrics'
+
+    CodeQualityMetrics:
+      type: object
+      properties:
+        lint_results:
+          type: object
+          properties:
+            tool_used:
+              type: string
+            passed:
+              type: boolean
+            issues_count:
+              type: integer
+              minimum: 0
+            issues:
+              type: array
+              items:
+                $ref: '#/components/schemas/LintIssue'
+        build_success:
+          type: boolean
+        security_issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecurityIssue'
+        dependency_audit:
+          type: object
+          properties:
+            vulnerabilities_found:
+              type: integer
+              minimum: 0
+            high_severity_count:
+              type: integer
+              minimum: 0
+
+    TestingMetrics:
+      type: object
+      properties:
+        test_execution:
+          type: object
+          properties:
+            tests_run:
+              type: integer
+              minimum: 0
+            tests_passed:
+              type: integer
+              minimum: 0
+            tests_failed:
+              type: integer
+              minimum: 0
+            framework:
+              type: string
+        coverage_report:
+          type: object
+          properties:
+            line_coverage:
+              type: number
+              minimum: 0
+              maximum: 100
+            branch_coverage:
+              type: number
+              minimum: 0
+              maximum: 100
+            function_coverage:
+              type: number
+              minimum: 0
+              maximum: 100
+
+    DocumentationMetrics:
+      type: object
+      properties:
+        readme_present:
+          type: boolean
+        readme_quality_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        api_documentation:
+          type: boolean
+        setup_instructions:
+          type: boolean
+        usage_examples:
+          type: boolean
+
+    ExecutionMetadata:
+      type: object
+      required:
+        - tools_used
+        - duration_seconds
+        - timestamp
+      properties:
+        tools_used:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        duration_seconds:
+          type: number
+          minimum: 0
+        timestamp:
+          type: string
+          format: date-time
+
+    LintIssue:
+      type: object
+      required:
+        - severity
+        - message
+        - file
+        - line
+      properties:
+        severity:
+          type: string
+          enum: ["error", "warning", "info"]
+        message:
+          type: string
+        file:
+          type: string
+        line:
+          type: integer
+          minimum: 1
+        column:
+          type: integer
+          minimum: 1
+
+    SecurityIssue:
+      type: object
+      required:
+        - severity
+        - title
+        - description
+      properties:
+        severity:
+          type: string
+          enum: ["critical", "high", "medium", "low"]
+        title:
+          type: string
+        description:
+          type: string
+        cve_id:
+          type: string
+        affected_package:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: string
+        timestamp:
+          type: string
+          format: date-time

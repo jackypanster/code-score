@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/example/go-microservice.git",
+    "commit": "b5e7c9d1a3f2485017392847561038472951abcd",
+    "language": "go",
+    "timestamp": "2025-09-27T14:22:00Z",
+    "size_mb": 8.7
+  },
+  "metrics": {
+    "code_quality": {
+      "lint_results": {
+        "tool_used": "golangci-lint",
+        "passed": true,
+        "issues_count": 2,
+        "issues": [
+          "cmd/server/main.go:45: SA1019: http.DefaultTransport is deprecated",
+          "internal/handlers/user.go:78: ineffassign: ineffectual assignment to err"
+        ]
+      },
+      "build_success": true,
+      "security_issues": [],
+      "dependency_audit": {
+        "vulnerabilities_found": 0,
+        "high_severity_count": 0,
+        "tool_used": "gosec",
+        "details": []
+      }
+    },
+    "testing": {
+      "test_execution": {
+        "tests_run": 34,
+        "tests_passed": 34,
+        "tests_failed": 0,
+        "framework": "go test",
+        "execution_time_seconds": 3.2,
+        "coverage_percentage": 89.4
+      },
+      "coverage_report": {
+        "line_coverage": 89.4,
+        "branch_coverage": 85.7,
+        "function_coverage": 94.1,
+        "tool_used": "go test -cover",
+        "uncovered_files": []
+      }
+    },
+    "documentation": {
+      "readme_present": true,
+      "readme_quality_score": 0.95,
+      "api_documentation": true,
+      "setup_instructions": true,
+      "usage_examples": true,
+      "additional_docs": [
+        "docs/api.md",
+        "docs/architecture.md",
+        "docs/deployment.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md"
+      ]
+    }
+  },
+  "execution": {
+    "tools_used": ["golangci-lint", "go test", "gosec"],
+    "errors": [],
+    "warnings": [
+      "2 linting issues found (non-critical)",
+      "Repository size: 8.7 MB, Files: 127"
+    ],
+    "duration_seconds": 18.9,
+    "timestamp": "2025-09-27T14:22:19Z"
+  }
+}

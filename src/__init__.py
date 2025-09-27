@@ -1,0 +1,1 @@
+"""Code Score - Git Repository Metrics Collection Tool."""

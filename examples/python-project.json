@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/example/python-flask-api.git",
+    "commit": "f7a9b3d4e5c6789012345678901234567890abcd",
+    "language": "python",
+    "timestamp": "2025-09-27T10:30:00Z",
+    "size_mb": 15.8
+  },
+  "metrics": {
+    "code_quality": {
+      "lint_results": {
+        "tool_used": "ruff",
+        "passed": true,
+        "issues_count": 3,
+        "issues": [
+          "src/api/routes.py:42: E501 line too long (88 > 79 characters)",
+          "src/models/user.py:15: F401 'datetime' imported but unused",
+          "tests/test_auth.py:23: W291 trailing whitespace"
+        ]
+      },
+      "build_success": true,
+      "security_issues": [],
+      "dependency_audit": {
+        "vulnerabilities_found": 1,
+        "high_severity_count": 0,
+        "tool_used": "pip-audit",
+        "details": [
+          {
+            "package": "flask",
+            "version": "2.0.1",
+            "vulnerability": "CVE-2023-30861",
+            "severity": "medium",
+            "description": "Flask before 2.3.2 has a potential cookie security issue"
+          }
+        ]
+      }
+    },
+    "testing": {
+      "test_execution": {
+        "tests_run": 47,
+        "tests_passed": 45,
+        "tests_failed": 2,
+        "framework": "pytest",
+        "execution_time_seconds": 8.7,
+        "failed_tests": [
+          "tests/test_auth.py::test_login_invalid_credentials",
+          "tests/test_api.py::test_rate_limiting"
+        ]
+      },
+      "coverage_report": {
+        "line_coverage": 82.5,
+        "branch_coverage": 78.2,
+        "function_coverage": 91.3,
+        "tool_used": "coverage",
+        "uncovered_files": [
+          "src/utils/deprecated.py",
+          "src/migrations/legacy.py"
+        ]
+      }
+    },
+    "documentation": {
+      "readme_present": true,
+      "readme_quality_score": 0.9,
+      "api_documentation": true,
+      "setup_instructions": true,
+      "usage_examples": true,
+      "additional_docs": [
+        "docs/api.md",
+        "docs/deployment.md",
+        "CONTRIBUTING.md"
+      ]
+    }
+  },
+  "execution": {
+    "tools_used": ["ruff", "pytest", "pip-audit", "coverage"],
+    "errors": [],
+    "warnings": [
+      "Some test files have low coverage",
+      "1 medium-severity security vulnerability found"
+    ],
+    "duration_seconds": 67.4,
+    "timestamp": "2025-09-27T10:32:07Z"
+  }
+}

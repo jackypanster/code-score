@@ -1,0 +1,207 @@
+"""Main CLI interface for Code Score metrics collection."""
+
+import sys
+import click
+from pathlib import Path
+from typing import Optional
+
+from ..metrics.git_operations import GitOperations, GitOperationError
+from ..metrics.language_detection import LanguageDetector
+from ..metrics.tool_executor import ToolExecutor
+from ..metrics.output_generators import OutputManager
+from ..metrics.error_handling import get_error_handler
+from ..metrics.cleanup import get_cleanup_manager
+
+
+@click.command()
+@click.argument('repository_url')
+@click.argument('commit_sha', required=False)
+@click.option('--output-dir', default='./output', help='Output directory for results')
+@click.option('--format', 'output_format', default='both',
+              type=click.Choice(['json', 'markdown', 'both']),
+              help='Output format')
+@click.option('--timeout', default=300, help='Analysis timeout in seconds')
+@click.option('--verbose', is_flag=True, help='Enable verbose logging')
+def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
+         output_format: str, timeout: int, verbose: bool) -> None:
+    """
+    Analyze code quality metrics for a Git repository.
+
+    REPOSITORY_URL: Git repository URL to analyze
+    COMMIT_SHA: Optional specific commit to analyze
+    """
+    # Initialize error handling and cleanup
+    error_handler = get_error_handler(verbose=verbose)
+    cleanup_manager = get_cleanup_manager()
+
+    try:
+        if verbose:
+            click.echo(f"Starting analysis of {repository_url}")
+            if commit_sha:
+                click.echo(f"Target commit: {commit_sha}")
+
+        # Initialize components
+        git_ops = GitOperations(timeout_seconds=timeout)
+        language_detector = LanguageDetector()
+        tool_executor = ToolExecutor(timeout_seconds=timeout)
+        output_manager = OutputManager(output_dir=output_dir)
+
+        # Step 1: Clone repository
+        if verbose:
+            click.echo("Cloning repository...")
+
+        try:
+            repository = git_ops.clone_repository(repository_url, commit_sha)
+        except GitOperationError as e:
+            error_handler.handle_repository_failure(repository_url, e)
+            click.echo(f"Error: Failed to clone repository: {e}", err=True)
+            sys.exit(1)
+
+        if verbose:
+            click.echo(f"Repository cloned to: {repository.local_path}")
+
+        try:
+            # Step 2: Detect language
+            if verbose:
+                click.echo("Detecting primary language...")
+
+            detected_language = language_detector.detect_primary_language(repository.local_path)
+            repository.detected_language = detected_language
+
+            if verbose:
+                click.echo(f"Detected language: {detected_language}")
+
+            # Step 3: Execute analysis tools
+            if verbose:
+                click.echo("Running analysis tools...")
+
+            metrics = tool_executor.execute_tools(detected_language, repository.local_path)
+
+            if verbose:
+                tools_used = metrics.execution_metadata.tools_used
+                click.echo(f"Tools executed: {', '.join(tools_used) if tools_used else 'none'}")
+
+            # Step 4: Generate output
+            if verbose:
+                click.echo(f"Generating {output_format} output...")
+
+            saved_files = output_manager.save_results(repository, metrics, output_format)
+
+            # Success message
+            click.echo("Analysis completed successfully!")
+            click.echo("Generated files:")
+            for file_path in saved_files:
+                click.echo(f"  - {file_path}")
+
+            # Show summary
+            click.echo(f"\nSummary:")
+            click.echo(f"  Repository: {repository.url}")
+            click.echo(f"  Language: {detected_language}")
+            click.echo(f"  Duration: {metrics.execution_metadata.duration_seconds:.1f}s")
+
+            if metrics.execution_metadata.errors:
+                click.echo(f"  Errors: {len(metrics.execution_metadata.errors)}")
+                if verbose:
+                    for error in metrics.execution_metadata.errors:
+                        click.echo(f"    - {error}")
+
+            if metrics.execution_metadata.warnings:
+                click.echo(f"  Warnings: {len(metrics.execution_metadata.warnings)}")
+                if verbose:
+                    for warning in metrics.execution_metadata.warnings:
+                        click.echo(f"    - {warning}")
+
+        finally:
+            # Step 5: Cleanup
+            if verbose:
+                click.echo("Cleaning up temporary files...")
+
+            try:
+                git_ops.cleanup_repository(repository)
+                cleanup_manager.cleanup_temporary_files()
+            except Exception as e:
+                error_handler.handle_error(e, "Cleanup")
+
+            # Log summary
+            error_handler.log_summary()
+
+    except KeyboardInterrupt:
+        click.echo("\nAnalysis interrupted by user", err=True)
+        sys.exit(130)
+
+    except Exception as e:
+        click.echo(f"Error: Unexpected failure: {e}", err=True)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
+
+
+@click.group()
+def cli() -> None:
+    """Code Score - Git Repository Metrics Collection Tool."""
+    pass
+
+
+@cli.command()
+@click.argument('repository_url')
+@click.argument('commit_sha', required=False)
+@click.option('--output-dir', default='./output')
+@click.option('--format', 'output_format', default='both',
+              type=click.Choice(['json', 'markdown', 'both']))
+@click.option('--timeout', default=300)
+@click.option('--verbose', is_flag=True)
+def analyze(repository_url: str, commit_sha: Optional[str], output_dir: str,
+           output_format: str, timeout: int, verbose: bool) -> None:
+    """Analyze a Git repository for code quality metrics."""
+    # This is the same as main() but accessible via 'code-score analyze'
+    ctx = click.Context(main)
+    ctx.invoke(main, repository_url=repository_url, commit_sha=commit_sha,
+               output_dir=output_dir, output_format=output_format,
+               timeout=timeout, verbose=verbose)
+
+
+@cli.command()
+def version() -> None:
+    """Show version information."""
+    click.echo("Code Score v0.1.0")
+
+
+@cli.command()
+@click.argument('repository_url')
+def detect_language(repository_url: str) -> None:
+    """Detect the primary language of a repository without full analysis."""
+    try:
+        git_ops = GitOperations()
+        language_detector = LanguageDetector()
+
+        # Clone repository
+        repository = git_ops.clone_repository(repository_url)
+
+        try:
+            # Detect language
+            stats = language_detector.get_language_statistics(repository.local_path)
+
+            click.echo(f"Primary language: {stats['primary_language']}")
+            click.echo(f"Confidence: {stats['confidence_score']:.2f}")
+            click.echo(f"Files analyzed: {stats['total_files_analyzed']}")
+
+            if stats['detected_languages']:
+                click.echo("\nLanguage breakdown:")
+                for lang, info in stats['detected_languages'].items():
+                    click.echo(f"  {lang}: {info['file_count']} files ({info['percentage']:.1f}%)")
+
+        finally:
+            git_ops.cleanup_repository(repository)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    # Support both direct execution and 'python -m src.cli.main'
+    if len(sys.argv) == 1:
+        cli()
+    else:
+        main()

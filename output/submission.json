@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/microsoft/vscode.git",
+    "commit": "52e664dd0338c8f4e2e57ba0cc9686356d923c5e",
+    "language": "typescript",
+    "timestamp": "2025-09-27T02:55:16.404804",
+    "size_mb": 148.8
+  },
+  "metrics": {
+    "code_quality": {
+      "lint_results": {
+        "tool_used": "none",
+        "passed": false,
+        "issues_count": 0,
+        "issues": [
+          {
+            "severity": "warning",
+            "message": "ESLint not available",
+            "file": "",
+            "line": 0
+          }
+        ]
+      },
+      "build_success": null,
+      "security_issues": [],
+      "dependency_audit": {
+        "vulnerabilities_found": 20,
+        "high_severity_count": 8,
+        "tool_used": "npm"
+      }
+    },
+    "testing": {
+      "test_execution": {
+        "tests_run": 0,
+        "tests_passed": 0,
+        "tests_failed": 0,
+        "framework": "npm",
+        "execution_time_seconds": 0.0
+      },
+      "coverage_report": null
+    },
+    "documentation": {
+      "readme_present": true,
+      "readme_quality_score": 1.0,
+      "api_documentation": true,
+      "setup_instructions": true,
+      "usage_examples": true
+    }
+  },
+  "execution": {
+    "tools_used": [
+      "npm",
+      "npm"
+    ],
+    "errors": [],
+    "warnings": [
+      "Repository size: 148.8 MB, Files: 8709"
+    ],
+    "duration_seconds": 7.908337116241455,
+    "timestamp": "2025-09-27T02:55:16.446724"
+  }
+}
