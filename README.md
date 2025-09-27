@@ -12,10 +12,13 @@ Perfect for hackathon judging, code review automation, and project quality asses
 
 - **Multi-language support**: Python, JavaScript/TypeScript, Java, Go
 - **Comprehensive analysis**: Linting, testing, security audits, documentation quality
+- **Checklist evaluation**: 11-item quality assessment with evidence-based scoring
 - **Performance optimized**: Handles large repositories with timeout controls
 - **Standardized output**: JSON and Markdown formats with schema validation
+- **Evidence tracking**: Detailed audit trail for all evaluation decisions
 - **Configurable timeouts**: Prevents hanging on problematic repositories
 - **Error handling**: Graceful degradation when tools are unavailable
+- **CLI integration**: Both analysis and evaluation commands available
 
 ## Prerequisites
 
@@ -124,6 +127,44 @@ uv run pytest
 ./scripts/run_metrics.sh https://github.com/user/repo.git --verbose
 ```
 
+### Checklist Evaluation
+
+After generating metrics, you can run the checklist evaluation system:
+
+```bash
+# Evaluate existing submission.json
+uv run python -m src.cli.evaluate output/submission.json
+
+# Custom output directory
+uv run python -m src.cli.evaluate output/submission.json --output-dir results/
+
+# Different output formats
+uv run python -m src.cli.evaluate output/submission.json --format json      # JSON only
+uv run python -m src.cli.evaluate output/submission.json --format markdown # Markdown only
+uv run python -m src.cli.evaluate output/submission.json --format both     # Both (default)
+
+# Custom checklist configuration
+uv run python -m src.cli.evaluate output/submission.json --checklist-config custom_checklist.yaml
+
+# Validation only (check input without generating outputs)
+uv run python -m src.cli.evaluate output/submission.json --validate-only
+
+# Verbose evaluation with detailed progress
+uv run python -m src.cli.evaluate output/submission.json --verbose
+```
+
+### Integrated Pipeline
+
+The analysis command can automatically run checklist evaluation:
+
+```bash
+# Analysis with checklist evaluation (default)
+./scripts/run_metrics.sh https://github.com/user/repo.git --enable-checklist
+
+# Analysis without checklist evaluation
+./scripts/run_metrics.sh https://github.com/user/repo.git --enable-checklist=false
+```
+
 ### Python Module Usage
 
 ```python
@@ -141,6 +182,21 @@ main.callback(
 ```
 
 ## Output Format
+
+The tool generates multiple output files depending on the analysis mode:
+
+### Basic Analysis Output
+
+**Files generated:**
+- `submission.json` - Raw metrics data
+- `report.md` - Human-readable analysis report
+
+### Checklist Evaluation Output
+
+**Files generated:**
+- `score_input.json` - Structured evaluation results for LLM processing
+- `evaluation_report.md` - Detailed human-readable evaluation report
+- `evidence/` directory - Detailed evidence files supporting all evaluation decisions
 
 ### JSON Output
 
@@ -198,14 +254,53 @@ The tool generates JSON output conforming to a strict schema:
 }
 ```
 
+### Checklist Evaluation JSON Output
+
+The evaluation system generates structured output for LLM processing:
+
+```json
+{
+  "schema_version": "1.0.0",
+  "repository_info": {
+    "url": "https://github.com/user/repo.git",
+    "commit_sha": "a1b2c3d4e5f6789012345678901234567890abcd",
+    "primary_language": "python",
+    "analysis_timestamp": "2025-09-27T10:30:00Z",
+    "metrics_source": "output/submission.json"
+  },
+  "evaluation_result": {
+    "checklist_items": [
+      {
+        "id": "code_quality_lint",
+        "name": "Static Linting Passed",
+        "dimension": "code_quality",
+        "max_points": 15,
+        "evaluation_status": "met",
+        "score": 15.0,
+        "evidence_references": [...]
+      }
+    ],
+    "total_score": 67.5,
+    "max_possible_score": 100,
+    "score_percentage": 67.5,
+    "category_breakdowns": {...},
+    "evidence_summary": [...]
+  },
+  "human_summary": "# Code Quality Evaluation Report\n..."
+}
+```
+
 ### Markdown Output
 
-The tool also generates human-readable Markdown reports with:
-- Repository information
+The tool generates comprehensive human-readable reports with:
+- Repository information and analysis context
 - Code quality summary with pass/fail indicators
-- Testing results and coverage
-- Documentation analysis
+- Testing results and coverage analysis
+- Documentation quality assessment
 - Tool execution summary
+- **Checklist evaluation** with detailed scoring breakdown
+- **Evidence tracking** with confidence levels
+- **Recommendations** for improvement
 
 ## Performance Considerations
 
@@ -254,11 +349,26 @@ The tool follows the KISS principle with fail-fast error handling:
 ```
 code-score/
 ├── src/
-│   ├── cli/                 # Command-line interface
-│   │   └── main.py
-│   └── metrics/             # Core analysis modules
-│       ├── models/          # Data models
-│       ├── tool_runners/    # Language-specific tools
+│   ├── cli/                     # Command-line interface
+│   │   ├── main.py             # Main analysis CLI
+│   │   └── evaluate.py         # Checklist evaluation CLI
+│   └── metrics/                 # Core analysis modules
+│       ├── models/              # Data models
+│       │   ├── checklist_item.py
+│       │   ├── evaluation_result.py
+│       │   ├── score_input.py
+│       │   ├── evidence_reference.py
+│       │   └── category_breakdown.py
+│       ├── tool_runners/        # Language-specific tools
+│       │   ├── python_tools.py
+│       │   ├── javascript_tools.py
+│       │   ├── java_tools.py
+│       │   └── golang_tools.py
+│       ├── checklist_evaluator.py   # Core evaluation logic
+│       ├── scoring_mapper.py        # Output formatting
+│       ├── evidence_tracker.py     # Evidence management
+│       ├── checklist_loader.py     # Configuration loading
+│       ├── pipeline_output_manager.py # Pipeline integration
 │       ├── git_operations.py
 │       ├── language_detection.py
 │       ├── tool_executor.py
@@ -271,7 +381,14 @@ code-score/
 │   └── unit/              # Unit tests
 ├── scripts/
 │   └── run_metrics.sh     # Entry point script
-└── specs/                 # Design documentation
+├── specs/                 # Design documentation
+│   └── 002-git-log-docs/  # Checklist evaluation specs
+│       ├── contracts/     # JSON schemas and YAML configs
+│       ├── tasks.md       # Implementation tasks
+│       ├── research.md    # Technical decisions
+│       ├── data-model.md  # Data model documentation
+│       └── quickstart.md  # Usage examples
+└── CLAUDE.md              # Development guidelines
 ```
 
 ### Running Tests
@@ -311,7 +428,31 @@ uv run mypy src/
 2. Add language mapping in `ToolExecutor.__init__()`
 3. Update language detection patterns in `LanguageDetector`
 4. Add integration tests in `tests/integration/`
-5. Update documentation
+5. Update checklist configuration for language-specific adaptations
+6. Update documentation
+
+### Checklist Evaluation System
+
+The checklist evaluation system provides standardized quality assessment:
+
+**Core Components:**
+- **ChecklistEvaluator**: Rule-based evaluation engine with 11 quality criteria
+- **ScoringMapper**: Transforms evaluation results to structured output
+- **EvidenceTracker**: Collects and organizes supporting evidence
+- **ChecklistLoader**: Manages configuration and language adaptations
+
+**Quality Dimensions:**
+- **Code Quality** (40 points): Linting, builds, security, documentation
+- **Testing** (35 points): Test automation, coverage, integration tests
+- **Documentation** (25 points): README, setup, API documentation
+
+**Evaluation Process:**
+1. Load submission.json from metrics analysis
+2. Apply 11-item checklist with language-specific adaptations
+3. Generate evidence for each evaluation decision
+4. Score items as "met", "partial", or "unmet"
+5. Create structured output for LLM processing
+6. Generate human-readable reports with recommendations
 
 ## Contributing
 

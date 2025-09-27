@@ -22,8 +22,10 @@ from ..metrics.cleanup import get_cleanup_manager
               help='Output format')
 @click.option('--timeout', default=300, help='Analysis timeout in seconds')
 @click.option('--verbose', is_flag=True, help='Enable verbose logging')
+@click.option('--enable-checklist', is_flag=True, default=True, help='Enable checklist evaluation (default: enabled)')
+@click.option('--checklist-config', help='Path to checklist configuration YAML file')
 def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
-         output_format: str, timeout: int, verbose: bool) -> None:
+         output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: Optional[str]) -> None:
     """
     Analyze code quality metrics for a Git repository.
 
@@ -86,6 +88,46 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                 click.echo(f"Generating {output_format} output...")
 
             saved_files = output_manager.save_results(repository, metrics, output_format)
+
+            # Step 4.5: Checklist evaluation integration
+            if enable_checklist:
+                try:
+                    if verbose:
+                        click.echo("Running checklist evaluation...")
+
+                    from ..metrics.pipeline_output_manager import PipelineOutputManager
+
+                    # Initialize pipeline output manager
+                    pipeline_manager = PipelineOutputManager(
+                        output_dir=output_dir,
+                        checklist_config_path=checklist_config,
+                        enable_checklist_evaluation=True
+                    )
+
+                    # Find submission.json in the output files
+                    submission_file = None
+                    for file_path in saved_files:
+                        if file_path.endswith('submission.json'):
+                            submission_file = file_path
+                            break
+
+                    if submission_file:
+                        # Integrate checklist evaluation
+                        all_files = pipeline_manager.integrate_with_existing_pipeline(
+                            saved_files, submission_file
+                        )
+                        saved_files = all_files
+
+                        if verbose:
+                            click.echo("✅ Checklist evaluation completed")
+                    else:
+                        if verbose:
+                            click.echo("⚠️  No submission.json found, skipping checklist evaluation")
+
+                except Exception as e:
+                    if verbose:
+                        click.echo(f"⚠️  Checklist evaluation failed: {e}")
+                    # Continue with original results
 
             # Success message
             click.echo("Analysis completed successfully!")
@@ -151,20 +193,28 @@ def cli() -> None:
               type=click.Choice(['json', 'markdown', 'both']))
 @click.option('--timeout', default=300)
 @click.option('--verbose', is_flag=True)
+@click.option('--enable-checklist', is_flag=True, default=True)
+@click.option('--checklist-config', help='Path to checklist configuration YAML file')
 def analyze(repository_url: str, commit_sha: Optional[str], output_dir: str,
-           output_format: str, timeout: int, verbose: bool) -> None:
+           output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: Optional[str]) -> None:
     """Analyze a Git repository for code quality metrics."""
     # This is the same as main() but accessible via 'code-score analyze'
     ctx = click.Context(main)
     ctx.invoke(main, repository_url=repository_url, commit_sha=commit_sha,
                output_dir=output_dir, output_format=output_format,
-               timeout=timeout, verbose=verbose)
+               timeout=timeout, verbose=verbose, enable_checklist=enable_checklist,
+               checklist_config=checklist_config)
 
 
 @cli.command()
 def version() -> None:
     """Show version information."""
     click.echo("Code Score v0.1.0")
+
+
+# Import and add the evaluate command
+from .evaluate import evaluate
+cli.add_command(evaluate)
 
 
 @cli.command()

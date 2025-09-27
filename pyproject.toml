@@ -14,6 +14,7 @@ dependencies = [
     "pydantic>=2.5.0",
     "gitpython>=3.1.40",
     "python-dateutil>=2.8.2",
+    "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]

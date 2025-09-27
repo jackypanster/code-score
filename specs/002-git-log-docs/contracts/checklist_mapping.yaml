@@ -1,0 +1,240 @@
+checklist_items:
+  # Code Quality Dimension (40 points total)
+  - id: "code_quality_lint"
+    name: "Static Linting Passed"
+    dimension: "code_quality"
+    max_points: 15
+    description: "Lint/static analysis pipeline covers core rules and passes successfully"
+    evaluation_criteria:
+      met:
+        - lint_results.passed == true
+        - lint_results.tool_used != "none"
+        - lint_results.issues_count == 0
+      partial:
+        - lint_results.tool_used != "none" AND lint_results.issues_count < 10
+        - lint_results.passed == false BUT evidence of attempt
+      unmet:
+        - lint_results.tool_used == "none"
+        - lint_results.passed == false AND lint_results.issues_count > 10
+    metrics_mapping:
+      source_path: "$.metrics.code_quality.lint_results"
+      required_fields: ["tool_used", "passed", "issues_count"]
+
+  - id: "code_quality_build"
+    name: "Build/Package Success"
+    dimension: "code_quality"
+    max_points: 10
+    description: "Provides recent build or package success log/CI record"
+    evaluation_criteria:
+      met:
+        - build_success == true
+      partial:
+        - build_success == null BUT other quality indicators present
+      unmet:
+        - build_success == false
+    metrics_mapping:
+      source_path: "$.metrics.code_quality.build_success"
+      required_fields: ["build_success"]
+
+  - id: "code_quality_security"
+    name: "Dependency Security Scan"
+    dimension: "code_quality"
+    max_points: 8
+    description: "Executes dependency security scan, lists high-risk items with handling plan"
+    evaluation_criteria:
+      met:
+        - dependency_audit.vulnerabilities_found >= 0 AND dependency_audit.tool_used != "none"
+        - dependency_audit.high_severity_count == 0
+      partial:
+        - dependency_audit.tool_used != "none" AND dependency_audit.high_severity_count <= 5
+      unmet:
+        - dependency_audit.tool_used == "none"
+        - dependency_audit.high_severity_count > 5
+    metrics_mapping:
+      source_path: "$.metrics.code_quality.dependency_audit"
+      required_fields: ["vulnerabilities_found", "high_severity_count", "tool_used"]
+
+  - id: "code_quality_structure"
+    name: "Core Module Documentation"
+    dimension: "code_quality"
+    max_points: 7
+    description: "README or code comments clearly mark key directories, service entry points"
+    evaluation_criteria:
+      met:
+        - readme_present == true AND readme_quality_score >= 0.8
+      partial:
+        - readme_present == true AND readme_quality_score >= 0.5
+      unmet:
+        - readme_present == false OR readme_quality_score < 0.5
+    metrics_mapping:
+      source_path: "$.metrics.documentation"
+      required_fields: ["readme_present", "readme_quality_score"]
+
+  # Testing Dimension (35 points total)
+  - id: "testing_automation"
+    name: "Automated Test Execution"
+    dimension: "testing"
+    max_points: 15
+    description: "At least one type of automated test executes and passes in CI"
+    evaluation_criteria:
+      met:
+        - test_execution.tests_run > 0 AND test_execution.tests_passed > 0
+        - test_execution.tests_failed == 0
+      partial:
+        - test_execution.tests_run > 0 BUT test_execution.tests_failed > 0
+      unmet:
+        - test_execution.tests_run == 0
+    metrics_mapping:
+      source_path: "$.metrics.testing.test_execution"
+      required_fields: ["tests_run", "tests_passed", "tests_failed"]
+
+  - id: "testing_coverage"
+    name: "Coverage or Core Test Evidence"
+    dimension: "testing"
+    max_points: 10
+    description: "Coverage >=60% or core functionality test list with execution proof"
+    evaluation_criteria:
+      met:
+        - coverage_report.coverage_percentage >= 60
+      partial:
+        - coverage_report.coverage_percentage >= 30 OR (coverage_report == null AND test_execution.tests_run >= 5)
+      unmet:
+        - coverage_report.coverage_percentage < 30 AND test_execution.tests_run < 5
+    metrics_mapping:
+      source_path: "$.metrics.testing"
+      required_fields: ["test_execution", "coverage_report"]
+
+  - id: "testing_integration"
+    name: "Integration/Smoke Test Scripts"
+    dimension: "testing"
+    max_points: 6
+    description: "Provides 2-3 typical scenario integration or smoke test scripts with results"
+    evaluation_criteria:
+      met:
+        - test_execution.framework != "none" AND test_execution.tests_run >= 3
+        - test_execution.execution_time_seconds > 0
+      partial:
+        - test_execution.tests_run >= 1 AND test_execution.tests_run < 3
+      unmet:
+        - test_execution.tests_run == 0 OR test_execution.framework == "none"
+    metrics_mapping:
+      source_path: "$.metrics.testing.test_execution"
+      required_fields: ["framework", "tests_run", "execution_time_seconds"]
+
+  - id: "testing_results"
+    name: "Test Result Documentation"
+    dimension: "testing"
+    max_points: 4
+    description: "Provides CI pipeline link or execution log archive proving test success"
+    evaluation_criteria:
+      met:
+        - test_execution.tests_passed > 0 AND execution.errors == []
+      partial:
+        - test_execution.tests_passed > 0 BUT execution.warnings.length > 0
+      unmet:
+        - test_execution.tests_passed == 0 OR execution.errors.length > 0
+    metrics_mapping:
+      source_path: "$.metrics.testing.test_execution"
+      fallback_path: "$.execution"
+      required_fields: ["tests_passed"]
+
+  # Documentation Dimension (25 points total)
+  - id: "documentation_readme"
+    name: "README Quick Start Guide"
+    dimension: "documentation"
+    max_points: 12
+    description: "README includes project overview, dependency install, start/test commands, sample data"
+    evaluation_criteria:
+      met:
+        - readme_present == true
+        - setup_instructions == true
+        - usage_examples == true
+        - readme_quality_score >= 0.8
+      partial:
+        - readme_present == true AND (setup_instructions == true OR usage_examples == true)
+        - readme_quality_score >= 0.5
+      unmet:
+        - readme_present == false
+        - readme_quality_score < 0.5
+    metrics_mapping:
+      source_path: "$.metrics.documentation"
+      required_fields: ["readme_present", "setup_instructions", "usage_examples", "readme_quality_score"]
+
+  - id: "documentation_config"
+    name: "Configuration and Environment Setup"
+    dimension: "documentation"
+    max_points: 7
+    description: "Provides .env.example or config docs listing required environment variables"
+    evaluation_criteria:
+      met:
+        - setup_instructions == true AND readme_quality_score >= 0.7
+      partial:
+        - setup_instructions == true AND readme_quality_score >= 0.4
+      unmet:
+        - setup_instructions == false
+    metrics_mapping:
+      source_path: "$.metrics.documentation"
+      required_fields: ["setup_instructions", "readme_quality_score"]
+
+  - id: "documentation_api"
+    name: "API/Interface Usage Documentation"
+    dimension: "documentation"
+    max_points: 6
+    description: "Lists main API/CLI/UI entry points with example parameters/responses/screenshots"
+    evaluation_criteria:
+      met:
+        - api_documentation == true AND usage_examples == true
+      partial:
+        - api_documentation == true OR usage_examples == true
+      unmet:
+        - api_documentation == false AND usage_examples == false
+    metrics_mapping:
+      source_path: "$.metrics.documentation"
+      required_fields: ["api_documentation", "usage_examples"]
+
+language_adaptations:
+  python:
+    code_quality_lint:
+      tools: ["ruff", "flake8", "black"]
+      tool_mapping:
+        tool_used: "ruff" # preferred
+        fallback: "flake8"
+    testing_automation:
+      frameworks: ["pytest", "unittest"]
+      minimum_tests: 5
+
+  javascript:
+    code_quality_lint:
+      tools: ["eslint", "prettier"]
+      tool_mapping:
+        tool_used: "eslint"
+    testing_automation:
+      frameworks: ["jest", "mocha", "npm"]
+      minimum_tests: 3
+
+  typescript:
+    code_quality_lint:
+      tools: ["eslint", "tsc", "prettier"]
+      tool_mapping:
+        tool_used: "eslint"
+    testing_automation:
+      frameworks: ["jest", "mocha", "npm"]
+      minimum_tests: 3
+
+  java:
+    code_quality_lint:
+      tools: ["checkstyle", "spotbugs"]
+      tool_mapping:
+        tool_used: "checkstyle"
+    testing_automation:
+      frameworks: ["maven", "gradle", "junit"]
+      minimum_tests: 5
+
+  go:
+    code_quality_lint:
+      tools: ["golangci-lint", "gofmt"]
+      tool_mapping:
+        tool_used: "golangci-lint"
+    testing_automation:
+      frameworks: ["go", "testing"]
+      minimum_tests: 3
