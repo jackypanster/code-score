@@ -1,117 +1,142 @@
 # Quickstart: Checklist Evaluation System
 
 ## Overview
-This quickstart guide demonstrates the checklist evaluation system that converts repository metrics into structured scoring input for automated hackathon evaluation.
+This quickstart guide demonstrates the complete checklist evaluation system that converts repository metrics into structured scoring input for automated code quality assessment.
 
 ## Prerequisites
 - Python 3.11+ with UV package manager
-- Existing submission.json file from Phase 1 metrics collection
-- Git repository access for testing
+- Git installed and accessible
+- Internet access for cloning test repositories
 
 ## Installation
 ```bash
-# Install dependencies (UV required)
+# Clone the repository
+git clone https://github.com/your-org/code-score.git
+cd code-score
+
+# Install dependencies
 uv sync
 
 # Verify installation
-uv run python -m src.cli.main --version
+uv run python -m src.cli.main --help
 ```
 
-## Basic Usage
+## Quick Start: Complete Pipeline
 
-### 1. Evaluate Existing Metrics
+### 1. Analyze a Repository with Checklist Evaluation
 ```bash
-# Evaluate submission.json and generate score_input.json
-uv run python -m src.cli.evaluate \
-  --input output/submission.json \
-  --output output/score_input.json \
-  --verbose
+# Complete analysis with automatic checklist evaluation
+./scripts/run_metrics.sh https://github.com/pallets/click.git --verbose --enable-checklist
 
-# Expected output:
-# Checklist Evaluation Complete
-# Total Score: 67.5/100 (67.5%)
-# - Code Quality: 25/40 (62.5%)
-# - Testing: 21/35 (60.0%)
-# - Documentation: 21.5/25 (86.0%)
-# Output: output/score_input.json
+# Output shows:
+# Analysis completed successfully!
+# Generated files:
+#   - ./output/submission.json
+#   - ./output/report.md
+#   - ./output/score_input.json          # ← Checklist evaluation
+#   - ./output/evaluation_report.md      # ← Human-readable evaluation
+#   Evidence Files: 14 files in ./output/evidence
 ```
 
-### 2. Generate Human-Readable Report
+### 2. Evaluate Existing Metrics (Two-Step Process)
 ```bash
-# Append evaluation summary to report
-uv run python -m src.cli.evaluate \
-  --input output/submission.json \
-  --output output/score_input.json \
-  --report output/report.md \
-  --verbose
+# Step 1: Generate metrics only
+./scripts/run_metrics.sh https://github.com/pallets/click.git --enable-checklist=false
 
-# Check the updated report
-tail -n 50 output/report.md
+# Step 2: Run checklist evaluation separately
+uv run python -m src.cli.evaluate output/submission.json --output-dir results/ --verbose
+
+# Output shows:
+# 🎉 Evaluation completed successfully!
+# 📊 Score: 67.5/100 (67.5%)
+# 📈 Category Breakdown:
+#    Code Quality: 22.0/40 (55.0%, Grade: F)
+#    Testing: 24.0/35 (68.6%, Grade: D)
+#    Documentation: 21.5/25 (86.0%, Grade: B)
+# 📋 Items: 6 met, 2 partial, 3 unmet
 ```
 
-### 3. Validate Output Format
+## Real Example Walkthrough
+
+Let's walk through a complete example using a real repository:
+
+### Step 1: Analyze Repository
 ```bash
-# Validate generated score_input.json against schema
-uv run python -c "
-import json
-import jsonschema
-from pathlib import Path
-
-# Load schema and data
-schema = json.loads(Path('specs/002-git-log-docs/contracts/score_input_schema.json').read_text())
-data = json.loads(Path('output/score_input.json').read_text())
-
-# Validate
-jsonschema.validate(data, schema)
-print('✅ score_input.json validates against schema')
-"
+# Analyze the tiktoken repository
+./scripts/run_metrics.sh https://github.com/openai/tiktoken.git --timeout 60 --verbose
 ```
 
-## Testing the System
-
-### 1. Run Contract Tests
+### Step 2: Review Generated Files
 ```bash
-# Test output schema validation
-uv run pytest tests/contract/test_score_input_schema.py -v
+# Check the basic metrics
+cat output/submission.json | jq '.metrics.code_quality.lint_results'
 
-# Expected output:
-# test_score_input_schema_valid ✓
-# test_required_fields_present ✓
-# test_score_calculations_correct ✓
+# Review the evaluation results
+cat output/score_input.json | jq '.evaluation_result.total_score'
+
+# Read the human-friendly report
+head -n 30 output/evaluation_report.md
 ```
 
-### 2. Run Integration Tests
+### Step 3: Examine Evidence Files
 ```bash
-# Test full evaluation workflow
-uv run pytest tests/integration/test_checklist_evaluation.py -v
+# List evidence files
+find output/evidence -name "*.json" | head -5
 
-# Expected output:
-# test_evaluation_with_complete_metrics ✓
-# test_evaluation_with_partial_metrics ✓
-# test_evaluation_with_missing_metrics ✓
-# test_multi_language_evaluation ✓
+# Check a specific evidence file
+cat output/evidence/code_quality/code_quality_lint_file_check.json | jq '.[0]'
 ```
 
-### 3. Run Unit Tests
+## CLI Commands Reference
+
+### Analyze Command (Main Pipeline)
 ```bash
-# Test individual components
-uv run pytest tests/unit/ -v
+# Basic usage
+./scripts/run_metrics.sh <repository-url>
 
-# Expected output:
-# test_checklist_evaluator.py ✓✓✓
-# test_scoring_mapper.py ✓✓✓
-# test_evidence_tracker.py ✓✓✓
+# With checklist evaluation (default)
+./scripts/run_metrics.sh <repository-url> --enable-checklist
+
+# Without checklist evaluation
+./scripts/run_metrics.sh <repository-url> --enable-checklist=false
+
+# Custom options
+./scripts/run_metrics.sh <repository-url> \
+  --output-dir ./results \
+  --timeout 120 \
+  --verbose \
+  --checklist-config path/to/custom_checklist.yaml
 ```
 
-## Example Outputs
+### Evaluate Command (Checklist Only)
+```bash
+# Basic evaluation
+uv run python -m src.cli.evaluate submission.json
 
-### Sample score_input.json Structure
+# Custom output directory
+uv run python -m src.cli.evaluate submission.json --output-dir results/
+
+# Different output formats
+uv run python -m src.cli.evaluate submission.json --format json      # JSON only
+uv run python -m src.cli.evaluate submission.json --format markdown # Markdown only
+uv run python -m src.cli.evaluate submission.json --format both     # Both (default)
+
+# Validation only (no output generation)
+uv run python -m src.cli.evaluate submission.json --validate-only
+
+# Verbose output with progress
+uv run python -m src.cli.evaluate submission.json --verbose
+```
+
+## Real Output Examples
+
+### Sample Score Input JSON
 ```json
 {
   "schema_version": "1.0.0",
   "repository_info": {
-    "url": "https://github.com/example/repo.git",
-    "commit_sha": "a1b2c3d4e5f6789012345678901234567890abcd",
+    "url": "https://github.com/openai/tiktoken.git",
+    "commit_sha": "abc123def456",
     "primary_language": "python",
     "analysis_timestamp": "2025-09-27T10:30:00Z",
     "metrics_source": "output/submission.json"
@@ -123,16 +148,15 @@ uv run pytest tests/unit/ -v
         "name": "Static Linting Passed",
         "dimension": "code_quality",
         "max_points": 15,
-        "description": "Lint/static analysis pipeline passes successfully",
         "evaluation_status": "met",
         "score": 15.0,
         "evidence_references": [
           {
-            "source_type": "lint_output",
-            "source_path": "$.metrics.code_quality.lint_results",
-            "description": "Ruff linting passed with 0 issues",
-            "confidence": 1.0,
-            "raw_data": "passed: true, issues_count: 0, tool_used: ruff"
+            "source_type": "file_check",
+            "source_path": "$.metrics.code_quality.lint_results.passed",
+            "description": "Checked lint_results.passed: expected True, got True",
+            "confidence": 0.95,
+            "raw_data": "True"
           }
         ]
       }
@@ -145,125 +169,193 @@ uv run pytest tests/unit/ -v
         "dimension": "code_quality",
         "items_count": 4,
         "max_points": 40,
-        "actual_points": 25.0,
-        "percentage": 62.5
+        "actual_points": 22.0,
+        "percentage": 55.0
       }
-    },
-    "evaluation_metadata": {
-      "evaluator_version": "1.0.0",
-      "processing_duration": 0.125,
-      "warnings": [],
-      "metrics_completeness": 0.9
-    },
-    "evidence_summary": [
-      "✅ Static linting passed (ruff)",
-      "⚠️ Build status unknown",
-      "✅ No high-severity security issues",
-      "✅ Comprehensive README present"
-    ]
-  },
-  "generation_timestamp": "2025-09-27T11:00:00Z",
-  "evidence_paths": {
-    "submission_json": "output/submission.json",
-    "checklist_mapping": "specs/002-git-log-docs/contracts/checklist_mapping.yaml"
-  },
-  "human_summary": "## Checklist Evaluation Summary\n\n**Total Score: 67.5/100 (67.5%)**\n\n### Code Quality (25/40 - 62.5%)\n- ✅ Static Linting: 15/15 points\n- ⚠️ Build Success: 5/10 points\n- ✅ Security Scan: 8/8 points\n- ⚠️ Module Docs: 3.5/7 points\n\n### Testing (21/35 - 60.0%)\n- ✅ Automated Tests: 15/15 points\n- ⚠️ Coverage: 5/10 points\n- ⚠️ Integration Tests: 3/6 points\n- ⚠️ Result Docs: 2/4 points\n\n### Documentation (21.5/25 - 86.0%)\n- ✅ README Guide: 12/12 points\n- ✅ Config Setup: 7/7 points\n- ⚠️ API Docs: 3/6 points\n\n### Key Strengths\n- Excellent linting and code quality\n- Strong automated test coverage\n- Comprehensive README documentation\n\n### Improvement Areas\n- Add build/CI success verification\n- Enhance integration test coverage\n- Document API endpoints and usage"
+    }
+  }
 }
 ```
 
-### Sample Report Appendix
+### Sample Evaluation Report
 ```markdown
-## Checklist Evaluation Results
+# Code Quality Evaluation Report
 
-**Generated**: 2025-09-27 11:00:00 UTC
-**Total Score**: 67.5/100 (67.5%)
+**Repository:** https://github.com/openai/tiktoken.git
+**Commit:** abc123def456
+**Language:** python
+**Analysis Date:** 2025-09-27 10:30:00 UTC
 
-### Score Breakdown
-| Dimension | Score | Max | Percentage |
-|-----------|-------|-----|------------|
-| Code Quality | 25.0 | 40 | 62.5% |
-| Testing | 21.0 | 35 | 60.0% |
-| Documentation | 21.5 | 25 | 86.0% |
+## Executive Summary
 
-### Individual Items
-1. **Static Linting Passed** (15/15) ✅ - Ruff linting passed with 0 issues
-2. **Build/Package Success** (5/10) ⚠️ - Build status not available in metrics
-3. **Dependency Security Scan** (8/8) ✅ - No high-severity vulnerabilities found
-4. **Core Module Documentation** (3.5/7) ⚠️ - README present but limited module descriptions
+**Overall Score:** 67.5 / 100 (67.5%)
+**Processing Time:** 0.12 seconds
+**Metrics Completeness:** 95.0%
 
-[... continues for all 11 items ...]
+**Grade: D** - Below-average code quality requiring significant improvements.
 
-### Evidence Summary
-- ✅ 6 items fully met (met status)
-- ⚠️ 4 items partially met (partial status)
-- ❌ 1 item unmet (unmet status)
+## Category Performance
 
-### Recommendations
-1. Add CI/build verification step
-2. Increase test coverage above 60%
-3. Document API endpoints with examples
-4. Add integration test scenarios
+### Code Quality - Grade F
+- **Score:** 22.0 / 40 (55.0%)
+- **Items Evaluated:** 4
 
----
-*Evaluation performed by code-score v1.0.0*
+### Testing - Grade D
+- **Score:** 24.0 / 35 (68.6%)
+- **Items Evaluated:** 4
+
+### Documentation - Grade B
+- **Score:** 21.5 / 25 (86.0%)
+- **Items Evaluated:** 3
+
+## Key Insights
+
+- Score distribution: 6 items fully met, 2 partially met, 3 unmet
+- Strongest area: Documentation (86.0%)
+- Weakest area: Code Quality (55.0%)
+
+## Recommendations
+
+- Implement static linting (e.g., ruff for Python, eslint for JavaScript)
+- Set up automated builds and dependency security scanning
+- Add automated tests with coverage reporting (target: >60% coverage)
 ```
 
-## Validation Scenarios
+## Testing the System
 
-### Test with Known Repositories
+### Run All Tests
 ```bash
-# Test with code-walker repository
-./scripts/run_metrics.sh git@github.com:AIGCInnovatorSpace/code-walker.git
-uv run python -m src.cli.evaluate --input output/submission.json --output output/score_input.json
+# Contract tests (schema validation)
+uv run pytest tests/contract/ -v
 
-# Test with multi-language repository
-./scripts/run_metrics.sh https://github.com/example/javascript-project.git
-uv run python -m src.cli.evaluate --input output/submission.json --output output/score_input.json
+# Integration tests (end-to-end workflows)
+uv run pytest tests/integration/ -v
 
-# Verify different scoring outcomes
-cat output/score_input.json | jq '.evaluation_result.total_score'
+# Unit tests (individual components)
+uv run pytest tests/unit/ -v
+
+# All tests with coverage
+uv run pytest --cov=src
 ```
 
-### Edge Case Testing
+### Test with Different Repository Types
+
 ```bash
-# Test with incomplete metrics
-echo '{"metrics": {"code_quality": {}}}' > test_incomplete.json
-uv run python -m src.cli.evaluate --input test_incomplete.json --output test_output.json
-# Should gracefully handle missing data
+# Python repository (good test coverage)
+./scripts/run_metrics.sh https://github.com/pallets/click.git
 
-# Test with malformed JSON
-echo '{"invalid": json}' > test_malformed.json
-uv run python -m src.cli.evaluate --input test_malformed.json --output test_output.json
-# Should fail fast with clear error message
+# JavaScript repository
+./scripts/run_metrics.sh https://github.com/lodash/lodash.git
+
+# Go repository
+./scripts/run_metrics.sh https://github.com/gin-gonic/gin.git
+
+# Java repository
+./scripts/run_metrics.sh https://github.com/spring-projects/spring-boot.git
 ```
 
-## Next Steps
-1. Review generated score_input.json for accuracy
-2. Validate evidence references match source data
-3. Customize evaluation criteria if needed
-4. Integrate with Phase 3 LLM evaluation system
+## Customization
+
+### Custom Checklist Configuration
+```bash
+# Copy default configuration
+cp specs/002-git-log-docs/contracts/checklist_mapping.yaml my_checklist.yaml
+
+# Edit your custom criteria
+nano my_checklist.yaml
+
+# Use custom configuration
+uv run python -m src.cli.evaluate submission.json --checklist-config my_checklist.yaml
+```
+
+### Language-Specific Adaptations
+The system automatically adapts evaluation criteria based on detected language:
+- **Python**: Uses ruff/flake8 for linting, pytest for testing
+- **JavaScript**: Uses eslint for linting, jest/mocha for testing
+- **Java**: Uses checkstyle for linting, maven/gradle for testing
+- **Go**: Uses golangci-lint for linting, go test for testing
+
+## Performance Expectations
+
+- **Small repositories** (<10MB): ~10-30 seconds
+- **Medium repositories** (10-100MB): ~30-120 seconds
+- **Large repositories** (100-500MB): ~2-5 minutes
+- **Evaluation only**: ~0.1-1 seconds (very fast)
 
 ## Troubleshooting
 
 ### Common Issues
-- **"File not found"**: Ensure submission.json exists from Phase 1
-- **"Schema validation failed"**: Check JSON format and required fields
-- **"Tool not available"**: Verify UV installation and dependencies
+
+**"Repository too large"**
+```bash
+# Increase timeout
+./scripts/run_metrics.sh <url> --timeout 600
+```
+
+**"Checklist evaluation failed"**
+```bash
+# Check submission.json format
+cat output/submission.json | jq '.'
+
+# Run evaluation with verbose output
+uv run python -m src.cli.evaluate output/submission.json --verbose
+```
+
+**"Missing required sections"**
+```bash
+# The submission.json must have repository, metrics, and execution sections
+# Re-run metrics collection to generate proper format
+```
 
 ### Debug Mode
 ```bash
-# Enable detailed logging
-uv run python -m src.cli.evaluate \
-  --input output/submission.json \
-  --output output/score_input.json \
-  --debug \
-  --verbose
+# Enable detailed logging for the entire pipeline
+./scripts/run_metrics.sh <url> --verbose
 
-# Check evaluation logic step-by-step
-python -c "
-from src.metrics.checklist_evaluator import ChecklistEvaluator
-evaluator = ChecklistEvaluator(debug=True)
-result = evaluator.evaluate_from_file('output/submission.json')
-print(f'Debug info: {evaluator.debug_log}')
+# Debug just the evaluation step
+uv run python -m src.cli.evaluate submission.json --verbose
+
+# Check individual components
+uv run python -c "
+from src.metrics.checklist_loader import ChecklistLoader
+loader = ChecklistLoader()
+validation = loader.validate_checklist_config()
+print(f'Checklist valid: {validation[\"valid\"]}')
+if not validation['valid']:
+    print(f'Errors: {validation[\"errors\"]}')
 "
 ```
+
+## Next Steps
+
+1. **Try the examples above** with different repositories
+2. **Examine the generated evidence files** to understand the evaluation logic
+3. **Customize the checklist configuration** for your specific needs
+4. **Integrate with your CI/CD pipeline** for automated quality assessment
+5. **Use the structured JSON output** for downstream LLM processing
+
+## API Usage
+
+For programmatic use:
+
+```python
+from src.metrics.checklist_evaluator import ChecklistEvaluator
+from src.metrics.scoring_mapper import ScoringMapper
+
+# Initialize evaluator
+evaluator = ChecklistEvaluator()
+
+# Load and evaluate submission
+with open('output/submission.json') as f:
+    submission_data = json.load(f)
+
+evaluation_result = evaluator.evaluate_from_dict(submission_data, 'output/submission.json')
+
+# Generate structured output
+mapper = ScoringMapper('results/')
+score_input = mapper.map_to_score_input(evaluation_result, repository_info, 'submission.json')
+
+print(f"Score: {evaluation_result.total_score}/{evaluation_result.max_possible_score}")
+```
+
+Ready to start evaluating code quality! 🚀

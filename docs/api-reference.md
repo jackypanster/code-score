@@ -1,261 +1,406 @@
-# Checklist Evaluation API Reference
+# Code Score API Reference
 
-## 概述
+## Overview
 
-本文档描述了检查清单评估系统的API接口和核心组件，便于开发人员理解和扩展功能。
+This document describes the API interfaces and core components of the Code Score system, including both metrics collection and checklist evaluation functionality.
 
-## 核心组件
+## Core Components
 
 ### 1. ChecklistEvaluator
 
-主要的评估引擎，负责将指标数据映射到检查清单评估结果。
+The main evaluation engine that processes submission data against the 11-item quality checklist.
 
 ```python
 from src.metrics.checklist_evaluator import ChecklistEvaluator
 
-# 初始化评估器
-evaluator = ChecklistEvaluator("path/to/checklist_mapping.yaml")
+# Initialize evaluator with default configuration
+evaluator = ChecklistEvaluator()
 
-# 从文件评估
+# Initialize with custom configuration
+evaluator = ChecklistEvaluator("path/to/custom_checklist.yaml")
+
+# Evaluate from submission file
 result = evaluator.evaluate_from_file("submission.json")
 
-# 从字典评估
-result = evaluator.evaluate_from_dict(submission_data)
+# Evaluate from dictionary
+result = evaluator.evaluate_from_dict(submission_data, "submission.json")
 ```
 
-#### 关键方法
+#### Key Methods
 
 - `evaluate_from_file(submission_path: str) -> EvaluationResult`
+  - Loads and evaluates a submission.json file
+  - Returns complete evaluation results with scoring and evidence
+
 - `evaluate_from_dict(submission_data: Dict, submission_path: str) -> EvaluationResult`
-- `evaluate_from_string(submission_json: str) -> EvaluationResult`
+  - Evaluates submission data from a Python dictionary
+  - Useful for programmatic processing
 
-### 2. EvidenceTracker
-
-证据收集和管理系统。
+#### Return Type: EvaluationResult
 
 ```python
-from src.metrics.evidence_tracker import EvidenceTracker
-
-tracker = EvidenceTracker(output_dir="./evidence")
-tracker.add_evidence(evidence_reference)
-evidence_files = tracker.save_evidence_files()
+class EvaluationResult:
+    checklist_items: List[ChecklistItem]        # Individual item evaluations
+    total_score: float                          # Total points earned
+    max_possible_score: int                     # Maximum possible points (100)
+    score_percentage: float                     # Score as percentage
+    category_breakdowns: Dict[str, CategoryBreakdown]  # Scores by dimension
+    evaluation_metadata: EvaluationMetadata    # Processing information
+    evidence_summary: List[str]                # Human-readable evidence list
 ```
 
-### 3. ScoringMapper
+### 2. ScoringMapper
 
-将评估结果转换为LLM评分输入格式。
+Transforms evaluation results into structured output formats for LLM processing.
 
 ```python
 from src.metrics.scoring_mapper import ScoringMapper
+from src.metrics.models.evaluation_result import RepositoryInfo
 
-mapper = ScoringMapper()
-score_input = mapper.create_score_input(evaluation_result, repository_info)
+mapper = ScoringMapper(output_base_path="./output")
+
+# Create repository information
+repository_info = RepositoryInfo(
+    url="https://github.com/user/repo.git",
+    commit_sha="abc123",
+    primary_language="python",
+    analysis_timestamp=datetime.now(),
+    metrics_source="submission.json"
+)
+
+# Map evaluation to score input format
+score_input = mapper.map_to_score_input(
+    evaluation_result=result,
+    repository_info=repository_info,
+    submission_path="submission.json"
+)
+
+# Generate JSON output
+json_path = mapper.generate_score_input_json(score_input, "score_input.json")
+
+# Generate markdown report
+md_path = mapper.generate_markdown_report(score_input, "report.md")
 ```
 
-## 数据模型
+#### Key Methods
+
+- `map_to_score_input() -> ScoreInput`: Converts evaluation to structured format
+- `generate_score_input_json()`: Saves JSON output file
+- `generate_markdown_report()`: Saves human-readable report
+
+### 3. EvidenceTracker
+
+Manages evidence collection and organization for evaluation transparency.
+
+```python
+from src.metrics.evidence_tracker import EvidenceTracker
+from src.metrics.models.evidence_reference import EvidenceReference
+
+tracker = EvidenceTracker(evidence_base_path="./evidence")
+
+# Track evidence for evaluation
+tracker.track_evaluation_evidence(evaluation_result)
+
+# Save evidence files to disk
+evidence_files = tracker.save_evidence_files()  # Returns Dict[str, str]
+file_paths = list(evidence_files.values())     # Get actual file paths
+
+# Generate evidence report
+report_path = tracker.export_evidence_report("evidence_report.md")
+```
+
+#### Evidence Structure
+
+Evidence files are organized by dimension:
+```
+evidence/
+├── code_quality/           # Code quality evidence
+├── testing/               # Testing evidence
+├── documentation/         # Documentation evidence
+├── system/               # System metadata
+├── evidence_summary.json # Overall summary
+└── manifest.json         # File manifest
+```
+
+### 4. ChecklistLoader
+
+Manages checklist configuration and language adaptations.
+
+```python
+from src.metrics.checklist_loader import ChecklistLoader
+
+# Load default configuration
+loader = ChecklistLoader()
+
+# Load custom configuration
+loader = ChecklistLoader("path/to/custom_checklist.yaml")
+
+# Validate configuration
+validation = loader.validate_checklist_config()
+if validation["valid"]:
+    print("Configuration is valid")
+else:
+    print(f"Errors: {validation['errors']}")
+
+# Get language-specific adaptations
+python_adaptations = loader.get_language_adaptations("python")
+
+# Export documentation
+doc_path = loader.export_checklist_documentation("checklist_docs.md")
+```
+
+## CLI Integration
+
+### Main Analysis CLI
+
+```python
+from src.cli.main import main
+
+# Programmatic usage
+main.callback(
+    repository_url="https://github.com/user/repo.git",
+    commit_sha=None,
+    output_dir="./results",
+    output_format="both",
+    timeout=300,
+    verbose=True,
+    enable_checklist=True,
+    checklist_config=None
+)
+```
+
+### Evaluation CLI
+
+```python
+from src.cli.evaluate import evaluate
+
+# Direct evaluation
+evaluate.callback(
+    submission_file=Path("submission.json"),
+    output_dir=Path("results"),
+    format="both",
+    checklist_config=None,
+    evidence_dir=Path("evidence"),
+    validate_only=False,
+    quiet=False,
+    verbose=True
+)
+```
+
+## Data Models
 
 ### ChecklistItem
-
-单个检查清单项的数据结构。
 
 ```python
 from src.metrics.models.checklist_item import ChecklistItem
 
 item = ChecklistItem(
     id="code_quality_lint",
-    name="代码风格检查",
+    name="Static Linting Passed",
     dimension="code_quality",
-    max_points=8,
-    description="提供代码风格检查工具的执行记录",
-    evaluation_status="met",  # "met" | "partial" | "unmet"
-    score=8.0,
-    evidence_references=[...],
-    evaluation_details={...}
-)
-```
-
-### EvaluationResult
-
-完整的评估结果数据结构。
-
-```python
-from src.metrics.models.evaluation_result import EvaluationResult
-
-result = EvaluationResult(
-    checklist_items=[...],           # List[ChecklistItem]
-    total_score=32.0,               # float
-    max_possible_score=100,         # int
-    score_percentage=32.0,          # float
-    category_breakdowns={...},      # Dict[str, CategoryBreakdown]
-    evaluation_metadata={...},      # EvaluationMetadata
-    evidence_summary=[...]          # List[str]
+    max_points=15,
+    description="Lint/static analysis pipeline passes successfully",
+    evaluation_status="met",  # "met", "partial", "unmet"
+    score=15.0,
+    evidence_references=[]
 )
 ```
 
 ### EvidenceReference
 
-证据引用的数据结构。
-
 ```python
 from src.metrics.models.evidence_reference import EvidenceReference
 
 evidence = EvidenceReference(
-    source_type="file_check",              # "file_check" | "calculation" | "manual"
+    source_type="file_check",
     source_path="$.metrics.code_quality.lint_results.passed",
-    description="检查lint_results.passed: expected True, got False",
-    confidence=0.85,                       # 0.0-1.0
-    raw_data="False",
-    timestamp="2025-09-27T13:49:17.327224"
+    description="Checked lint_results.passed: expected True, got True",
+    confidence=0.95,
+    raw_data="True"
 )
 ```
 
-## CLI接口
+### ScoreInput
 
-### evaluate命令
+```python
+from src.metrics.models.score_input import ScoreInput
 
-```bash
-# 基本用法
-uv run python -m src.cli.evaluate SUBMISSION_FILE [OPTIONS]
-
-# 选项
---format [json|markdown]    # 输出格式 (默认: json)
---output-dir PATH          # 输出目录 (默认: ./evaluation_output)
---help                     # 显示帮助信息
+score_input = ScoreInput(
+    schema_version="1.0.0",
+    repository_info=repository_info,
+    evaluation_result=evaluation_result,
+    generation_timestamp=datetime.now(),
+    evidence_paths=evidence_paths,
+    human_summary=summary_text
+)
 ```
 
-### 示例
+## Error Handling
 
-```bash
-# 生成JSON格式输出
-uv run python -m src.cli.evaluate submission.json --format json --output-dir ./results
+### Exception Types
 
-# 生成Markdown格式输出
-uv run python -m src.cli.evaluate submission.json --format markdown --output-dir ./reports
+```python
+from src.metrics.submission_pipeline import SubmissionValidationError
+
+try:
+    result = evaluator.evaluate_from_file("submission.json")
+except SubmissionValidationError as e:
+    print(f"Validation failed: {e}")
+except FileNotFoundError:
+    print("Submission file not found")
+except Exception as e:
+    print(f"Evaluation failed: {e}")
 ```
 
-## 配置格式
+### Validation Methods
 
-### checklist_mapping.yaml
+```python
+# Validate checklist configuration
+validation = loader.validate_checklist_config()
 
-检查清单配置文件的结构：
+# Validate evidence integrity
+evidence_validation = tracker.validate_evidence_integrity()
+
+# Check if evaluation should run
+from src.metrics.submission_pipeline import PipelineIntegrator
+integrator = PipelineIntegrator()
+should_run = integrator.should_run_checklist_evaluation(submission_data)
+```
+
+## Pipeline Integration
+
+### PipelineOutputManager
+
+```python
+from src.metrics.pipeline_output_manager import PipelineOutputManager
+
+manager = PipelineOutputManager(
+    output_dir="./results",
+    checklist_config_path="checklist.yaml",
+    enable_checklist_evaluation=True
+)
+
+# Process submission with checklist
+generated_files = manager.process_submission_with_checklist(
+    submission_path="submission.json",
+    output_format="both"  # "json", "markdown", "both"
+)
+
+# Integrate with existing pipeline
+all_files = manager.integrate_with_existing_pipeline(
+    existing_output_files=["submission.json", "report.md"],
+    submission_path="submission.json"
+)
+```
+
+## Configuration
+
+### Checklist Mapping YAML
 
 ```yaml
 checklist_items:
-  - id: "code_quality_lint"
-    name: "代码风格检查"
-    dimension: "code_quality"
-    max_points: 8
-    description: "提供代码风格检查工具的执行记录"
+  - id: code_quality_lint
+    name: "Static Linting Passed"
+    dimension: code_quality
+    max_points: 15
+    description: "Lint/static analysis pipeline passes successfully"
     evaluation_criteria:
       met:
-        - lint_results.passed == true
+        - "lint_results.passed == true"
+        - "lint_results.tool_used is not null"
+        - "lint_results.issues_count == 0"
       partial:
-        - lint_results.passed == false BUT evidence of attempt
+        - "lint_results.passed == false"
+        - "lint_results.issues_count <= 10"
       unmet:
-        - lint_results.tool_used == "none"
+        - "lint_results.tool_used is null"
     metrics_mapping:
       source_path: "$.metrics.code_quality.lint_results"
-      required_fields: ["tool_used", "passed"]
+      required_fields: ["passed", "tool_used", "issues_count"]
+
+language_adaptations:
+  python:
+    code_quality_lint:
+      preferred_tools: ["ruff", "flake8"]
+      confidence_boost: 0.1
+  javascript:
+    code_quality_lint:
+      preferred_tools: ["eslint"]
+      confidence_boost: 0.1
 ```
 
-### 表达式语法
+## Performance Considerations
 
-支持的操作符和语法：
+- **Evaluation speed**: <0.1 seconds for typical submissions
+- **Memory usage**: Minimal, processes JSON structures in memory
+- **File generation**: Evidence files are written individually for efficiency
+- **Concurrent processing**: Thread-safe for parallel evaluations
 
-- **比较操作符**: `==`, `!=`, `>`, `>=`, `<`, `<=`
-- **逻辑操作符**: `AND`, `OR`, `BUT`
-- **括号**: `(` `)` 用于分组
-- **数组操作**: `.length` 获取数组长度
-- **字面量**: `[]`, `{}`, `null`, `true`, `false`, 数字, 字符串
+## Examples
 
-### 表达式示例
-
-```yaml
-# 简单比较
-- tests_passed > 0
-
-# 逻辑组合
-- tests_passed > 0 AND errors == []
-
-# 复杂条件
-- coverage >= 60 OR (coverage == null AND tests_run >= 5)
-
-# 数组长度检查
-- execution.errors.length == 0
-
-# BUT条件 (等同于AND)
-- tests_passed > 0 BUT warnings.length > 0
-```
-
-## 扩展开发
-
-### 添加新的评估标准
-
-1. 修改 `checklist_mapping.yaml` 添加新项目
-2. 确保数据路径在 `submission.json` 中存在
-3. 运行测试验证新标准工作正常
-
-### 自定义证据类型
+### Complete Evaluation Workflow
 
 ```python
-# 扩展证据类型
-class CustomEvidenceReference(EvidenceReference):
-    custom_field: str = ""
+import json
+from pathlib import Path
+from src.metrics.checklist_evaluator import ChecklistEvaluator
+from src.metrics.scoring_mapper import ScoringMapper
+from src.metrics.evidence_tracker import EvidenceTracker
+from src.metrics.models.evaluation_result import RepositoryInfo
 
-    def to_dict(self) -> dict:
-        base_dict = super().to_dict()
-        base_dict["custom_field"] = self.custom_field
-        return base_dict
+# 1. Load submission data
+with open("submission.json", "r") as f:
+    submission_data = json.load(f)
+
+# 2. Run evaluation
+evaluator = ChecklistEvaluator()
+evaluation_result = evaluator.evaluate_from_dict(submission_data, "submission.json")
+
+# 3. Track evidence
+evidence_tracker = EvidenceTracker("./evidence")
+evidence_tracker.track_evaluation_evidence(evaluation_result)
+evidence_files = evidence_tracker.save_evidence_files()
+
+# 4. Generate structured output
+repository_info = RepositoryInfo(
+    url=submission_data["repository"]["url"],
+    commit_sha=submission_data["repository"]["commit"],
+    primary_language=submission_data["repository"]["language"],
+    analysis_timestamp=datetime.now(),
+    metrics_source="submission.json"
+)
+
+mapper = ScoringMapper("./output")
+score_input = mapper.map_to_score_input(
+    evaluation_result, repository_info, "submission.json"
+)
+
+# 5. Save outputs
+mapper.generate_score_input_json(score_input, "score_input.json")
+mapper.generate_markdown_report(score_input, "evaluation_report.md")
+
+print(f"Score: {evaluation_result.total_score}/{evaluation_result.max_possible_score}")
+print(f"Generated {len(evidence_files)} evidence files")
 ```
 
-### 添加新的输出格式
+### Custom Evaluation Logic
 
 ```python
-# 在 output_generators.py 中添加新的生成器
-def generate_custom_format(evaluation_result: EvaluationResult) -> str:
-    # 实现自定义格式生成逻辑
-    pass
+# Custom evaluation with specific criteria
+evaluator = ChecklistEvaluator("custom_checklist.yaml")
+
+# Override specific item evaluation
+def custom_lint_evaluation(item, submission_data):
+    lint_data = submission_data.get("metrics", {}).get("code_quality", {}).get("lint_results", {})
+    if lint_data.get("passed") and lint_data.get("issues_count", 0) == 0:
+        return "met", 15.0
+    elif lint_data.get("tool_used"):
+        return "partial", 7.5
+    else:
+        return "unmet", 0.0
+
+# Use custom evaluation logic
+result = evaluator.evaluate_from_dict(submission_data, "submission.json")
 ```
 
-## 错误处理
-
-### 常见错误类型
-
-- `FileNotFoundError`: 找不到配置文件或输入文件
-- `ValueError`: 无效的JSON或YAML格式
-- `ValidationError`: Pydantic模型验证失败
-- `ExpressionError`: 表达式语法错误
-
-### 错误处理示例
-
-```python
-try:
-    result = evaluator.evaluate_from_file("submission.json")
-except FileNotFoundError:
-    print("找不到输入文件")
-except ValueError as e:
-    print(f"数据格式错误: {e}")
-except Exception as e:
-    print(f"评估过程出错: {e}")
-```
-
-## 性能考虑
-
-### 优化建议
-
-1. **批量处理**: 重用 `ChecklistEvaluator` 实例
-2. **内存管理**: 大批量处理时定期清理证据数据
-3. **并行处理**: 多个文件可以并行评估
-4. **缓存**: 相同配置可以缓存加载结果
-
-### 性能指标
-
-- **单次评估**: ~10ms
-- **内存占用**: ~10MB per evaluation
-- **并发支持**: 无状态设计，支持多线程
-
----
-
-**版本**: 1.0.0
-**最后更新**: 2025-09-27
-**维护者**: Claude Code Assistant
+This API provides flexible, programmatic access to all checklist evaluation functionality with comprehensive error handling and evidence tracking.

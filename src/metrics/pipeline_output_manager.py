@@ -174,9 +174,11 @@ class PipelineOutputManager:
         # Track evidence for the entire evaluation result
         tracker.track_evaluation_evidence(evaluation_result)
 
-        # Save evidence files
-        evidence_files = tracker.save_evidence_files()
-        return evidence_files
+        # Save evidence files - this returns Dict[str, str] mapping evidence_key -> file_path
+        evidence_files_dict = tracker.save_evidence_files()
+
+        # Extract the actual file paths (values) from the dictionary
+        return list(evidence_files_dict.values())
 
     def _create_markdown_report(self,
                               evaluation_result: EvaluationResult,
