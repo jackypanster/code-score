@@ -1,0 +1,269 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Score Input Schema",
+  "description": "Structured output format for checklist evaluation results",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "repository_info",
+    "evaluation_result",
+    "generation_timestamp",
+    "evidence_paths",
+    "human_summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the schema format"
+    },
+    "repository_info": {
+      "$ref": "#/definitions/RepositoryInfo"
+    },
+    "evaluation_result": {
+      "$ref": "#/definitions/EvaluationResult"
+    },
+    "generation_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of evaluation generation"
+    },
+    "evidence_paths": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "File paths to supporting evidence documents"
+    },
+    "human_summary": {
+      "type": "string",
+      "description": "Markdown-formatted summary for human review"
+    }
+  },
+  "definitions": {
+    "RepositoryInfo": {
+      "type": "object",
+      "required": ["url", "commit_sha", "primary_language", "analysis_timestamp", "metrics_source"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Repository URL"
+        },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$",
+          "description": "Full commit SHA"
+        },
+        "primary_language": {
+          "type": "string",
+          "enum": ["python", "javascript", "typescript", "java", "go"],
+          "description": "Primary programming language detected"
+        },
+        "analysis_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the original metrics were collected"
+        },
+        "metrics_source": {
+          "type": "string",
+          "description": "Path to the submission.json file"
+        }
+      }
+    },
+    "EvaluationResult": {
+      "type": "object",
+      "required": [
+        "checklist_items",
+        "total_score",
+        "max_possible_score",
+        "score_percentage",
+        "category_breakdowns",
+        "evaluation_metadata",
+        "evidence_summary"
+      ],
+      "properties": {
+        "checklist_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ChecklistItem"
+          },
+          "minItems": 11,
+          "maxItems": 11,
+          "description": "All 11 checklist evaluation items"
+        },
+        "total_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Sum of all item scores"
+        },
+        "max_possible_score": {
+          "type": "integer",
+          "const": 100,
+          "description": "Maximum possible total score"
+        },
+        "score_percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage score (total_score / max_possible_score * 100)"
+        },
+        "category_breakdowns": {
+          "type": "object",
+          "required": ["code_quality", "testing", "documentation"],
+          "properties": {
+            "code_quality": { "$ref": "#/definitions/CategoryBreakdown" },
+            "testing": { "$ref": "#/definitions/CategoryBreakdown" },
+            "documentation": { "$ref": "#/definitions/CategoryBreakdown" }
+          },
+          "additionalProperties": false
+        },
+        "evaluation_metadata": {
+          "$ref": "#/definitions/EvaluationMetadata"
+        },
+        "evidence_summary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Key evidence points for human review"
+        }
+      }
+    },
+    "ChecklistItem": {
+      "type": "object",
+      "required": ["id", "name", "dimension", "max_points", "description", "evaluation_status", "score", "evidence_references"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the checklist item"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name"
+        },
+        "dimension": {
+          "type": "string",
+          "enum": ["code_quality", "testing", "documentation"],
+          "description": "Evaluation category"
+        },
+        "max_points": {
+          "type": "integer",
+          "enum": [4, 6, 7, 8, 10, 12, 15],
+          "description": "Maximum possible points for this item"
+        },
+        "description": {
+          "type": "string",
+          "description": "Evaluation criteria description"
+        },
+        "evaluation_status": {
+          "type": "string",
+          "enum": ["met", "partial", "unmet"],
+          "description": "Current evaluation status"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Calculated score for this item"
+        },
+        "evidence_references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EvidenceReference"
+          },
+          "description": "Supporting evidence for the evaluation"
+        }
+      }
+    },
+    "EvidenceReference": {
+      "type": "object",
+      "required": ["source_type", "source_path", "description", "confidence"],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": ["lint_output", "test_result", "file_check", "security_audit", "documentation_analysis"],
+          "description": "Type of evidence"
+        },
+        "source_path": {
+          "type": "string",
+          "description": "JSON path or file reference to the evidence"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable explanation of the evidence"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence level in this evidence (0.0 to 1.0)"
+        },
+        "raw_data": {
+          "type": "string",
+          "description": "Optional excerpt of supporting data"
+        }
+      }
+    },
+    "CategoryBreakdown": {
+      "type": "object",
+      "required": ["dimension", "items_count", "max_points", "actual_points", "percentage"],
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "enum": ["code_quality", "testing", "documentation"],
+          "description": "Category name"
+        },
+        "items_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of items in this category"
+        },
+        "max_points": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum possible points for this category"
+        },
+        "actual_points": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Achieved points in this category"
+        },
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Category percentage score"
+        }
+      }
+    },
+    "EvaluationMetadata": {
+      "type": "object",
+      "required": ["evaluator_version", "processing_duration", "warnings", "metrics_completeness"],
+      "properties": {
+        "evaluator_version": {
+          "type": "string",
+          "description": "Version of the evaluation logic"
+        },
+        "processing_duration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds taken for evaluation"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Non-fatal issues encountered"
+        },
+        "metrics_completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Percentage of required metrics available"
+        }
+      }
+    }
+  }
+}

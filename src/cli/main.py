@@ -167,6 +167,11 @@ def version() -> None:
     click.echo("Code Score v0.1.0")
 
 
+# Import and add the evaluate command
+from .evaluate import evaluate
+cli.add_command(evaluate)
+
+
 @cli.command()
 @click.argument('repository_url')
 def detect_language(repository_url: str) -> None:
