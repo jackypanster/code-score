@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: Smoke Test Interface Contract
+  description: Interface contract for end-to-end smoke test validation
+  version: 1.0.0
+
+paths:
+  # Note: This is a testing interface, not a REST API
+  # Paths represent test execution flows rather than HTTP endpoints
+
+  /smoke-test/execute:
+    post:
+      summary: Execute full pipeline smoke test
+      description: Runs the complete code analysis pipeline and validates outputs
+      operationId: executeSmokeTest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmokeTestRequest'
+      responses:
+        '200':
+          description: Smoke test completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmokeTestSuccess'
+        '400':
+          description: Pipeline execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmokeTestFailure'
+        '500':
+          description: Validation error or unexpected failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmokeTestError'
+
+components:
+  schemas:
+    SmokeTestRequest:
+      type: object
+      required:
+        - repository_url
+        - working_directory
+      properties:
+        repository_url:
+          type: string
+          format: uri
+          description: Target Git repository URL for testing
+          example: "git@github.com:AIGCInnovatorSpace/code-walker.git"
+        working_directory:
+          type: string
+          description: Project root directory path
+          example: "/Users/user/workspace/code-score"
+        timeout_seconds:
+          type: integer
+          description: Maximum execution time in seconds
+          minimum: 60
+          maximum: 600
+          default: 300
+        enable_checklist:
+          type: boolean
+          description: Whether to run checklist evaluation
+          default: true
+        generate_llm_report:
+          type: boolean
+          description: Whether to generate LLM processing reports
+          default: false
+
+    SmokeTestSuccess:
+      type: object
+      required:
+        - test_passed
+        - execution_summary
+        - pipeline_duration
+        - output_files
+      properties:
+        test_passed:
+          type: boolean
+          enum: [true]
+        execution_summary:
+          type: string
+          description: Brief success summary
+          example: "Full pipeline executed successfully, all outputs validated"
+        pipeline_duration:
+          type: number
+          description: Pipeline execution time in seconds
+          minimum: 0
+        pipeline_exit_code:
+          type: integer
+          enum: [0]
+        output_files:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/OutputFile'
+
+    SmokeTestFailure:
+      type: object
+      required:
+        - test_passed
+        - error_message
+        - failure_type
+      properties:
+        test_passed:
+          type: boolean
+          enum: [false]
+        error_message:
+          type: string
+          description: Detailed error description
+        failure_type:
+          type: string
+          enum:
+            - pipeline_execution_failed
+            - output_files_missing
+            - output_validation_failed
+        pipeline_exit_code:
+          type: integer
+          description: Non-zero exit code from pipeline
+        missing_files:
+          type: array
+          items:
+            type: string
+          description: List of expected files that were not found
+
+    SmokeTestError:
+      type: object
+      required:
+        - test_passed
+        - error_message
+        - error_type
+      properties:
+        test_passed:
+          type: boolean
+          enum: [false]
+        error_message:
+          type: string
+          description: Unexpected error description
+        error_type:
+          type: string
+          enum:
+            - configuration_error
+            - environment_error
+            - unexpected_exception
+        exception_details:
+          type: string
+          description: Technical exception information for debugging
+
+    OutputFile:
+      type: object
+      required:
+        - filename
+        - file_exists
+        - file_path
+      properties:
+        filename:
+          type: string
+          enum:
+            - submission.json
+            - score_input.json
+            - evaluation_report.md
+        file_exists:
+          type: boolean
+        file_path:
+          type: string
+          description: Absolute path to output file
+        file_size_bytes:
+          type: integer
+          minimum: 0
+          description: File size (only if file exists)
+        last_modified:
+          type: string
+          format: date-time
+          description: File modification timestamp
+        content_valid:
+          type: boolean
+          description: Whether file content passed basic validation
