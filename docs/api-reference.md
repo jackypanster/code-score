@@ -404,3 +404,400 @@ result = evaluator.evaluate_from_dict(submission_data, "submission.json")
 ```
 
 This API provides flexible, programmatic access to all checklist evaluation functionality with comprehensive error handling and evidence tracking.
+
+## LLM Report Generation
+
+The LLM (Large Language Model) report generation system transforms structured evaluation data into human-readable narrative reports using external AI services.
+
+### 1. ReportGenerator
+
+The main orchestrator for LLM-powered report generation.
+
+```python
+from src.llm.report_generator import ReportGenerator
+
+# Initialize with default components
+generator = ReportGenerator()
+
+# Initialize with custom components
+from src.llm.template_loader import TemplateLoader
+from src.llm.prompt_builder import PromptBuilder
+
+loader = TemplateLoader(use_sandbox=True, cache_templates=True)
+builder = PromptBuilder(template_loader=loader)
+generator = ReportGenerator(template_loader=loader, prompt_builder=builder)
+
+# Generate report from evaluation data
+result = generator.generate_report(
+    score_input_path="output/score_input.json",
+    output_path="output/final_report.md",
+    template_path="templates/custom_template.md",
+    provider="gemini",
+    verbose=True,
+    timeout=60
+)
+```
+
+#### Key Methods
+
+- `generate_report(**kwargs) -> Dict[str, Any]`
+  - Orchestrates complete report generation pipeline
+  - Returns metadata about generation process and results
+
+- `validate_prerequisites(provider: str) -> Dict[str, Any]`
+  - Checks if all requirements are met for report generation
+  - Validates provider availability, environment, and templates
+
+- `get_available_providers() -> List[Dict[str, Any]]`
+  - Returns list of configured LLM providers with availability status
+
+- `get_template_info(template_path: Optional[str]) -> Dict[str, Any]`
+  - Returns information about template configuration and validation
+
+#### Return Type: Generation Result
+
+```python
+{
+    "success": bool,                          # Whether generation succeeded
+    "output_path": str,                       # Path to generated report
+    "generation_time_seconds": float,         # Total processing time
+    "report_metadata": {
+        "word_count": int,                    # Generated report word count
+        "validation_status": str,             # Content validation status
+        "warnings": List[str]                 # Generation warnings
+    },
+    "provider_metadata": {
+        "provider_name": str,                 # LLM provider used
+        "model_name": str,                    # Specific model identifier
+        "response_time_seconds": float        # LLM API response time
+    },
+    "template_metadata": {
+        "template_name": str,                 # Template identifier
+        "file_path": str,                     # Template file path
+        "required_fields_used": List[str]     # Template variables used
+    }
+}
+```
+
+### 2. TemplateLoader
+
+Handles loading, validation, and compilation of Jinja2 report templates.
+
+```python
+from src.llm.template_loader import TemplateLoader
+
+# Initialize loader
+loader = TemplateLoader(use_sandbox=True, cache_templates=True)
+
+# Load template configuration
+template_config = loader.load_template("path/to/template.md")
+
+# Compile template for rendering
+compiled_template = loader.compile_template(template_config)
+
+# Load default template
+default_template = loader.load_default_template()
+
+# Create template from string
+inline_template = loader.create_template_from_string(
+    template_content="# Report\nScore: {{total.score}}",
+    name="inline_template"
+)
+
+# Validate template syntax
+is_valid = loader.validate_template_syntax_only("path/to/template.md")
+
+# Get available templates
+templates = loader.get_available_templates()
+```
+
+#### Key Methods
+
+- `load_template(template_path: str) -> ReportTemplate`
+  - Loads and validates template configuration from file
+
+- `compile_template(template_config: ReportTemplate) -> Template`
+  - Compiles Jinja2 template with caching support
+
+- `validate_template_syntax_only(template_path: str) -> bool`
+  - Validates template syntax without full loading
+
+- `validate_template_with_context(template_config, sample_context) -> Dict`
+  - Comprehensive template validation with sample data
+
+### 3. PromptBuilder
+
+Builds LLM prompts from evaluation data with content management and optimization.
+
+```python
+from src.llm.prompt_builder import PromptBuilder
+
+# Initialize builder
+builder = PromptBuilder()
+
+# Build prompt from evaluation data
+prompt = builder.build_prompt(
+    score_input_data=score_data,
+    template_config=template_config,
+    custom_limits={"max_evidence_items": 5}
+)
+
+# Validate input data
+issues = builder.validate_context_data(score_data)
+
+# Estimate token usage
+estimates = builder.estimate_token_usage(prompt)
+
+# Optimize for specific provider
+from src.llm.models.template_context import TemplateContext
+context = TemplateContext.from_score_input(score_data)
+optimized_context = builder.optimize_context_for_provider(context, "gemini")
+
+# Get context statistics
+stats = builder.get_context_statistics(context)
+```
+
+#### Key Methods
+
+- `build_prompt(score_input_data, template_config, custom_limits=None) -> str`
+  - Builds complete LLM prompt with content truncation
+
+- `validate_context_data(score_input_data: Dict) -> List[str]`
+  - Validates evaluation data structure and completeness
+
+- `estimate_token_usage(prompt: str) -> Dict[str, Union[int, float]]`
+  - Estimates token usage and costs for different providers
+
+- `optimize_context_for_provider(context, provider_name: str) -> TemplateContext`
+  - Applies provider-specific optimizations to context data
+
+### 4. LLM Data Models
+
+#### ReportTemplate
+
+Configuration for report templates.
+
+```python
+from src.llm.models.report_template import ReportTemplate
+
+template = ReportTemplate(
+    name="custom_template",
+    file_path="/path/to/template.md",
+    description="Custom report template",
+    required_fields=["repository", "total", "met_items"],
+    content_limits={"max_evidence_items": 3}
+)
+
+# Validate template
+template.validate_template_syntax()
+
+# Load content
+content = template.load_template_content()
+
+# Check required fields
+missing = template.check_required_fields(["repository", "total"])
+```
+
+#### LLMProviderConfig
+
+Configuration for external LLM providers.
+
+```python
+from src.llm.models.llm_provider_config import LLMProviderConfig
+
+config = LLMProviderConfig(
+    provider_name="gemini",
+    cli_command=["gemini", "--api-key", "${GEMINI_API_KEY}"],
+    model_name="gemini-1.5-pro",
+    timeout_seconds=30,
+    max_tokens=2048,
+    temperature=0.7
+)
+
+# Validate environment
+missing_vars = config.validate_environment()
+
+# Build CLI command
+cmd = config.build_cli_command("Test prompt")
+
+# Get default configurations
+defaults = LLMProviderConfig.get_default_configs()
+```
+
+#### GeneratedReport
+
+Final report output with metadata.
+
+```python
+from src.llm.models.generated_report import GeneratedReport
+
+report = GeneratedReport(
+    content="# Generated Report\nReport content here",
+    template_used=template_metadata,
+    provider_used=provider_metadata,
+    input_metadata=input_metadata
+)
+
+# Calculate derived fields
+report.calculate_derived_fields()
+
+# Validate content
+issues = report.validate_markdown_structure()
+
+# Add warnings
+report.add_warning("Custom warning message")
+
+# Export to file format
+file_content = report.to_file_content()
+```
+
+#### TemplateContext
+
+Data structure for template rendering.
+
+```python
+from src.llm.models.template_context import TemplateContext
+
+# Create from evaluation data
+context = TemplateContext.from_score_input(score_input_data)
+
+# Get categorized items
+met_items = context.met_items
+partial_items = context.partial_items
+unmet_items = context.unmet_items
+
+# Apply content limits
+context.apply_content_limits({"max_evidence_items": 3})
+
+# Convert to Jinja2 format
+jinja_data = context.to_jinja_dict()
+
+# Get statistics
+all_items = context.get_all_items()
+stats = {
+    "total_items": len(all_items),
+    "warnings": len(context.warnings)
+}
+```
+
+## CLI Integration for LLM Features
+
+### LLM Report Command
+
+```python
+# Programmatic usage
+from src.cli.llm_report import main as llm_report_main
+import sys
+
+# Set command-line arguments
+sys.argv = [
+    "llm-report",
+    "output/score_input.json",
+    "--output", "output/final_report.md",
+    "--provider", "gemini",
+    "--verbose"
+]
+
+# Execute command
+exit_code = llm_report_main()
+```
+
+### Integration with Main Analysis
+
+```python
+from src.cli.main import main
+
+# Run analysis with LLM report generation
+main.callback(
+    repository_url="https://github.com/user/repo.git",
+    enable_checklist=True,
+    generate_llm_report=True,
+    llm_template="templates/custom.md",
+    llm_provider="gemini"
+)
+```
+
+## Error Handling for LLM Features
+
+### Exception Types
+
+```python
+from src.llm.report_generator import ReportGeneratorError, LLMProviderError
+from src.llm.template_loader import TemplateLoaderError, TemplateValidationError
+from src.llm.prompt_builder import PromptBuilderError, ContextLimitExceededError
+
+try:
+    generator = ReportGenerator()
+    result = generator.generate_report("score_input.json")
+except TemplateLoaderError as e:
+    print(f"Template loading failed: {e}")
+except LLMProviderError as e:
+    print(f"LLM service error: {e}")
+except ReportGeneratorError as e:
+    print(f"Generation failed: {e}")
+```
+
+### Validation and Prerequisites
+
+```python
+# Check prerequisites before generation
+generator = ReportGenerator()
+validation = generator.validate_prerequisites("gemini")
+
+if not validation["valid"]:
+    print("Prerequisites not met:")
+    for issue in validation["issues"]:
+        print(f"- {issue}")
+else:
+    print("All prerequisites satisfied")
+    result = generator.generate_report("score_input.json")
+```
+
+## Performance Considerations for LLM Features
+
+- **Template compilation**: Cached automatically for repeated use
+- **Content truncation**: Applied automatically for large datasets
+- **Provider timeouts**: Configurable per provider (10-300 seconds)
+- **Memory usage**: Optimized for datasets up to 500MB repositories
+- **Generation time**: Typically <5 seconds excluding LLM API calls
+
+## Complete LLM Workflow Example
+
+```python
+from src.llm.report_generator import ReportGenerator
+from src.llm.template_loader import TemplateLoader
+from src.llm.prompt_builder import PromptBuilder
+
+# 1. Initialize components
+generator = ReportGenerator()
+
+# 2. Validate prerequisites
+prerequisites = generator.validate_prerequisites("gemini")
+if not prerequisites["valid"]:
+    raise Exception(f"Prerequisites not met: {prerequisites['issues']}")
+
+# 3. Generate report
+result = generator.generate_report(
+    score_input_path="output/score_input.json",
+    output_path="output/final_report.md",
+    template_path="templates/comprehensive.md",
+    provider="gemini",
+    verbose=True,
+    timeout=60
+)
+
+# 4. Check results
+if result["success"]:
+    print(f"Report generated: {result['output_path']}")
+    print(f"Generation time: {result['generation_time_seconds']:.2f}s")
+    print(f"Word count: {result['report_metadata']['word_count']}")
+else:
+    print("Report generation failed")
+
+# 5. Access generated report
+with open(result["output_path"], 'r') as f:
+    generated_report = f.read()
+    print(f"Report length: {len(generated_report)} characters")
+```
+
+This LLM API enables flexible, programmatic report generation with comprehensive error handling, validation, and provider management.

@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Report Template Configuration",
+  "description": "Schema for LLM report template configuration and metadata",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template identifier",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "file_path": {
+      "type": "string",
+      "description": "Path to template file",
+      "pattern": "^.*\\.md$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description",
+      "maxLength": 200
+    },
+    "required_fields": {
+      "type": "array",
+      "description": "List of placeholder fields required in template",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][a-zA-Z0-9_\\.]*$"
+      },
+      "uniqueItems": true
+    },
+    "content_limits": {
+      "type": "object",
+      "description": "Maximum content lengths for truncation",
+      "properties": {
+        "evidence_items_per_category": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "max_evidence_length": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 5000,
+          "default": 500
+        },
+        "max_total_context": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 100000,
+          "default": 30000
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["name", "file_path", "description", "required_fields"],
+  "additionalProperties": false
+}

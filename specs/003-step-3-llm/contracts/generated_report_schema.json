@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated Report Output",
+  "description": "Schema for final LLM-generated report output and metadata",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Generated markdown content",
+      "minLength": 100
+    },
+    "template_used": {
+      "type": "object",
+      "description": "Reference to source template",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "file_path": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "file_path"],
+      "additionalProperties": false
+    },
+    "generation_timestamp": {
+      "type": "string",
+      "description": "When report was created",
+      "format": "date-time"
+    },
+    "provider_used": {
+      "type": "object",
+      "description": "LLM provider information",
+      "properties": {
+        "provider_name": {
+          "type": "string"
+        },
+        "model_name": {
+          "type": "string"
+        },
+        "api_duration_seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["provider_name", "model_name"],
+      "additionalProperties": false
+    },
+    "truncation_applied": {
+      "type": "object",
+      "description": "Documentation of content truncation",
+      "properties": {
+        "evidence_truncated": {
+          "type": "boolean"
+        },
+        "items_removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "original_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "final_length": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["evidence_truncated", "items_removed"],
+      "additionalProperties": false
+    },
+    "input_metadata": {
+      "type": "object",
+      "description": "Reference to input data",
+      "properties": {
+        "score_input_path": {
+          "type": "string"
+        },
+        "repository_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "total_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": ["score_input_path", "repository_url"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "content",
+    "template_used",
+    "generation_timestamp",
+    "provider_used",
+    "truncation_applied",
+    "input_metadata"
+  ],
+  "additionalProperties": false
+}

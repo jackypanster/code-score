@@ -19,6 +19,7 @@ Perfect for hackathon judging, code review automation, and project quality asses
 - **Configurable timeouts**: Prevents hanging on problematic repositories
 - **Error handling**: Graceful degradation when tools are unavailable
 - **CLI integration**: Both analysis and evaluation commands available
+- **LLM report generation**: AI-powered narrative reports using external LLM services
 
 ## Prerequisites
 
@@ -163,6 +164,143 @@ The analysis command can automatically run checklist evaluation:
 
 # Analysis without checklist evaluation
 ./scripts/run_metrics.sh https://github.com/user/repo.git --enable-checklist=false
+```
+
+### LLM Report Generation
+
+The tool can generate human-readable reports using external Large Language Model (LLM) services. This feature transforms structured evaluation data into comprehensive, narrative reports suitable for code reviews, hackathon judging, and project documentation.
+
+#### Prerequisites for LLM Features
+
+**Gemini CLI** (default provider):
+```bash
+# Install Gemini CLI
+# Follow installation instructions at: https://ai.google.dev/gemini-api/docs/quickstart
+
+# Verify installation
+gemini --version
+
+# Set up API key (required)
+export GEMINI_API_KEY="your-api-key-here"
+```
+
+#### Basic LLM Report Usage
+
+```bash
+# Generate report from existing evaluation data
+uv run python -m src.cli.llm_report output/score_input.json
+
+# Custom output path
+uv run python -m src.cli.llm_report output/score_input.json --output ./reports/final_report.md
+
+# Verbose mode with detailed progress
+uv run python -m src.cli.llm_report output/score_input.json --verbose
+```
+
+#### Custom Templates
+
+```bash
+# Use custom report template
+uv run python -m src.cli.llm_report output/score_input.json \
+  --prompt ./templates/hackathon_template.md \
+  --output ./hackathon_evaluation.md
+
+# Multiple provider options
+uv run python -m src.cli.llm_report output/score_input.json --provider gemini
+uv run python -m src.cli.llm_report output/score_input.json --provider openai
+uv run python -m src.cli.llm_report output/score_input.json --provider claude
+```
+
+#### Integrated Workflow
+
+```bash
+# Complete analysis with automatic LLM report generation
+./scripts/run_metrics.sh https://github.com/user/repo.git --generate-llm-report
+
+# Custom LLM settings
+./scripts/run_metrics.sh https://github.com/user/repo.git \
+  --generate-llm-report \
+  --llm-template ./templates/custom.md \
+  --llm-provider gemini
+```
+
+#### Template Customization
+
+Create custom report templates using Jinja2 syntax:
+
+```markdown
+# Code Review Report for {{repository.url}}
+
+## Executive Summary
+- **Total Score**: {{total.score}}/100 ({{total.percentage}}%)
+- **Grade**: {{total.grade_letter}}
+- **Primary Language**: {{repository.primary_language}}
+
+## Strengths
+{{#each met_items}}
+- ✅ **{{name}}**: {{description}}
+{{/each}}
+
+## Areas for Improvement
+{{#each unmet_items}}
+- ❌ **{{name}}**: {{description}}
+{{/each}}
+
+## Detailed Analysis
+{{#each category_scores}}
+### {{@key|title}}
+- Score: {{score}}/{{max_points}} ({{percentage}}%)
+- Status: {{status|title}}
+{{/each}}
+```
+
+#### LLM Output
+
+The LLM report generation produces:
+
+**Files generated:**
+- `final_report.md` - AI-generated narrative report
+- `generation_metadata.json` - Generation details and statistics
+
+**Report includes:**
+- Executive summary with overall assessment
+- Categorized strengths and improvement areas
+- Evidence-based recommendations
+- Project-specific insights and suggestions
+- Actionable next steps for code quality improvement
+
+#### Performance and Limitations
+
+- **Generation time**: Typically 10-30 seconds (depends on LLM provider)
+- **Context limits**: Large evaluations are automatically truncated to fit LLM context
+- **Content quality**: Reports are generated from structured data and may require human review
+- **Provider availability**: Requires external LLM service access and API credentials
+
+#### Use Cases
+
+**Hackathon Judging:**
+```bash
+# Process multiple repositories for evaluation
+for repo in $(cat hackathon_repos.txt); do
+  ./scripts/run_metrics.sh "$repo" --generate-llm-report --output-dir "results/$(basename $repo)"
+done
+```
+
+**Code Review Preparation:**
+```bash
+# Generate detailed report for PR review
+uv run python -m src.cli.llm_report output/score_input.json \
+  --prompt templates/code_review.md \
+  --output pr_review_summary.md
+```
+
+**Continuous Integration:**
+```bash
+# Add to CI pipeline
+if ./scripts/run_metrics.sh "$CI_REPOSITORY_URL" --generate-llm-report; then
+  # Upload final_report.md as CI artifact
+  cp output/final_report.md "$CI_ARTIFACTS_DIR/"
+fi
 ```
 
 ### Python Module Usage

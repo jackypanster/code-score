@@ -18,7 +18,10 @@ class PipelineOutputManager:
     def __init__(self,
                  output_dir: str,
                  checklist_config_path: Optional[str] = None,
-                 enable_checklist_evaluation: bool = True):
+                 enable_checklist_evaluation: bool = True,
+                 enable_llm_report: bool = False,
+                 llm_provider: str = "gemini",
+                 llm_template_path: Optional[str] = None):
         """
         Initialize the pipeline output manager.
 
@@ -26,9 +29,15 @@ class PipelineOutputManager:
             output_dir: Base output directory
             checklist_config_path: Path to checklist configuration YAML
             enable_checklist_evaluation: Whether to run checklist evaluation
+            enable_llm_report: Whether to generate LLM reports
+            llm_provider: LLM provider to use for report generation
+            llm_template_path: Path to custom LLM template
         """
         self.output_dir = Path(output_dir)
         self.enable_checklist_evaluation = enable_checklist_evaluation
+        self.enable_llm_report = enable_llm_report
+        self.llm_provider = llm_provider
+        self.llm_template_path = llm_template_path
 
         # Initialize components
         if enable_checklist_evaluation:
@@ -40,6 +49,18 @@ class PipelineOutputManager:
             self.checklist_evaluator = None
             self.scoring_mapper = None
             self.pipeline_integrator = None
+
+        # Initialize LLM report generator if enabled
+        if enable_llm_report:
+            try:
+                from ..llm.report_generator import ReportGenerator
+                self.llm_generator = ReportGenerator()
+            except ImportError:
+                print("⚠️  LLM report generation not available - missing dependencies")
+                self.enable_llm_report = False
+                self.llm_generator = None
+        else:
+            self.llm_generator = None
 
     def process_submission_with_checklist(self,
                                         submission_path: str,
@@ -301,8 +322,68 @@ class PipelineOutputManager:
             for category, files in checklist_outputs.items():
                 all_files.extend(files)
 
+            # Generate LLM report if enabled and score_input.json exists
+            if self.enable_llm_report:
+                llm_files = self._generate_llm_report(all_files)
+                all_files.extend(llm_files)
+
             return all_files
 
         except Exception as e:
             print(f"⚠️  Checklist evaluation failed but existing pipeline succeeded: {e}")
             return all_files
+
+    def _generate_llm_report(self, existing_files: List[str]) -> List[str]:
+        """
+        Generate LLM report from score_input.json if available.
+
+        Args:
+            existing_files: List of existing output files
+
+        Returns:
+            List of generated LLM report files
+        """
+        if not self.enable_llm_report or not self.llm_generator:
+            return []
+
+        try:
+            # Find score_input.json file
+            score_input_file = None
+            for file_path in existing_files:
+                if file_path.endswith('score_input.json'):
+                    score_input_file = file_path
+                    break
+
+            if not score_input_file:
+                print("⚠️  No score_input.json found, skipping LLM report generation")
+                return []
+
+            # Validate prerequisites
+            validation_result = self.llm_generator.validate_prerequisites(self.llm_provider)
+            if not validation_result['valid']:
+                print(f"⚠️  LLM prerequisites not met, skipping report generation:")
+                for issue in validation_result['issues']:
+                    print(f"    • {issue}")
+                return []
+
+            # Generate final report
+            final_report_path = str(self.output_dir / "final_report.md")
+
+            result = self.llm_generator.generate_report(
+                score_input_path=score_input_file,
+                output_path=final_report_path,
+                template_path=self.llm_template_path,
+                provider=self.llm_provider,
+                verbose=False  # Keep quiet in pipeline mode
+            )
+
+            if result.get('success'):
+                print(f"✅ LLM report generated: {final_report_path}")
+                return [final_report_path]
+            else:
+                print("⚠️  LLM report generation failed")
+                return []
+
+        except Exception as e:
+            print(f"⚠️  LLM report generation error: {e}")
+            return []
