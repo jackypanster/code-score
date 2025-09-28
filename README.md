@@ -172,7 +172,7 @@ The tool can generate human-readable reports using external Large Language Model
 
 #### Prerequisites for LLM Features
 
-**Gemini CLI** (default provider):
+**Gemini CLI** (required):
 ```bash
 # Install Gemini CLI
 # Follow installation instructions at: https://ai.google.dev/gemini-api/docs/quickstart
@@ -183,6 +183,8 @@ gemini --version
 # Set up API key (required)
 export GEMINI_API_KEY="your-api-key-here"
 ```
+
+> **Note**: Currently only Gemini is supported as the LLM provider in this MVP version.
 
 #### Basic LLM Report Usage
 
@@ -204,11 +206,6 @@ uv run python -m src.cli.llm_report output/score_input.json --verbose
 uv run python -m src.cli.llm_report output/score_input.json \
   --prompt ./templates/hackathon_template.md \
   --output ./hackathon_evaluation.md
-
-# Multiple provider options
-uv run python -m src.cli.llm_report output/score_input.json --provider gemini
-uv run python -m src.cli.llm_report output/score_input.json --provider openai
-uv run python -m src.cli.llm_report output/score_input.json --provider claude
 ```
 
 #### Integrated Workflow
@@ -217,11 +214,10 @@ uv run python -m src.cli.llm_report output/score_input.json --provider claude
 # Complete analysis with automatic LLM report generation
 ./scripts/run_metrics.sh https://github.com/user/repo.git --generate-llm-report
 
-# Custom LLM settings
+# Custom LLM template
 ./scripts/run_metrics.sh https://github.com/user/repo.git \
   --generate-llm-report \
-  --llm-template ./templates/custom.md \
-  --llm-provider gemini
+  --llm-template ./templates/custom.md
 ```
 
 #### Template Customization
@@ -271,10 +267,10 @@ The LLM report generation produces:
 
 #### Performance and Limitations
 
-- **Generation time**: Typically 10-30 seconds (depends on LLM provider)
-- **Context limits**: Large evaluations are automatically truncated to fit LLM context
+- **Generation time**: Typically 10-30 seconds using Gemini
+- **Context limits**: Large evaluations are automatically truncated to fit Gemini's context window
 - **Content quality**: Reports are generated from structured data and may require human review
-- **Provider availability**: Requires external LLM service access and API credentials
+- **Provider dependency**: Requires Gemini CLI installation and GEMINI_API_KEY configuration
 
 #### Use Cases
 
@@ -288,7 +284,7 @@ done
 
 **Code Review Preparation:**
 ```bash
-# Generate detailed report for PR review
+# Generate detailed report for PR review using Gemini
 uv run python -m src.cli.llm_report output/score_input.json \
   --prompt templates/code_review.md \
   --output pr_review_summary.md

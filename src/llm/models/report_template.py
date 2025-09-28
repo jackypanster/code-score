@@ -58,7 +58,7 @@ class ReportTemplate(BaseModel):
     )
 
     target_providers: List[str] = Field(
-        default_factory=lambda: ["gemini", "openai", "claude"],
+        default_factory=lambda: ["gemini"],
         description="LLM providers this template is optimized for"
     )
 
@@ -133,11 +133,11 @@ class ReportTemplate(BaseModel):
     @field_validator('target_providers')
     def validate_target_providers(cls, v):
         """Validate that provider names are recognized."""
-        allowed_providers = ['gemini', 'openai', 'claude', 'anthropic', 'gpt', 'local']
+        allowed_providers = ['gemini']
 
         for provider in v:
             if provider not in allowed_providers:
-                raise ValueError(f"Unknown provider: {provider}. Allowed: {', '.join(allowed_providers)}")
+                raise ValueError(f"Unsupported provider: {provider}. Only Gemini is supported in this MVP version.")
 
         return v
 
@@ -218,6 +218,6 @@ class ReportTemplate(BaseModel):
                     "max_description_length": 200
                 },
                 "template_type": "general",
-                "target_providers": ["gemini", "openai", "claude"]
+                "target_providers": ["gemini"]
             }
         }

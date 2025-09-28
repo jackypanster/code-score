@@ -61,7 +61,7 @@ class PromptBuilder:
         This method converts structured evaluation data into a properly formatted
         prompt by applying template rendering with automatic content truncation
         to respect LLM context limits. It handles data filtering, template
-        compilation, and prompt optimization for different providers.
+        compilation, and prompt optimization for Gemini.
 
         Args:
             score_input_data: Loaded score_input.json data containing:
@@ -264,7 +264,7 @@ class PromptBuilder:
 
     def estimate_token_usage(self, prompt: str) -> Dict[str, Union[int, float]]:
         """
-        Estimate token usage for different LLM providers.
+        Estimate token usage for Gemini LLM provider.
 
         Args:
             prompt: Prompt text
@@ -272,7 +272,7 @@ class PromptBuilder:
         Returns:
             Dictionary with token estimates
         """
-        # Rough estimation: ~4 characters per token for most LLMs
+        # Rough estimation: ~4 characters per token for Gemini
         char_count = len(prompt)
         estimated_tokens = char_count // 4
 
@@ -280,52 +280,32 @@ class PromptBuilder:
             'character_count': char_count,
             'estimated_tokens': estimated_tokens,
             'estimated_tokens_conservative': char_count // 3,  # Conservative estimate
-            'estimated_cost_gpt4': estimated_tokens * 0.00003,  # $0.03 per 1K tokens
             'estimated_cost_gemini': estimated_tokens * 0.0000125,  # $0.0125 per 1K tokens
         }
 
-    def optimize_context_for_provider(self, context: TemplateContext,
-                                    provider_name: str) -> TemplateContext:
+    def optimize_context_for_gemini(self, context: TemplateContext) -> TemplateContext:
         """
-        Optimize context data for specific LLM provider.
+        Optimize context data for Gemini LLM provider.
 
         Args:
             context: Template context to optimize
-            provider_name: Name of LLM provider
 
         Returns:
-            Optimized template context
+            Optimized template context for Gemini
         """
-        # Provider-specific optimizations
-        provider_limits = {
-            'gemini': {
-                'max_evidence_items': 3,
-                'max_description_length': 150,
-                'prefer_structured': True
-            },
-            'openai': {
-                'max_evidence_items': 4,
-                'max_description_length': 200,
-                'prefer_detailed': True
-            },
-            'claude': {
-                'max_evidence_items': 5,
-                'max_description_length': 250,
-                'prefer_comprehensive': True
-            }
+        # Gemini-specific optimization settings
+        gemini_limits = {
+            'max_evidence_items': 3,
+            'max_description_length': 150,
+            'prefer_structured': True
         }
 
-        limits = provider_limits.get(provider_name, {
-            'max_evidence_items': 3,
-            'max_description_length': 200
-        })
+        # Apply Gemini-specific limits
+        context.apply_content_limits(gemini_limits)
 
-        # Apply provider-specific limits
-        context.apply_content_limits(limits)
-
-        # Add provider-specific context
-        context.generation_metadata['optimized_for'] = provider_name
-        context.generation_metadata['optimization_applied'] = list(limits.keys())
+        # Add Gemini-specific context
+        context.generation_metadata['optimized_for'] = 'gemini'
+        context.generation_metadata['optimization_applied'] = list(gemini_limits.keys())
 
         return context
 

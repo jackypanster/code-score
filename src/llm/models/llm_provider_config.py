@@ -99,13 +99,10 @@ class LLMProviderConfig(BaseModel):
         if not v:
             raise ValueError("Provider name cannot be empty")
 
-        allowed_providers = [
-            'gemini', 'openai', 'claude', 'anthropic', 'gpt4', 'local',
-            'huggingface', 'cohere', 'together', 'replicate'
-        ]
+        allowed_providers = ['gemini']
 
         if v not in allowed_providers:
-            raise ValueError(f"Unknown provider: {v}. Allowed: {', '.join(allowed_providers)}")
+            raise ValueError(f"Unsupported provider: {v}. Only Gemini is supported in this MVP version.")
 
         return v
 
@@ -227,31 +224,15 @@ class LLMProviderConfig(BaseModel):
         return result
 
     def get_provider_specific_limits(self) -> Dict[str, Optional[int]]:
-        """Get provider-specific limits and capabilities."""
-        provider_limits = {
-            'gemini': {
+        """Get Gemini-specific limits and capabilities."""
+        # Only Gemini is supported in current MVP
+        if self.provider_name == 'gemini':
+            return {
                 'context_window': 128000,
                 'max_output_tokens': 8192,
                 'default_temperature': 0.1
-            },
-            'openai': {
-                'context_window': 128000,
-                'max_output_tokens': 4096,
-                'default_temperature': 0.7
-            },
-            'claude': {
-                'context_window': 200000,
-                'max_output_tokens': 4096,
-                'default_temperature': 0.3
-            },
-            'anthropic': {
-                'context_window': 200000,
-                'max_output_tokens': 4096,
-                'default_temperature': 0.3
             }
-        }
-
-        return provider_limits.get(self.provider_name, {})
+        return {}
 
     class Config:
         """Pydantic model configuration."""
@@ -298,28 +279,6 @@ class LLMProviderConfig(BaseModel):
                 # Critical: --approval-mode yolo enables non-interactive execution
                 # --debug provides detailed execution information for troubleshooting
                 additional_args={'--approval-mode': 'yolo', '--debug': None}
-            ),
-            'openai': cls(
-                provider_name='openai',
-                cli_command=['openai', 'api', 'completions.create'],
-                model_name='gpt-4',
-                timeout_seconds=45,
-                max_tokens=2048,
-                temperature=0.7,
-                environment_variables={'OPENAI_API_KEY': 'required'},
-                supports_streaming=True,
-                context_window=128000
-            ),
-            'claude': cls(
-                provider_name='claude',
-                cli_command=['claude', 'complete'],
-                model_name='claude-3-haiku',
-                timeout_seconds=60,
-                max_tokens=2048,
-                temperature=0.3,
-                environment_variables={'ANTHROPIC_API_KEY': 'required'},
-                supports_streaming=False,
-                context_window=200000
             )
         }
 

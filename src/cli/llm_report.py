@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
               default='output/final_report.md',
               help='Output path for generated report (default: output/final_report.md)')
 @click.option('--provider',
-              type=click.Choice(['gemini', 'openai', 'claude'], case_sensitive=False),
+              type=click.Choice(['gemini'], case_sensitive=False),
               default='gemini',
-              help='LLM provider to use for generation (default: gemini)')
+              help='LLM provider (currently only Gemini is supported)')
 @click.option('--verbose', '-v',
               is_flag=True,
               help='Enable detailed logging and progress information')
@@ -70,9 +70,9 @@ def main(score_input_path: str,
       uv run python -m src.cli.llm_report output/score_input.json \\
         --prompt custom_template.md --output evaluation_report.md
 
-      # Use different LLM provider
+      # Use custom timeout
       uv run python -m src.cli.llm_report output/score_input.json \\
-        --provider openai --timeout 60
+        --timeout 60
     """
     try:
         # Validate argument combinations
@@ -135,8 +135,8 @@ def main(score_input_path: str,
         logger.info("💡 Try using --validate-only to check prerequisites")
         sys.exit(3)
     except LLMProviderError as e:
-        logger.error(f"❌ LLM provider error: {e}")
-        logger.info("💡 Check your LLM provider configuration and credentials")
+        logger.error(f"❌ Gemini error: {e}")
+        logger.info("💡 Check your Gemini CLI configuration and GEMINI_API_KEY")
         _print_provider_help(provider)
         sys.exit(4)
     except TemplateLoaderError as e:
@@ -252,21 +252,9 @@ def _print_setup_help(provider: str) -> None:
    2. Set environment variable: export GEMINI_API_KEY=your_api_key
    3. Verify installation: gemini --version
         """,
-        'openai': """
-💡 OpenAI Setup Help:
-   1. Install OpenAI CLI: pip install openai
-   2. Set environment variable: export OPENAI_API_KEY=your_api_key
-   3. Verify installation: openai --version
-        """,
-        'claude': """
-💡 Claude Setup Help:
-   1. Install Claude CLI: pip install anthropic
-   2. Set environment variable: export ANTHROPIC_API_KEY=your_api_key
-   3. Verify installation: claude --version
-        """
     }
 
-    logger.info(help_text.get(provider, "No setup help available for this provider"))
+    logger.info(help_text.get(provider, "💡 Only Gemini is supported in this MVP version"))
 
 
 def _print_provider_help(provider: str) -> None:

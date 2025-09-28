@@ -12,7 +12,6 @@ TIMEOUT=300
 VERBOSE=false
 ENABLE_CHECKLIST=true
 GENERATE_LLM_REPORT=false
-LLM_PROVIDER="gemini"
 LLM_TEMPLATE=""
 
 # Script directory
@@ -35,8 +34,7 @@ Options:
     --verbose               Enable verbose logging
     --enable-checklist      Enable checklist evaluation (default: enabled)
     --disable-checklist     Disable checklist evaluation
-    --generate-llm-report   Generate human-readable LLM report
-    --llm-provider PROVIDER LLM provider: gemini, openai, claude (default: gemini)
+    --generate-llm-report   Generate human-readable LLM report using Gemini
     --llm-template PATH     Path to custom LLM prompt template
     --help                  Show this help message
 
@@ -46,7 +44,7 @@ Examples:
     $0 https://github.com/user/repo.git --format json --verbose
     $0 https://github.com/user/repo.git main --output-dir ./results
     $0 https://github.com/user/repo.git --generate-llm-report
-    $0 https://github.com/user/repo.git --generate-llm-report --llm-provider openai
+    $0 https://github.com/user/repo.git --generate-llm-report --llm-template custom.md
 
 Environment Variables:
     METRICS_OUTPUT_DIR   Default output directory
@@ -91,10 +89,6 @@ while [[ $# -gt 0 ]]; do
         --generate-llm-report)
             GENERATE_LLM_REPORT=true
             shift
-            ;;
-        --llm-provider)
-            LLM_PROVIDER="$2"
-            shift 2
             ;;
         --llm-template)
             LLM_TEMPLATE="$2"
@@ -152,15 +146,7 @@ if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || [[ "$TIMEOUT" -lt 1 ]] || [[ "$TIMEOUT" -gt
     exit 1
 fi
 
-# Validate LLM provider
-case "$LLM_PROVIDER" in
-    gemini|openai|claude)
-        ;;
-    *)
-        echo "Error: Invalid LLM provider '$LLM_PROVIDER'. Must be gemini, openai, or claude" >&2
-        exit 1
-        ;;
-esac
+# LLM provider is fixed to Gemini (only supported provider in MVP)
 
 # Validate LLM template path if provided
 if [[ -n "$LLM_TEMPLATE" ]] && [[ ! -f "$LLM_TEMPLATE" ]]; then
@@ -190,8 +176,7 @@ if [[ "$VERBOSE" == "true" ]]; then
     echo "Timeout: $TIMEOUT seconds"
     echo "Checklist evaluation: $ENABLE_CHECKLIST"
     if [[ "$GENERATE_LLM_REPORT" == "true" ]]; then
-        echo "LLM report generation: enabled"
-        echo "LLM provider: $LLM_PROVIDER"
+        echo "LLM report generation: enabled (using Gemini)"
         if [[ -n "$LLM_TEMPLATE" ]]; then
             echo "LLM template: $LLM_TEMPLATE"
         fi
@@ -223,10 +208,9 @@ else
     CMD_ARGS+=("--enable-checklist=false")
 fi
 
-# Add LLM report generation options
+# Add LLM report generation options (using Gemini)
 if [[ "$GENERATE_LLM_REPORT" == "true" ]]; then
     CMD_ARGS+=("--generate-llm-report")
-    CMD_ARGS+=("--llm-provider" "$LLM_PROVIDER")
 
     if [[ -n "$LLM_TEMPLATE" ]]; then
         CMD_ARGS+=("--llm-template" "$LLM_TEMPLATE")

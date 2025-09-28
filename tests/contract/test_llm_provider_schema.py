@@ -35,16 +35,6 @@ class TestLLMProviderSchema:
             }
         }
 
-    @pytest.fixture
-    def valid_openai_config(self):
-        """Valid OpenAI provider configuration for testing."""
-        return {
-            "provider_name": "openai",
-            "cli_command": ["openai", "api", "chat.completions.create"],
-            "model_name": "gpt-4",
-            "timeout_seconds": 60,
-            "max_tokens": 8000
-        }
 
     def test_schema_loads_successfully(self, schema):
         """Test that the schema file loads and is valid JSON."""
@@ -56,9 +46,6 @@ class TestLLMProviderSchema:
         """Test that a valid Gemini configuration passes validation."""
         validate(instance=valid_gemini_config, schema=schema)
 
-    def test_valid_openai_config_passes(self, schema, valid_openai_config):
-        """Test that a valid OpenAI configuration passes validation."""
-        validate(instance=valid_openai_config, schema=schema)
 
     def test_missing_required_fields_fail(self, schema):
         """Test that configurations missing required fields fail validation."""
@@ -93,7 +80,7 @@ class TestLLMProviderSchema:
 
     def test_valid_provider_names_pass(self, schema, valid_gemini_config):
         """Test that all valid provider names pass validation."""
-        valid_names = ["gemini", "openai", "claude", "custom"]
+        valid_names = ["gemini"]
 
         for valid_name in valid_names:
             config = valid_gemini_config.copy()
@@ -213,7 +200,7 @@ class TestLLMProviderSchema:
 
     def test_model_name_examples_are_valid(self, schema, valid_gemini_config):
         """Test that the example model names in schema are valid."""
-        example_models = ["gemini-2.5-pro", "gpt-4", "claude-3-opus"]
+        example_models = ["gemini-2.5-pro", "gemini-1.5-pro"]
 
         for model_name in example_models:
             config = valid_gemini_config.copy()

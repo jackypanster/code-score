@@ -288,30 +288,24 @@ Percentage: {{total.percentage}}%
 
         output_path = temp_directories["output"] / "final_report.md"
 
-        # Test different providers
-        providers = ["gemini", "openai", "claude"]
+        # Test Gemini provider (only supported provider in MVP)
+        with patch('subprocess.run') as mock_subprocess:
+            mock_subprocess.return_value.returncode = 0
+            mock_subprocess.return_value.stdout = "# Report from Gemini\nGenerated content"
 
-        for provider in providers:
-            with patch('subprocess.run') as mock_subprocess:
-                mock_subprocess.return_value.returncode = 0
-                mock_subprocess.return_value.stdout = f"# Report from {provider}\nGenerated content"
+            generator = ReportGenerator()
+            result = generator.generate_report(
+                score_input_path=str(score_input_path),
+                output_path=str(output_path),
+                template_path=str(default_template),
+                provider="gemini"
+            )
 
-                generator = ReportGenerator()
-                result = generator.generate_report(
-                    score_input_path=str(score_input_path),
-                    output_path=str(output_path),
-                    template_path=str(default_template),
-                    provider=provider
-                )
+            assert result is not None
 
-                assert result is not None
-
-                # Verify correct provider was called
-                call_args = mock_subprocess.call_args[0][0]
-                if provider == "gemini":
-                    assert "gemini" in call_args
-                elif provider == "openai":
-                    assert "openai" in call_args or "gpt" in str(call_args)
+            # Verify Gemini was called
+            call_args = mock_subprocess.call_args[0][0]
+            assert "gemini" in call_args
 
     def test_output_metadata_generation(self, sample_score_input, temp_directories, default_template):
         """Test that proper metadata is generated with the report."""

@@ -7,7 +7,7 @@
     "provider_name": {
       "type": "string",
       "description": "LLM provider identifier",
-      "enum": ["gemini", "openai", "claude", "custom"]
+      "enum": ["gemini"]
     },
     "cli_command": {
       "type": "array",
@@ -20,7 +20,7 @@
     "model_name": {
       "type": "string",
       "description": "Specific model identifier",
-      "examples": ["gemini-2.5-pro", "gpt-4", "claude-3-opus"]
+      "examples": ["gemini-2.5-pro", "gemini-1.5-pro"]
     },
     "timeout_seconds": {
       "type": "integer",

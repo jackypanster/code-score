@@ -114,8 +114,7 @@ class TestCLICommandsSpecification:
         assert "choices" in provider
         assert isinstance(provider["choices"], list)
         assert "gemini" in provider["choices"]
-        assert "openai" in provider["choices"]
-        assert "claude" in provider["choices"]
+        assert len(provider["choices"]) == 1  # Only Gemini supported in MVP
 
     def test_verbose_argument(self, cli_spec):
         """Test verbose argument specification."""

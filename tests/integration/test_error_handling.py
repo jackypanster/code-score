@@ -428,7 +428,7 @@ Score: {{total.score}}/{{total.max_score}}
                     score_input_path=str(score_input_path),
                     output_path=str(output_path),
                     template_path=str(valid_template),
-                    provider="openai"  # Might not be installed
+                    provider="gemini"  # Test with primary supported provider
                 )
 
             assert "Provider CLI not found" in str(exc_info.value)

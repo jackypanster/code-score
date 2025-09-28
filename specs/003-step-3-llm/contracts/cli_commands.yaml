@@ -29,7 +29,7 @@ cli_commands:
         required: false
         default: "gemini"
         description: "LLM provider to use"
-        choices: ["gemini", "openai", "claude"]
+        choices: ["gemini"]
 
       - name: "verbose"
         type: "boolean"

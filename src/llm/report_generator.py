@@ -30,7 +30,7 @@ class ReportGeneratorError(Exception):
 
 
 class LLMProviderError(ReportGeneratorError):
-    """Exception raised when LLM provider fails."""
+    """Exception raised when Gemini fails."""
     pass
 
 
@@ -73,7 +73,7 @@ class ReportGenerator:
             score_input_path: Path to score_input.json file containing evaluation results
             output_path: Output path for generated report (default: None for in-memory only)
             template_path: Path to Jinja2 template file (uses default if None)
-            provider: LLM provider name ("gemini", "openai", "claude")
+            provider: LLM provider name ("gemini" only)
             verbose: Enable detailed logging and progress tracking
             timeout: Override default timeout for LLM API calls (10-300 seconds)
 
@@ -92,7 +92,7 @@ class ReportGenerator:
             ReportGeneratorError: If any step in the generation pipeline fails
             LLMProviderError: If external LLM service is unavailable or returns errors
             FileNotFoundError: If score_input_path or template_path don't exist
-            ValueError: If provider is not supported or timeout is out of range
+            ValueError: If timeout is out of range or Gemini configuration is invalid
 
         Examples:
             >>> generator = ReportGenerator()
@@ -255,7 +255,7 @@ class ReportGenerator:
 
                 response = result.stdout.strip()
                 if not response:
-                    raise LLMProviderError("Empty response from LLM provider")
+                    raise LLMProviderError("Empty response from Gemini")
 
                 logger.debug(f"LLM response: {len(response)} characters")
                 return response
@@ -467,7 +467,7 @@ class ReportGenerator:
 
     def get_available_providers(self) -> List[Dict[str, Any]]:
         """
-        Get list of available LLM providers with status.
+        Get list of available providers with status (Gemini only).
 
         Returns:
             List of provider information dictionaries

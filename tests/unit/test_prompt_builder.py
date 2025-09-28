@@ -421,31 +421,15 @@ class TestPromptBuilder:
         assert estimates['estimated_tokens'] == len(prompt) // 4
         assert estimates['estimated_tokens_conservative'] == len(prompt) // 3
 
-    def test_optimize_context_for_provider_gemini(self, prompt_builder, sample_template_context):
-        """Test context optimization for Gemini provider."""
-        optimized = prompt_builder.optimize_context_for_provider(sample_template_context, "gemini")
+    def test_optimize_context_for_gemini(self, prompt_builder, sample_template_context):
+        """Test context optimization for Gemini."""
+        optimized = prompt_builder.optimize_context_for_gemini(sample_template_context)
 
         assert optimized.generation_metadata['optimized_for'] == "gemini"
         assert 'optimization_applied' in optimized.generation_metadata
 
-    def test_optimize_context_for_provider_openai(self, prompt_builder, sample_template_context):
-        """Test context optimization for OpenAI provider."""
-        optimized = prompt_builder.optimize_context_for_provider(sample_template_context, "openai")
 
-        assert optimized.generation_metadata['optimized_for'] == "openai"
 
-    def test_optimize_context_for_provider_claude(self, prompt_builder, sample_template_context):
-        """Test context optimization for Claude provider."""
-        optimized = prompt_builder.optimize_context_for_provider(sample_template_context, "claude")
-
-        assert optimized.generation_metadata['optimized_for'] == "claude"
-
-    def test_optimize_context_for_provider_unknown(self, prompt_builder, sample_template_context):
-        """Test context optimization for unknown provider."""
-        optimized = prompt_builder.optimize_context_for_provider(sample_template_context, "unknown_provider")
-
-        assert optimized.generation_metadata['optimized_for'] == "unknown_provider"
-        # Should use default limits
 
     def test_get_context_statistics(self, prompt_builder, sample_template_context):
         """Test getting context statistics."""
@@ -551,18 +535,13 @@ class TestPromptBuilder:
         log_messages = [record.message for record in caplog.records]
         assert any("Built prompt:" in msg for msg in log_messages)
 
-    @pytest.mark.parametrize("provider,expected_items", [
-        ("gemini", 3),
-        ("openai", 4),
-        ("claude", 5),
-        ("unknown", 3)
-    ])
-    def test_provider_specific_limits(self, prompt_builder, sample_template_context, provider, expected_items):
-        """Test provider-specific optimization limits."""
-        optimized = prompt_builder.optimize_context_for_provider(sample_template_context, provider)
+    def test_gemini_specific_limits(self, prompt_builder, sample_template_context):
+        """Test Gemini-specific optimization limits."""
+        optimized = prompt_builder.optimize_context_for_gemini(sample_template_context)
 
-        assert optimized.generation_metadata['optimized_for'] == provider
-        # Verify optimization was applied
+        assert optimized.generation_metadata['optimized_for'] == "gemini"
+        assert 'optimization_applied' in optimized.generation_metadata
+        # Verify Gemini-specific optimization was applied
         assert 'optimization_applied' in optimized.generation_metadata
 
     def test_build_prompt_end_to_end_realistic(self, prompt_builder_default, sample_score_input):

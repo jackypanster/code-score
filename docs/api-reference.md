@@ -407,7 +407,7 @@ This API provides flexible, programmatic access to all checklist evaluation func
 
 ## LLM Report Generation
 
-The LLM (Large Language Model) report generation system transforms structured evaluation data into human-readable narrative reports using external AI services.
+The LLM (Large Language Model) report generation system transforms structured evaluation data into human-readable narrative reports using Gemini AI service.
 
 ### 1. ReportGenerator
 
@@ -607,11 +607,11 @@ from src.llm.models.llm_provider_config import LLMProviderConfig
 
 config = LLMProviderConfig(
     provider_name="gemini",
-    cli_command=["gemini", "--api-key", "${GEMINI_API_KEY}"],
+    cli_command=["gemini"],
     model_name="gemini-1.5-pro",
     timeout_seconds=30,
     max_tokens=2048,
-    temperature=0.7
+    temperature=0.1
 )
 
 # Validate environment

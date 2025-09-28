@@ -24,12 +24,11 @@ from ..metrics.cleanup import get_cleanup_manager
 @click.option('--verbose', is_flag=True, help='Enable verbose logging')
 @click.option('--enable-checklist', type=bool, default=True, help='Enable checklist evaluation (default: enabled)')
 @click.option('--checklist-config', help='Path to checklist configuration YAML file')
-@click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report after analysis')
-@click.option('--llm-provider', default='gemini', type=click.Choice(['gemini', 'openai', 'claude']), help='LLM provider for report generation')
+@click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
 @click.option('--llm-template', help='Path to custom LLM prompt template')
 def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
          output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: Optional[str],
-         generate_llm_report: bool, llm_provider: str, llm_template: Optional[str]) -> None:
+         generate_llm_report: bool, llm_template: Optional[str]) -> None:
     """
     Analyze code quality metrics for a Git repository.
 
@@ -133,11 +132,11 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                         click.echo(f"⚠️  Checklist evaluation failed: {e}")
                     # Continue with original results
 
-            # Step 4.7: LLM Report Generation (optional)
+            # Step 4.7: LLM Report Generation using Gemini (optional)
             if generate_llm_report:
                 try:
                     if verbose:
-                        click.echo(f"Generating LLM report using {llm_provider}...")
+                        click.echo("Generating LLM report using Gemini...")
 
                     from ..llm.report_generator import ReportGenerator, ReportGeneratorError, LLMProviderError
 
@@ -152,25 +151,26 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                         # Initialize report generator
                         generator = ReportGenerator()
 
-                        # Validate prerequisites
-                        validation_result = generator.validate_prerequisites(llm_provider)
+                        # Validate Gemini prerequisites
+                        validation_result = generator.validate_prerequisites('gemini')
                         if not validation_result['valid']:
                             if verbose:
-                                click.echo(f"⚠️  LLM prerequisites not met:")
+                                click.echo("⚠️  Gemini prerequisites not met:")
                                 for issue in validation_result['issues']:
                                     click.echo(f"    • {issue}")
+                                click.echo("⚠️  Install Gemini CLI and set GEMINI_API_KEY environment variable")
                                 click.echo("⚠️  Skipping LLM report generation")
                             else:
-                                click.echo(f"⚠️  LLM report generation skipped: prerequisites not met")
+                                click.echo("⚠️  LLM report generation skipped: Gemini CLI not configured")
                         else:
-                            # Generate final report
+                            # Generate final report using Gemini
                             final_report_path = str(Path(output_dir) / "final_report.md")
 
                             result = generator.generate_report(
                                 score_input_path=score_input_file,
                                 output_path=final_report_path,
                                 template_path=llm_template,
-                                provider=llm_provider,
+                                provider='gemini',
                                 verbose=verbose,
                                 timeout=timeout
                             )
@@ -179,10 +179,10 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                                 saved_files.append(final_report_path)
                                 if verbose:
                                     metadata = result.get('report_metadata', {})
-                                    click.echo(f"✅ LLM report generated: {metadata.get('word_count', 0)} words")
+                                    click.echo(f"✅ Gemini report generated: {metadata.get('word_count', 0)} words")
                             else:
                                 if verbose:
-                                    click.echo("⚠️  LLM report generation failed")
+                                    click.echo("⚠️  Gemini report generation failed")
 
                     else:
                         if verbose:
@@ -193,7 +193,8 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                         click.echo(f"⚠️  LLM report generation failed: {e}")
                 except LLMProviderError as e:
                     if verbose:
-                        click.echo(f"⚠️  LLM provider error: {e}")
+                        click.echo(f"⚠️  Gemini error: {e}")
+                        click.echo(f"⚠️  Ensure Gemini CLI is installed and GEMINI_API_KEY is set")
                 except Exception as e:
                     if verbose:
                         click.echo(f"⚠️  Unexpected error in LLM report generation: {e}")
@@ -264,12 +265,11 @@ def cli() -> None:
 @click.option('--verbose', is_flag=True)
 @click.option('--enable-checklist', type=bool, default=True)
 @click.option('--checklist-config', help='Path to checklist configuration YAML file')
-@click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report after analysis')
-@click.option('--llm-provider', default='gemini', type=click.Choice(['gemini', 'openai', 'claude']), help='LLM provider for report generation')
+@click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
 @click.option('--llm-template', help='Path to custom LLM prompt template')
 def analyze(repository_url: str, commit_sha: Optional[str], output_dir: str,
            output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: Optional[str],
-           generate_llm_report: bool, llm_provider: str, llm_template: Optional[str]) -> None:
+           generate_llm_report: bool, llm_template: Optional[str]) -> None:
     """Analyze a Git repository for code quality metrics."""
     # This is the same as main() but accessible via 'code-score analyze'
     ctx = click.Context(main)
@@ -277,7 +277,7 @@ def analyze(repository_url: str, commit_sha: Optional[str], output_dir: str,
                output_dir=output_dir, output_format=output_format,
                timeout=timeout, verbose=verbose, enable_checklist=enable_checklist,
                checklist_config=checklist_config, generate_llm_report=generate_llm_report,
-               llm_provider=llm_provider, llm_template=llm_template)
+               llm_template=llm_template)
 
 
 @cli.command()
