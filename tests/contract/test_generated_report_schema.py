@@ -6,10 +6,10 @@ defined JSON schema and that validation catches invalid report formats.
 """
 
 import json
-import pytest
-from jsonschema import validate, ValidationError
 from pathlib import Path
-from datetime import datetime
+
+import pytest
+from jsonschema import ValidationError, validate
 
 
 class TestGeneratedReportSchema:

@@ -1,8 +1,8 @@
 """Contract tests for metrics collection format validation."""
 
-import pytest
-from typing import Dict, Any, List
 from datetime import datetime
+
+import pytest
 
 
 class TestMetricsFormatContract:

@@ -1,6 +1,5 @@
 """ScoringMapper class for transforming evaluation results to ScoreInput format."""
 
-from typing import Dict, Any, List
 from datetime import datetime
 from pathlib import Path
 
@@ -43,22 +42,26 @@ class ScoringMapper:
 
         return score_input
 
-    def _generate_evidence_paths(self, evaluation_result: EvaluationResult, evidence_base_path: str) -> Dict[str, str]:
-        """Generate mapping of evidence types to file paths."""
+    def _generate_evidence_paths(self, evaluation_result: EvaluationResult, evidence_base_path: str) -> dict[str, str]:
+        """Generate mapping of evidence types to file paths.
+
+        Only includes paths that point to existing files to ensure reliability
+        for downstream systems consuming the evidence_paths.
+        """
         evidence_paths = {}
 
         for item in evaluation_result.checklist_items:
             for evidence in item.evidence_references:
                 evidence_key = f"{item.id}_{evidence.source_type}"
                 evidence_file = f"{evidence_base_path}/{item.dimension}/{item.id}_{evidence.source_type}.json"
-                evidence_paths[evidence_key] = evidence_file
 
-        # Add aggregated evidence files
-        evidence_paths.update({
-            "evaluation_summary": f"{evidence_base_path}/evaluation_summary.json",
-            "category_breakdowns": f"{evidence_base_path}/category_breakdowns.json",
-            "warnings_log": f"{evidence_base_path}/warnings.log"
-        })
+                # Only include evidence files that actually exist
+                if Path(evidence_file).exists():
+                    evidence_paths[evidence_key] = evidence_file
+
+        # Note: Removed phantom path generation for non-existent files
+        # Previously generated paths for evaluation_summary.json, category_breakdowns.json, warnings.log
+        # that were never actually created by EvidenceTracker
 
         return evidence_paths
 
@@ -218,7 +221,7 @@ class ScoringMapper:
         else:
             return "low"
 
-    def _generate_insights(self, evaluation_result: EvaluationResult) -> List[str]:
+    def _generate_insights(self, evaluation_result: EvaluationResult) -> list[str]:
         """Generate key insights about the evaluation."""
         insights = []
 
@@ -242,7 +245,7 @@ class ScoringMapper:
 
         return insights
 
-    def _generate_recommendations(self, evaluation_result: EvaluationResult) -> List[str]:
+    def _generate_recommendations(self, evaluation_result: EvaluationResult) -> list[str]:
         """Generate actionable recommendations based on evaluation."""
         recommendations = []
 
@@ -300,6 +303,20 @@ class ScoringMapper:
 
         return str(output_file)
 
-    def update_evidence_paths_with_generated_files(self, score_input: ScoreInput, generated_files: Dict[str, str]) -> None:
-        """Update evidence paths with actual generated file paths."""
-        score_input.evidence_paths.update(generated_files)
+    def update_evidence_paths_with_generated_files(self, score_input: ScoreInput, generated_files: dict[str, str]) -> None:
+        """Update evidence paths with actual generated file paths.
+
+        Ensures that only existing files are included in evidence_paths
+        and removes any phantom paths that may have been generated.
+        """
+        from .models.evidence_validation import clean_evidence_paths
+
+        # First, clean any existing phantom paths from the current evidence_paths
+        cleaned_current_paths = clean_evidence_paths(score_input.evidence_paths)
+
+        # Then, clean the generated files to ensure they exist
+        cleaned_generated_files = clean_evidence_paths(generated_files)
+
+        # Update with cleaned paths only
+        score_input.evidence_paths = cleaned_current_paths
+        score_input.evidence_paths.update(cleaned_generated_files)

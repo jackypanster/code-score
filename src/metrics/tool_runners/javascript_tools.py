@@ -1,9 +1,9 @@
 """JavaScript-specific tool runner for code analysis."""
 
-import subprocess
 import json
+import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 
 class JavaScriptToolRunner:
@@ -14,7 +14,7 @@ class JavaScriptToolRunner:
         self.timeout_seconds = timeout_seconds
         self.tools_available = {}
 
-    def run_linting(self, repo_path: str) -> Dict[str, Any]:
+    def run_linting(self, repo_path: str) -> dict[str, Any]:
         """Run JavaScript linting using ESLint."""
         result = {
             "tool_used": "eslint",
@@ -56,7 +56,7 @@ class JavaScriptToolRunner:
         except Exception:
             return result
 
-    def run_testing(self, repo_path: str) -> Dict[str, Any]:
+    def run_testing(self, repo_path: str) -> dict[str, Any]:
         """Run JavaScript tests using npm test or available framework."""
         result = {
             "tests_run": 0,
@@ -132,7 +132,7 @@ class JavaScriptToolRunner:
         except Exception:
             return result
 
-    def run_security_audit(self, repo_path: str) -> Dict[str, Any]:
+    def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using npm audit."""
         result = {
             "vulnerabilities_found": 0,
@@ -190,7 +190,7 @@ class JavaScriptToolRunner:
         except Exception:
             return result
 
-    def run_formatting_check(self, repo_path: str) -> Dict[str, Any]:
+    def run_formatting_check(self, repo_path: str) -> dict[str, Any]:
         """Check JavaScript code formatting using Prettier."""
         result = {
             "tool_used": "prettier",
@@ -258,7 +258,7 @@ class JavaScriptToolRunner:
         self.tools_available[tool_name] = available
         return available
 
-    def _format_eslint_issues(self, lint_data: List[Dict]) -> List[Dict]:
+    def _format_eslint_issues(self, lint_data: list[dict]) -> list[dict]:
         """Format ESLint issues to standard format."""
         formatted = []
 

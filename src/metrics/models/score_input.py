@@ -1,7 +1,7 @@
 """ScoreInput model for structured output format for downstream LLM processing."""
 
-from typing import Dict
 from datetime import datetime
+
 from pydantic import BaseModel, Field, validator
 
 from .evaluation_result import EvaluationResult, RepositoryInfo
@@ -14,7 +14,7 @@ class ScoreInput(BaseModel):
     repository_info: RepositoryInfo = Field(..., description="Source repository details")
     evaluation_result: EvaluationResult = Field(..., description="Complete evaluation data")
     generation_timestamp: datetime = Field(..., description="When evaluation was performed")
-    evidence_paths: Dict[str, str] = Field(default_factory=dict, description="File paths to supporting evidence")
+    evidence_paths: dict[str, str] = Field(default_factory=dict, description="File paths to supporting evidence")
     human_summary: str = Field(..., description="Markdown summary for manual review")
 
     @validator("schema_version")
@@ -36,12 +36,30 @@ class ScoreInput(BaseModel):
 
     @validator("evidence_paths")
     def evidence_paths_must_be_valid(cls, v):
-        """Validate that all evidence paths are valid references."""
+        """Validate that all evidence paths are valid references to existing files."""
+        from pathlib import Path
+
         for key, path in v.items():
             if not isinstance(key, str) or not isinstance(path, str):
                 raise ValueError("Evidence paths must be string key-value pairs")
             if not key.strip() or not path.strip():
                 raise ValueError("Evidence path keys and values cannot be empty")
+
+            # Check for phantom paths that should not be present
+            phantom_paths = ["evaluation_summary", "category_breakdowns", "warnings_log"]
+            if key in phantom_paths:
+                raise ValueError(f"Phantom path '{key}' should not be in evidence_paths")
+
+            # Validate that file exists (optional validation for file existence)
+            # This validation can be disabled by setting SKIP_FILE_VALIDATION environment variable
+            import os
+            if not os.getenv("SKIP_FILE_VALIDATION"):
+                file_path = Path(path)
+                if not file_path.exists():
+                    raise ValueError(f"Evidence file does not exist: {path}")
+                if not file_path.is_file():
+                    raise ValueError(f"Evidence path is not a file: {path}")
+
         return v
 
     @validator("human_summary")
@@ -56,19 +74,19 @@ class ScoreInput(BaseModel):
         result = self.evaluation_result
 
         summary_lines = [
-            f"# Code Quality Evaluation Summary",
-            f"",
+            "# Code Quality Evaluation Summary",
+            "",
             f"**Repository**: {self.repository_info.url}",
             f"**Commit**: {self.repository_info.commit_sha}",
             f"**Language**: {self.repository_info.primary_language}",
             f"**Evaluation Date**: {self.generation_timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"",
-            f"## Overall Score",
-            f"",
+            "",
+            "## Overall Score",
+            "",
             f"**Total Score**: {result.total_score:.1f} / {result.max_possible_score} ({result.score_percentage:.1f}%)",
-            f"",
-            f"## Category Breakdown",
-            f""
+            "",
+            "## Category Breakdown",
+            ""
         ]
 
         for dimension, breakdown in result.category_breakdowns.items():
@@ -76,12 +94,12 @@ class ScoreInput(BaseModel):
                 f"### {dimension.replace('_', ' ').title()}",
                 f"- Score: {breakdown.actual_points:.1f} / {breakdown.max_points} ({breakdown.percentage:.1f}%)",
                 f"- Items: {breakdown.items_count}",
-                f""
+                ""
             ])
 
         summary_lines.extend([
-            f"## Checklist Items",
-            f""
+            "## Checklist Items",
+            ""
         ])
 
         for item in result.checklist_items:
@@ -91,35 +109,35 @@ class ScoreInput(BaseModel):
                 f"- **Status**: {item.evaluation_status}",
                 f"- **Score**: {item.score:.1f} / {item.max_points}",
                 f"- **Description**: {item.description}",
-                f""
+                ""
             ])
 
         if result.evidence_summary:
             summary_lines.extend([
-                f"## Key Evidence",
-                f""
+                "## Key Evidence",
+                ""
             ])
             for evidence in result.evidence_summary:
                 summary_lines.append(f"- {evidence}")
 
         if result.evaluation_metadata.warnings:
             summary_lines.extend([
-                f"",
-                f"## Warnings",
-                f""
+                "",
+                "## Warnings",
+                ""
             ])
             for warning in result.evaluation_metadata.warnings:
                 summary_lines.append(f"- ⚠️ {warning}")
 
         summary_lines.extend([
-            f"",
-            f"## Evaluation Metadata",
-            f"",
+            "",
+            "## Evaluation Metadata",
+            "",
             f"- **Evaluator Version**: {result.evaluation_metadata.evaluator_version}",
             f"- **Processing Duration**: {result.evaluation_metadata.processing_duration:.2f}s",
             f"- **Metrics Completeness**: {result.evaluation_metadata.metrics_completeness:.1f}%",
-            f"",
-            f"---",
+            "",
+            "---",
             f"*Generated at {self.generation_timestamp.isoformat()}*"
         ])
 
@@ -129,7 +147,7 @@ class ScoreInput(BaseModel):
         """Update the human summary based on current evaluation result."""
         self.human_summary = self.generate_human_summary()
 
-    def to_json_dict(self) -> Dict:
+    def to_json_dict(self) -> dict:
         """Convert to dictionary suitable for JSON serialization."""
         return {
             "schema_version": self.schema_version,

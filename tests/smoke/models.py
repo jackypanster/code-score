@@ -8,7 +8,6 @@ implementation for tracking execution state and validation results.
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 
 @dataclass
@@ -18,9 +17,9 @@ class SmokeTestExecution:
     repository_url: str
     working_directory: Path
     execution_start_time: datetime
-    execution_end_time: Optional[datetime] = None
-    pipeline_exit_code: Optional[int] = None
-    pipeline_duration: Optional[float] = None
+    execution_end_time: datetime | None = None
+    pipeline_exit_code: int | None = None
+    pipeline_duration: float | None = None
 
     def __post_init__(self):
         """Validate data integrity after initialization."""
@@ -60,8 +59,8 @@ class OutputArtifact:
     file_path: Path
     expected_name: str
     file_exists: bool = False
-    file_size_bytes: Optional[int] = None
-    last_modified: Optional[datetime] = None
+    file_size_bytes: int | None = None
+    last_modified: datetime | None = None
     content_valid: bool = False
 
     def __post_init__(self):
@@ -108,30 +107,30 @@ class OutputArtifact:
         """Validate JSON file content."""
         try:
             import json
-            with open(self.file_path, 'r') as f:
+            with open(self.file_path) as f:
                 json.load(f)
             return True
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             return False
 
     def _validate_markdown_content(self) -> bool:
         """Validate Markdown file content."""
         try:
-            with open(self.file_path, 'r', encoding='utf-8') as f:
+            with open(self.file_path, encoding='utf-8') as f:
                 content = f.read()
             # Basic check: file should contain readable text
             # Note: We don't use isprintable() because valid Markdown contains newlines
             return len(content.strip()) > 0
-        except (IOError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError):
             return False
 
     def _validate_readable_content(self) -> bool:
         """Validate that file contains readable content."""
         try:
-            with open(self.file_path, 'r', encoding='utf-8') as f:
+            with open(self.file_path, encoding='utf-8') as f:
                 content = f.read(1024)  # Read first 1KB
             return len(content.strip()) > 0
-        except (IOError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError):
             return False
 
 
@@ -143,10 +142,10 @@ class ValidationResult:
     pipeline_successful: bool
     all_files_present: bool
     execution_summary: str
-    error_message: Optional[str] = None
-    output_files: Optional[List[OutputArtifact]] = None
-    pipeline_duration: Optional[float] = None
-    pipeline_exit_code: Optional[int] = None
+    error_message: str | None = None
+    output_files: list[OutputArtifact] | None = None
+    pipeline_duration: float | None = None
+    pipeline_exit_code: int | None = None
 
     def __post_init__(self):
         """Validate result consistency."""
@@ -169,7 +168,7 @@ class ValidationResult:
     def success(
         cls,
         execution_summary: str,
-        output_files: List[OutputArtifact],
+        output_files: list[OutputArtifact],
         pipeline_duration: float,
         pipeline_exit_code: int = 0
     ) -> 'ValidationResult':
@@ -189,7 +188,7 @@ class ValidationResult:
         cls,
         error_message: str,
         pipeline_exit_code: int,
-        pipeline_duration: Optional[float] = None
+        pipeline_duration: float | None = None
     ) -> 'ValidationResult':
         """Create a pipeline failure result."""
         return cls(
@@ -206,7 +205,7 @@ class ValidationResult:
     def file_validation_failure(
         cls,
         error_message: str,
-        output_files: List[OutputArtifact],
+        output_files: list[OutputArtifact],
         pipeline_duration: float,
         pipeline_exit_code: int = 0
     ) -> 'ValidationResult':
@@ -235,7 +234,7 @@ class ValidationResult:
 
         return "output_validation_failed"
 
-    def get_missing_files(self) -> List[str]:
+    def get_missing_files(self) -> list[str]:
         """Get list of missing expected files."""
         if not self.output_files:
             return []

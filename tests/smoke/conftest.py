@@ -4,11 +4,12 @@ Pytest configuration and fixtures for smoke tests.
 This module provides shared fixtures and configuration for the smoke test suite.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
+
+import pytest
 
 
 @pytest.fixture(scope="session")

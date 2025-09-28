@@ -4,10 +4,9 @@ This test validates that the evaluation system correctly handles different
 programming languages with language-specific metrics and adaptations.
 """
 
-import json
+
 import pytest
-from pathlib import Path
-import tempfile
+
 
 class TestLanguageEvaluation:
     """Test evaluation across different programming languages."""
@@ -242,7 +241,7 @@ class TestLanguageEvaluation:
         """Test that language-specific evaluation is not yet implemented."""
         # This test will fail until ChecklistEvaluator supports language adaptations
         with pytest.raises(ImportError):
-            from src.metrics.checklist_evaluator import ChecklistEvaluator
+            pass
 
     def test_python_language_evaluation(self, python_submission):
         """Test evaluation of Python repository with ruff/pytest tools."""

@@ -1,16 +1,14 @@
 """Integration tests for language detection workflow."""
 
+
 import pytest
-import tempfile
-from pathlib import Path
-from typing import Dict, List
 
 
 class TestLanguageDetectionIntegration:
     """Test the complete language detection workflow."""
 
     @pytest.fixture
-    def mock_repository_structures(self) -> Dict[str, List[str]]:
+    def mock_repository_structures(self) -> dict[str, list[str]]:
         """Mock repository file structures for different languages."""
         return {
             "python": [
@@ -83,7 +81,7 @@ class TestLanguageDetectionIntegration:
         assert detection_requirements["confidence_threshold"] > 0.5
         assert detection_requirements["fallback_language"] == "unknown"
 
-    def test_python_detection_patterns(self, mock_repository_structures: Dict[str, List[str]]) -> None:
+    def test_python_detection_patterns(self, mock_repository_structures: dict[str, list[str]]) -> None:
         """Test Python language detection patterns."""
         python_files = mock_repository_structures["python"]
 
@@ -103,7 +101,7 @@ class TestLanguageDetectionIntegration:
         config_files = [f for f in python_files if any(c in f for c in python_indicators["config_files"])]
         assert len(config_files) >= 1
 
-    def test_javascript_detection_patterns(self, mock_repository_structures: Dict[str, List[str]]) -> None:
+    def test_javascript_detection_patterns(self, mock_repository_structures: dict[str, list[str]]) -> None:
         """Test JavaScript language detection patterns."""
         js_files = mock_repository_structures["javascript"]
 
@@ -121,7 +119,7 @@ class TestLanguageDetectionIntegration:
         # Verify package.json exists
         assert any("package.json" in f for f in js_files)
 
-    def test_typescript_detection_patterns(self, mock_repository_structures: Dict[str, List[str]]) -> None:
+    def test_typescript_detection_patterns(self, mock_repository_structures: dict[str, list[str]]) -> None:
         """Test TypeScript language detection patterns."""
         ts_files = mock_repository_structures["typescript"]
 
@@ -139,7 +137,7 @@ class TestLanguageDetectionIntegration:
         # Verify TypeScript config exists
         assert any("tsconfig.json" in f for f in ts_files)
 
-    def test_java_detection_patterns(self, mock_repository_structures: Dict[str, List[str]]) -> None:
+    def test_java_detection_patterns(self, mock_repository_structures: dict[str, list[str]]) -> None:
         """Test Java language detection patterns."""
         java_files = mock_repository_structures["java"]
 
@@ -158,7 +156,7 @@ class TestLanguageDetectionIntegration:
         # Verify Maven/Gradle config exists
         assert any("pom.xml" in f for f in java_files)
 
-    def test_go_detection_patterns(self, mock_repository_structures: Dict[str, List[str]]) -> None:
+    def test_go_detection_patterns(self, mock_repository_structures: dict[str, list[str]]) -> None:
         """Test Go language detection patterns."""
         go_files = mock_repository_structures["go"]
 

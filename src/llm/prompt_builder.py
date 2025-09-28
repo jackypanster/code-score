@@ -5,15 +5,14 @@ This module provides functionality for building LLM prompts from evaluation data
 with proper content truncation and context management for optimal generation.
 """
 
-import json
 import logging
-from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
+from typing import Any
 
 from jinja2 import Template
 
-from .models.template_context import TemplateContext
 from .models.report_template import ReportTemplate
+from .models.template_context import TemplateContext
 from .template_loader import TemplateLoader
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class PromptBuilder:
     prompts with content truncation and context management for LLM APIs.
     """
 
-    def __init__(self, template_loader: Optional[TemplateLoader] = None):
+    def __init__(self, template_loader: TemplateLoader | None = None):
         """
         Initialize PromptBuilder.
 
@@ -52,9 +51,9 @@ class PromptBuilder:
             'max_prompt_length': 32000  # characters
         }
 
-    def build_prompt(self, score_input_data: Dict[str, Any],
+    def build_prompt(self, score_input_data: dict[str, Any],
                     template_config: ReportTemplate,
-                    custom_limits: Optional[Dict[str, int]] = None) -> str:
+                    custom_limits: dict[str, int] | None = None) -> str:
         """
         Build complete LLM prompt from evaluation data and template.
 
@@ -214,7 +213,7 @@ class PromptBuilder:
         return truncated + truncation_notice
 
 
-    def validate_context_data(self, score_input_data: Dict[str, Any]) -> List[str]:
+    def validate_context_data(self, score_input_data: dict[str, Any]) -> list[str]:
         """
         Validate score input data for prompt building.
 
@@ -262,7 +261,7 @@ class PromptBuilder:
 
         return issues
 
-    def estimate_token_usage(self, prompt: str) -> Dict[str, Union[int, float]]:
+    def estimate_token_usage(self, prompt: str) -> dict[str, int | float]:
         """
         Estimate token usage for Gemini LLM provider.
 
@@ -309,7 +308,7 @@ class PromptBuilder:
 
         return context
 
-    def get_context_statistics(self, context: TemplateContext) -> Dict[str, Any]:
+    def get_context_statistics(self, context: TemplateContext) -> dict[str, Any]:
         """
         Get detailed statistics about template context.
 
@@ -345,7 +344,7 @@ class PromptBuilder:
             'metadata_keys': list(context.generation_metadata.keys())
         }
 
-    def set_context_limits(self, limits: Dict[str, int]) -> None:
+    def set_context_limits(self, limits: dict[str, int]) -> None:
         """
         Update default context limits.
 
@@ -355,7 +354,7 @@ class PromptBuilder:
         self._context_limits.update(limits)
         logger.debug(f"Updated context limits: {limits}")
 
-    def get_context_limits(self) -> Dict[str, int]:
+    def get_context_limits(self) -> dict[str, int]:
         """
         Get current context limits.
 

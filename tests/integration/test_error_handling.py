@@ -9,11 +9,12 @@ implementation is complete.
 """
 
 import json
-import pytest
+import subprocess
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import subprocess
+from unittest.mock import patch
+
+import pytest
 
 # Import modules that don't exist yet - will fail until implementation
 pytest.importorskip("src.llm.report_generator", reason="Implementation not ready")
@@ -284,8 +285,9 @@ Score: {{total.score}}/{{total.max_score}}
 
     def test_cli_error_handling_missing_args(self):
         """Test CLI error handling when required arguments are missing."""
-        from src.cli.llm_report import main as llm_report_main
         import sys
+
+        from src.cli.llm_report import main as llm_report_main
 
         # Test with missing required score_input_path argument
         test_args = ["llm-report"]
@@ -299,8 +301,9 @@ Score: {{total.score}}/{{total.max_score}}
 
     def test_cli_error_handling_invalid_provider(self, temp_directories, valid_score_input, valid_template):
         """Test CLI error handling when invalid provider is specified."""
-        from src.cli.llm_report import main as llm_report_main
         import sys
+
+        from src.cli.llm_report import main as llm_report_main
 
         score_input_path = temp_directories["input"] / "score_input.json"
         with open(score_input_path, 'w') as f:

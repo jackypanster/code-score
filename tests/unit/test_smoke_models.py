@@ -5,11 +5,12 @@ This module contains unit tests for the data models used in the smoke test suite
 focusing on validation, behavior, and edge cases.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from tests.smoke.models import SmokeTestExecution, OutputArtifact, ValidationResult
+import pytest
+
+from tests.smoke.models import OutputArtifact, SmokeTestExecution, ValidationResult
 
 
 class TestSmokeTestExecutionModel:

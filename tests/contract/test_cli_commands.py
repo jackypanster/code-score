@@ -5,9 +5,10 @@ This test validates that CLI command specifications conform to the
 defined YAML structure and that command definitions are complete and valid.
 """
 
-import yaml
-import pytest
 from pathlib import Path
+
+import pytest
+import yaml
 
 
 class TestCLICommandsSpecification:

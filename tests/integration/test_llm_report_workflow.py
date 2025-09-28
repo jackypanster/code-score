@@ -9,10 +9,11 @@ implementation is complete.
 """
 
 import json
-import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
+import pytest
 
 # Import modules that don't exist yet - will fail until implementation
 pytest.importorskip("src.llm.report_generator", reason="Implementation not ready")
@@ -200,8 +201,9 @@ This project shows basic code quality but needs significant improvement in testi
 
     def test_cli_command_execution(self, sample_score_input, temp_directories, default_template):
         """Test CLI command execution for report generation."""
-        from src.cli.llm_report import main as llm_report_main
         import sys
+
+        from src.cli.llm_report import main as llm_report_main
 
         # Setup input file
         score_input_path = temp_directories["input"] / "score_input.json"
@@ -233,8 +235,8 @@ This project shows basic code quality but needs significant improvement in testi
 
     def test_template_processing(self, sample_score_input, temp_directories):
         """Test template processing and data injection."""
-        from src.llm.template_loader import TemplateLoader
         from src.llm.prompt_builder import PromptBuilder
+        from src.llm.template_loader import TemplateLoader
 
         # Create template with various placeholders
         template_content = """# Report for {{repository.url}}

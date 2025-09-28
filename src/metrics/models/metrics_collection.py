@@ -1,7 +1,8 @@
 """MetricsCollection entity model for aggregating analysis results."""
 
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -11,7 +12,7 @@ class LintIssue(BaseModel):
     message: str = Field(..., description="Issue description")
     file: str = Field(..., description="File path")
     line: int = Field(..., description="Line number")
-    column: Optional[int] = Field(None, description="Column number")
+    column: int | None = Field(None, description="Column number")
 
 
 class SecurityIssue(BaseModel):
@@ -19,22 +20,22 @@ class SecurityIssue(BaseModel):
     severity: str = Field(..., description="Vulnerability severity")
     title: str = Field(..., description="Vulnerability title")
     description: str = Field(..., description="Detailed description")
-    cve_id: Optional[str] = Field(None, description="CVE identifier")
-    affected_package: Optional[str] = Field(None, description="Affected package name")
+    cve_id: str | None = Field(None, description="CVE identifier")
+    affected_package: str | None = Field(None, description="Affected package name")
 
 
 class CodeQualityMetrics(BaseModel):
     """Code quality analysis results."""
-    lint_results: Optional[Dict[str, Any]] = Field(None, description="Linting tool results")
-    build_success: Optional[bool] = Field(None, description="Build success status")
-    security_issues: List[SecurityIssue] = Field(default_factory=list, description="Security vulnerabilities")
-    dependency_audit: Optional[Dict[str, Any]] = Field(None, description="Dependency audit results")
+    lint_results: dict[str, Any] | None = Field(None, description="Linting tool results")
+    build_success: bool | None = Field(None, description="Build success status")
+    security_issues: list[SecurityIssue] = Field(default_factory=list, description="Security vulnerabilities")
+    dependency_audit: dict[str, Any] | None = Field(None, description="Dependency audit results")
 
 
 class TestingMetrics(BaseModel):
     """Testing execution and coverage results."""
-    test_execution: Optional[Dict[str, Any]] = Field(None, description="Test execution results")
-    coverage_report: Optional[Dict[str, Any]] = Field(None, description="Code coverage analysis")
+    test_execution: dict[str, Any] | None = Field(None, description="Test execution results")
+    coverage_report: dict[str, Any] | None = Field(None, description="Code coverage analysis")
 
 
 class DocumentationMetrics(BaseModel):
@@ -48,9 +49,9 @@ class DocumentationMetrics(BaseModel):
 
 class ExecutionMetadata(BaseModel):
     """Tool execution metadata."""
-    tools_used: List[str] = Field(default_factory=list, description="Analysis tools executed")
-    errors: List[str] = Field(default_factory=list, description="Errors encountered")
-    warnings: List[str] = Field(default_factory=list, description="Warnings generated")
+    tools_used: list[str] = Field(default_factory=list, description="Analysis tools executed")
+    errors: list[str] = Field(default_factory=list, description="Errors encountered")
+    warnings: list[str] = Field(default_factory=list, description="Warnings generated")
     duration_seconds: float = Field(0.0, description="Total execution time")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Execution timestamp")
 

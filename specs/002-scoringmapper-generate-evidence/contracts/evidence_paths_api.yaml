@@ -1,0 +1,161 @@
+openapi: 3.0.0
+info:
+  title: Evidence Paths API Contract
+  description: Contract for evidence path generation ensuring file existence validation
+  version: 1.0.0
+
+components:
+  schemas:
+    EvidencePathsMapping:
+      type: object
+      description: Validated mapping of evidence categories to existing file paths
+      additionalProperties:
+        type: string
+        format: path
+        description: Absolute file path that must exist on filesystem
+      example:
+        code_quality_lint_results: "/output/evidence/code_quality/code_quality_lint_results.json"
+        testing_test_results: "/output/evidence/testing/testing_test_results.json"
+        documentation_readme_analysis: "/output/evidence/documentation/documentation_readme_analysis.json"
+
+    ScoreInputEvidence:
+      type: object
+      description: Evidence section of score_input.json with file existence guarantee
+      required:
+        - evidence_paths
+      properties:
+        evidence_paths:
+          $ref: '#/components/schemas/EvidencePathsMapping'
+        evidence_base_path:
+          type: string
+          format: path
+          description: Base directory containing evidence files
+        total_evidence_files:
+          type: integer
+          minimum: 0
+          description: Count of available evidence files
+      example:
+        evidence_paths:
+          code_quality_lint_results: "/output/evidence/code_quality/code_quality_lint_results.json"
+          testing_test_results: "/output/evidence/testing/testing_test_results.json"
+        evidence_base_path: "/output/evidence"
+        total_evidence_files: 2
+
+    ValidationError:
+      type: object
+      description: Error when evidence path validation fails
+      required:
+        - error_type
+        - message
+        - invalid_paths
+      properties:
+        error_type:
+          type: string
+          enum: [phantom_path_detected, file_not_found, invalid_path_format]
+        message:
+          type: string
+          description: Human-readable error description
+        invalid_paths:
+          type: array
+          items:
+            type: string
+          description: List of paths that failed validation
+        suggested_action:
+          type: string
+          description: Recommended action to resolve the error
+
+paths:
+  /evidence/validate:
+    post:
+      summary: Validate evidence paths for file existence
+      description: Validates that all provided evidence paths point to existing files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - evidence_paths
+              properties:
+                evidence_paths:
+                  $ref: '#/components/schemas/EvidencePathsMapping'
+      responses:
+        '200':
+          description: All evidence paths validated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [valid]
+                  validated_paths:
+                    $ref: '#/components/schemas/EvidencePathsMapping'
+                  validation_summary:
+                    type: object
+                    properties:
+                      total_paths:
+                        type: integer
+                      valid_paths:
+                        type: integer
+                      removed_phantom_paths:
+                        type: integer
+        '400':
+          description: Evidence path validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /evidence/generate:
+    post:
+      summary: Generate validated evidence paths mapping
+      description: Creates evidence paths mapping with phantom path removal and file validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - evaluation_result
+                - evidence_base_path
+              properties:
+                evaluation_result:
+                  type: object
+                  description: Evaluation result with checklist items
+                evidence_base_path:
+                  type: string
+                  format: path
+                  description: Base path for evidence files
+                include_phantom_paths:
+                  type: boolean
+                  default: false
+                  description: Whether to include phantom paths (deprecated, should be false)
+      responses:
+        '200':
+          description: Evidence paths generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evidence_paths:
+                    $ref: '#/components/schemas/EvidencePathsMapping'
+                  generation_summary:
+                    type: object
+                    properties:
+                      total_generated:
+                        type: integer
+                      phantom_paths_removed:
+                        type: integer
+                      validation_passed:
+                        type: boolean
+        '500':
+          description: Evidence path generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'

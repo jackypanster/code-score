@@ -1,10 +1,10 @@
 """Integration tests for repository cloning workflow."""
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
-from typing import Optional
+
+import pytest
 
 
 class TestRepositoryCloningIntegration:

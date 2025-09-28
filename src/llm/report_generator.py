@@ -6,20 +6,23 @@ template loading, prompt building, LLM calls, and report generation.
 """
 
 import json
-import subprocess
 import logging
-import time
+import subprocess
 import threading
+import time
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
+from typing import Any
 
-from .models.report_template import ReportTemplate
+from .models.generated_report import (
+    GeneratedReport,
+    InputMetadata,
+    ProviderMetadata,
+    TemplateMetadata,
+)
 from .models.llm_provider_config import LLMProviderConfig
-from .models.generated_report import GeneratedReport, TemplateMetadata, ProviderMetadata, InputMetadata, TruncationInfo
-from .models.template_context import TemplateContext
+from .models.report_template import ReportTemplate
+from .prompt_builder import PromptBuilder
 from .template_loader import TemplateLoader, TemplateLoaderError
-from .prompt_builder import PromptBuilder, PromptBuilderError
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +45,8 @@ class ReportGenerator:
     from code evaluation data using external LLM services.
     """
 
-    def __init__(self, template_loader: Optional[TemplateLoader] = None,
-                 prompt_builder: Optional[PromptBuilder] = None):
+    def __init__(self, template_loader: TemplateLoader | None = None,
+                 prompt_builder: PromptBuilder | None = None):
         """
         Initialize ReportGenerator.
 
@@ -56,11 +59,11 @@ class ReportGenerator:
         self._default_providers = LLMProviderConfig.get_default_configs()
 
     def generate_report(self, score_input_path: str,
-                       output_path: Optional[str] = None,
-                       template_path: Optional[str] = None,
+                       output_path: str | None = None,
+                       template_path: str | None = None,
                        provider: str = "gemini",
                        verbose: bool = False,
-                       timeout: Optional[int] = None) -> Dict[str, Any]:
+                       timeout: int | None = None) -> dict[str, Any]:
         """
         Generate complete LLM report from evaluation data.
 
@@ -169,10 +172,10 @@ class ReportGenerator:
             logger.error(f"Report generation failed: {e}")
             raise ReportGeneratorError(f"Report generation failed: {e}")
 
-    def _load_score_input(self, score_input_path: str) -> Dict[str, Any]:
+    def _load_score_input(self, score_input_path: str) -> dict[str, Any]:
         """Load and validate score input data."""
         try:
-            with open(score_input_path, 'r', encoding='utf-8') as f:
+            with open(score_input_path, encoding='utf-8') as f:
                 data = json.load(f)
 
             # Validate data structure
@@ -187,7 +190,7 @@ class ReportGenerator:
         except json.JSONDecodeError as e:
             raise ReportGeneratorError(f"Invalid JSON in score input: {e}")
 
-    def _load_template(self, template_path: Optional[str]) -> ReportTemplate:
+    def _load_template(self, template_path: str | None) -> ReportTemplate:
         """Load template configuration."""
         try:
             if template_path:
@@ -198,7 +201,7 @@ class ReportGenerator:
         except TemplateLoaderError as e:
             raise ReportGeneratorError(f"Template loading failed: {e}")
 
-    def _get_provider_config(self, provider: str, timeout: Optional[int]) -> LLMProviderConfig:
+    def _get_provider_config(self, provider: str, timeout: int | None) -> LLMProviderConfig:
         """Get provider configuration with optional timeout override."""
         if provider not in self._default_providers:
             raise ReportGeneratorError(f"Unknown provider: {provider}")
@@ -218,9 +221,7 @@ class ReportGenerator:
 
     def _call_llm(self, prompt: str, provider_config: LLMProviderConfig) -> str:
         """Call external LLM service via subprocess with enhanced error recovery."""
-        import signal
         import threading
-        import time
 
         try:
             # Build CLI command
@@ -332,7 +333,7 @@ class ReportGenerator:
         sys.stderr.flush()
 
     def _create_generated_report(self, llm_response: str,
-                               score_input_data: Dict[str, Any],
+                               score_input_data: dict[str, Any],
                                template_config: ReportTemplate,
                                provider_config: LLMProviderConfig,
                                generation_time: float) -> GeneratedReport:
@@ -405,7 +406,7 @@ class ReportGenerator:
             raise ReportGeneratorError(f"Failed to save report: {e}")
 
 
-    def validate_prerequisites(self, provider: str) -> Dict[str, Any]:
+    def validate_prerequisites(self, provider: str) -> dict[str, Any]:
         """
         Validate that all prerequisites are met for report generation.
 
@@ -465,7 +466,7 @@ class ReportGenerator:
 
         return results
 
-    def get_available_providers(self) -> List[Dict[str, Any]]:
+    def get_available_providers(self) -> list[dict[str, Any]]:
         """
         Get list of available providers with status (Gemini only).
 
@@ -500,7 +501,7 @@ class ReportGenerator:
 
         return providers
 
-    def get_template_info(self, template_path: Optional[str] = None) -> Dict[str, Any]:
+    def get_template_info(self, template_path: str | None = None) -> dict[str, Any]:
         """
         Get information about template configuration.
 

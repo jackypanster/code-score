@@ -5,17 +5,17 @@ This test validates error handling and failure modes in the smoke test.
 These tests will initially fail until the implementation is complete.
 """
 
-import pytest
 import subprocess
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+
+import pytest
 
 # Import the smoke test implementation (will fail initially)
 try:
-    from tests.smoke.test_full_pipeline import test_full_pipeline_execution
+    from tests.smoke.file_validator import validate_output_files
     from tests.smoke.models import ValidationResult
     from tests.smoke.pipeline_executor import execute_pipeline
-    from tests.smoke.file_validator import validate_output_files
+    from tests.smoke.test_full_pipeline import test_full_pipeline_execution
 except ImportError:
     # Expected to fail initially - implementation doesn't exist yet
     test_full_pipeline_execution = None

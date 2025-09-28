@@ -5,12 +5,11 @@ This module provides functionality for loading, validating, and compiling
 Jinja2 templates for LLM report generation with security sandboxing.
 """
 
-import os
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 import logging
+from pathlib import Path
+from typing import Any
 
-from jinja2 import Template, Environment, FileSystemLoader, TemplateSyntaxError, meta
+from jinja2 import Environment, FileSystemLoader, Template, TemplateSyntaxError, meta
 from jinja2.sandbox import SandboxedEnvironment
 
 from .models.report_template import ReportTemplate
@@ -51,10 +50,10 @@ class TemplateLoader:
         """
         self.use_sandbox = use_sandbox
         self.cache_templates = cache_templates
-        self._template_cache: Dict[str, Template] = {}
-        self._environment: Optional[Environment] = None
+        self._template_cache: dict[str, Template] = {}
+        self._environment: Environment | None = None
 
-    def _get_environment(self, template_dir: Optional[str] = None) -> Environment:
+    def _get_environment(self, template_dir: str | None = None) -> Environment:
         """
         Get Jinja2 environment with appropriate configuration.
 
@@ -184,7 +183,7 @@ class TemplateLoader:
         except Exception as e:
             raise TemplateValidationError(f"Failed to compile template {template_config.name}: {e}")
 
-    def _extract_template_variables(self, template_path: str) -> List[str]:
+    def _extract_template_variables(self, template_path: str) -> list[str]:
         """
         Extract template variables from Jinja2 template.
 
@@ -195,7 +194,7 @@ class TemplateLoader:
             List of variable names used in template
         """
         try:
-            with open(template_path, 'r', encoding='utf-8') as f:
+            with open(template_path, encoding='utf-8') as f:
                 template_content = f.read()
 
             # Parse template to extract variables
@@ -210,7 +209,7 @@ class TemplateLoader:
             return []
 
     def validate_template_fields(self, template_config: ReportTemplate,
-                                available_fields: List[str]) -> List[str]:
+                                available_fields: list[str]) -> list[str]:
         """
         Validate that template required fields are available.
 
@@ -223,7 +222,7 @@ class TemplateLoader:
         """
         return template_config.check_required_fields(available_fields)
 
-    def load_from_directory(self, template_dir: str, pattern: str = "*.md") -> List[ReportTemplate]:
+    def load_from_directory(self, template_dir: str, pattern: str = "*.md") -> list[ReportTemplate]:
         """
         Load all templates from a directory.
 
@@ -310,7 +309,7 @@ class TemplateLoader:
         self._template_cache.clear()
         logger.debug("Template cache cleared")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         Get template cache statistics.
 
@@ -337,7 +336,7 @@ class TemplateLoader:
             TemplateValidationError: If syntax validation fails
         """
         try:
-            with open(template_path, 'r', encoding='utf-8') as f:
+            with open(template_path, encoding='utf-8') as f:
                 template_content = f.read()
 
             # Security validation first
@@ -419,7 +418,7 @@ class TemplateLoader:
                 logger.warning(f"Template contains potentially unsafe pattern: {pattern}")
 
     def validate_template_with_context(self, template_config: ReportTemplate,
-                                     sample_context: Dict[str, Any]) -> Dict[str, Any]:
+                                     sample_context: dict[str, Any]) -> dict[str, Any]:
         """
         Validate template with sample context data.
 
@@ -481,7 +480,7 @@ class TemplateLoader:
 
         return results
 
-    def get_available_templates(self) -> Dict[str, str]:
+    def get_available_templates(self) -> dict[str, str]:
         """
         Get available templates in the default template directory.
 
@@ -499,7 +498,7 @@ class TemplateLoader:
         return templates
 
     def render_template_preview(self, template_config: ReportTemplate,
-                               sample_data: Dict[str, Any],
+                               sample_data: dict[str, Any],
                                max_length: int = 500) -> str:
         """
         Render template with sample data for preview.

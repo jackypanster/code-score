@@ -33,10 +33,11 @@ uv run python -m src.cli.main --help
 # Output shows:
 # Analysis completed successfully!
 # Generated files:
-#   - ./output/submission.json      # Raw metrics data
-#   - ./output/report.md           # Markdown summary
-#   - ./output/score_input.json    # Structured evaluation
-#   - ./output/evaluation_report.md # Human-readable assessment
+#   - ./output/submission.json                     # Raw metrics data (consolidated)
+#   - ./output/metrics/click_20250928_143022.md    # Markdown summary (timestamped)
+#   - ./output/metrics/click_20250928_143022.json  # Detailed metrics data
+#   - ./output/score_input.json                    # Structured evaluation (checklist)
+#   - ./output/evaluation_report.md                # Human-readable assessment (checklist)
 # Evidence Files: 14 files in ./output/evidence/
 ```
 
@@ -84,7 +85,7 @@ uv run python -m src.cli.llm_report output/score_input.json
 # ✅ Template loaded: specs/prompts/llm_report.md
 # ✅ Score data validated: 67.5/100 (67.5%)
 # 🤖 Calling Gemini CLI...
-# ✅ Report generated: output/final_report.md
+# ✅ Report generated: output/metrics/{repo_name}_llm_report_{timestamp}.md
 ```
 
 ### Integrated Workflow
@@ -119,8 +120,11 @@ cat output/submission.json | jq '.metrics.code_quality.lint_results'
 # Review evaluation scores
 cat output/score_input.json | jq '.evaluation_result.total_score'
 
-# Read assessment report
+# Read assessment report (from checklist evaluation)
 head -n 30 output/evaluation_report.md
+
+# View latest metrics report (from basic analysis)
+head -n 30 $(ls -t output/metrics/*.md | head -1)
 ```
 
 ### 3. Explore Evidence Files
@@ -139,8 +143,8 @@ cat output/evidence/code_quality/code_quality_lint_file_check.json | jq '.[0]'
 # Create comprehensive narrative report
 uv run python -m src.cli.llm_report output/score_input.json --verbose
 
-# Review generated content
-head -n 50 output/final_report.md
+# Review generated content (find latest LLM report)
+head -n 50 $(ls -t output/metrics/*llm_report*.md | head -1)
 ```
 
 ## Common Use Cases
@@ -224,12 +228,15 @@ uv run python -m src.cli.llm_report <score_input.json> [options]
 
 | File | Description | Use Case |
 |------|-------------|----------|
-| `submission.json` | Raw metrics data | Machine processing, debugging |
-| `report.md` | Human-readable summary | Quick overview, documentation |
-| `score_input.json` | Structured evaluation | LLM input, detailed analysis |
-| `evaluation_report.md` | Assessment breakdown | Quality review, improvement planning |
-| `final_report.md` | AI-generated narrative | Executive summaries, presentations |
-| `evidence/` | Supporting evidence files | Audit trails, detailed justification |
+| `output/submission.json` | Raw metrics data (consolidated) | Machine processing, debugging |
+| `output/metrics/{repo}_{timestamp}.md` | Human-readable summary (timestamped) | Quick overview, documentation |
+| `output/metrics/{repo}_{timestamp}.json` | Detailed metrics data | Full analysis data |
+| `output/score_input.json` | Structured evaluation (checklist) | LLM input, detailed analysis |
+| `output/evaluation_report.md` | Assessment breakdown (checklist) | Quality review, improvement planning |
+| `output/metrics/{repo}_llm_report_{timestamp}.md` | AI-generated narrative | Executive summaries, presentations |
+| `output/evidence/` | Supporting evidence files | Audit trails, detailed justification |
+
+**Note**: Files with `{timestamp}` use format `YYYYMMDD_HHMMSS` to prevent overwrites. To find the latest file: `ls -lt output/metrics/*.md | head -1`. If you need fixed filenames, you can manually copy the files or wait for a future version that provides alias files.
 
 ## Troubleshooting
 

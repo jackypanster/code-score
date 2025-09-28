@@ -5,10 +5,11 @@ to score_input.json generation.
 """
 
 import json
-import pytest
-from pathlib import Path
 import tempfile
-import os
+from pathlib import Path
+
+import pytest
+
 
 class TestChecklistEvaluation:
     """Test end-to-end evaluation workflow."""
@@ -80,13 +81,13 @@ class TestChecklistEvaluation:
         """Test that the evaluation workflow is not yet implemented."""
         # This test will fail until the ChecklistEvaluator is implemented
         with pytest.raises(ImportError):
-            from src.metrics.checklist_evaluator import ChecklistEvaluator
+            pass
 
     def test_cli_evaluate_command_not_implemented(self):
         """Test that the CLI evaluate command is not yet implemented."""
         # This test will fail until the CLI evaluate command is implemented
         with pytest.raises(ImportError):
-            from src.cli.evaluate import main
+            pass
 
     def test_complete_workflow_integration(self, sample_submission_json, temp_output_dir):
         """Test complete workflow from submission.json to score_input.json."""

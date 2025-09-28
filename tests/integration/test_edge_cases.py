@@ -5,9 +5,9 @@ and other exceptional scenarios.
 """
 
 import json
+
 import pytest
-from pathlib import Path
-import tempfile
+
 
 class TestEdgeCases:
     """Test edge cases and error handling in evaluation."""
@@ -395,8 +395,9 @@ class TestEdgeCases:
         """Test performance with very large submission.json files."""
         # This test will fail until implementation exists
         with pytest.raises(ImportError):
-            from src.metrics.checklist_evaluator import ChecklistEvaluator
             import time
+
+            from src.metrics.checklist_evaluator import ChecklistEvaluator
 
             # Create large submission with many issues
             large_submission = {

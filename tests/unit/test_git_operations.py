@@ -1,12 +1,11 @@
 """Unit tests for git operations functionality."""
 
-import pytest
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock, call
 import subprocess
+from unittest.mock import MagicMock, patch
 
-from src.metrics.git_operations import GitOperations, GitOperationError
+import pytest
+
+from src.metrics.git_operations import GitOperationError, GitOperations
 from src.metrics.models.repository import Repository
 
 

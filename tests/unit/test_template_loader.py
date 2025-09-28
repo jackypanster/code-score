@@ -5,23 +5,23 @@ This module tests all functionality of the TemplateLoader class including
 template loading, validation, security checks, caching, and error handling.
 """
 
-import pytest
 import tempfile
-import json
 from pathlib import Path
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import MagicMock, patch
 
-from jinja2 import TemplateSyntaxError, Template
+import pytest
+from jinja2 import Template
 from jinja2.sandbox import SandboxedEnvironment
+
+from src.llm.models.report_template import ReportTemplate
 
 # Import the modules to test
 from src.llm.template_loader import (
     TemplateLoader,
     TemplateLoaderError,
+    TemplateNotFoundException,
     TemplateValidationError,
-    TemplateNotFoundException
 )
-from src.llm.models.report_template import ReportTemplate
 
 
 class TestTemplateLoader:

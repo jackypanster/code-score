@@ -1,13 +1,13 @@
 """EvidenceTracker class for managing and organizing evaluation evidence."""
 
 import json
-from pathlib import Path
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-from .models.evidence_reference import EvidenceReference
 from .models.checklist_item import ChecklistItem
 from .models.evaluation_result import EvaluationResult
+from .models.evidence_reference import EvidenceReference
 
 
 class EvidenceTracker:
@@ -16,14 +16,14 @@ class EvidenceTracker:
     def __init__(self, evidence_base_path: str = "evidence"):
         """Initialize evidence tracker with base output path."""
         self.evidence_base_path = Path(evidence_base_path)
-        self.evidence_store: Dict[str, List[Dict[str, Any]]] = {}
-        self.file_manifest: Dict[str, str] = {}
+        self.evidence_store: dict[str, list[dict[str, Any]]] = {}
+        self.file_manifest: dict[str, str] = {}
 
     def track_evidence(
         self,
         item_id: str,
         evidence: EvidenceReference,
-        source_data: Optional[Dict[str, Any]] = None
+        source_data: dict[str, Any] | None = None
     ) -> str:
         """Track evidence for a checklist item and return evidence key."""
         evidence_key = f"{item_id}_{evidence.source_type}"
@@ -47,7 +47,7 @@ class EvidenceTracker:
         self.evidence_store[evidence_key].append(evidence_data)
         return evidence_key
 
-    def track_checklist_item_evidence(self, checklist_item: ChecklistItem) -> List[str]:
+    def track_checklist_item_evidence(self, checklist_item: ChecklistItem) -> list[str]:
         """Track all evidence for a checklist item."""
         evidence_keys = []
 
@@ -57,7 +57,7 @@ class EvidenceTracker:
 
         return evidence_keys
 
-    def track_evaluation_evidence(self, evaluation_result: EvaluationResult) -> Dict[str, List[str]]:
+    def track_evaluation_evidence(self, evaluation_result: EvaluationResult) -> dict[str, list[str]]:
         """Track evidence for entire evaluation result."""
         all_evidence_keys = {}
 
@@ -103,7 +103,7 @@ class EvidenceTracker:
 
         self.evidence_store["evaluation_metadata"] = [metadata_evidence]
 
-    def get_evidence_by_item(self, item_id: str) -> List[Dict[str, Any]]:
+    def get_evidence_by_item(self, item_id: str) -> list[dict[str, Any]]:
         """Get all evidence for a specific checklist item."""
         item_evidence = []
 
@@ -114,7 +114,7 @@ class EvidenceTracker:
 
         return item_evidence
 
-    def get_evidence_by_type(self, source_type: str) -> List[Dict[str, Any]]:
+    def get_evidence_by_type(self, source_type: str) -> list[dict[str, Any]]:
         """Get all evidence of a specific type."""
         type_evidence = []
 
@@ -125,7 +125,7 @@ class EvidenceTracker:
 
         return type_evidence
 
-    def get_high_confidence_evidence(self, threshold: float = 0.8) -> List[Dict[str, Any]]:
+    def get_high_confidence_evidence(self, threshold: float = 0.8) -> list[dict[str, Any]]:
         """Get evidence with confidence above threshold."""
         high_confidence = []
 
@@ -136,7 +136,7 @@ class EvidenceTracker:
 
         return high_confidence
 
-    def generate_evidence_summary(self) -> Dict[str, Any]:
+    def generate_evidence_summary(self) -> dict[str, Any]:
         """Generate summary of all tracked evidence."""
         total_evidence = sum(len(evidence_list) for evidence_list in self.evidence_store.values())
 
@@ -166,7 +166,7 @@ class EvidenceTracker:
             "generation_timestamp": datetime.now().isoformat()
         }
 
-    def save_evidence_files(self) -> Dict[str, str]:
+    def save_evidence_files(self) -> dict[str, str]:
         """Save evidence to structured files and return file paths."""
         saved_files = {}
 
@@ -237,7 +237,7 @@ class EvidenceTracker:
         # Load manifest if available
         manifest_file = evidence_base / "manifest.json"
         if manifest_file.exists():
-            with open(manifest_file, 'r', encoding='utf-8') as f:
+            with open(manifest_file, encoding='utf-8') as f:
                 self.file_manifest = json.load(f)["files"]
 
         # Load evidence files
@@ -245,7 +245,7 @@ class EvidenceTracker:
         for evidence_file in evidence_base.rglob("*.json"):
             if evidence_file.name not in ["evidence_summary.json", "manifest.json"]:
                 try:
-                    with open(evidence_file, 'r', encoding='utf-8') as f:
+                    with open(evidence_file, encoding='utf-8') as f:
                         evidence_data = json.load(f)
 
                     if isinstance(evidence_data, list) and evidence_data:
@@ -255,7 +255,7 @@ class EvidenceTracker:
                 except (json.JSONDecodeError, KeyError) as e:
                     print(f"Warning: Could not load evidence file {evidence_file}: {e}")
 
-    def validate_evidence_integrity(self) -> Dict[str, Any]:
+    def validate_evidence_integrity(self) -> dict[str, Any]:
         """Validate integrity of tracked evidence."""
         validation_results = {
             "valid": True,

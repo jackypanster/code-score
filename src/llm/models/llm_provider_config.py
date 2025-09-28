@@ -5,7 +5,7 @@ This module defines the LLMProviderConfig Pydantic model for configuring
 external LLM services and CLI command generation.
 """
 
-from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -23,13 +23,13 @@ class LLMProviderConfig(BaseModel):
         pattern=r'^[a-z][a-z0-9_]*$'
     )
 
-    cli_command: List[str] = Field(
+    cli_command: list[str] = Field(
         ...,
         description="Base CLI command and arguments for the provider",
         min_items=1
     )
 
-    model_name: Optional[str] = Field(
+    model_name: str | None = Field(
         None,
         description="Specific model identifier (e.g., 'gemini-1.5-pro', 'gpt-4')"
     )
@@ -41,25 +41,25 @@ class LLMProviderConfig(BaseModel):
         le=300
     )
 
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         None,
         description="Maximum response length (provider-specific)",
         gt=0
     )
 
-    temperature: Optional[float] = Field(
+    temperature: float | None = Field(
         None,
         description="Sampling temperature for response generation",
         ge=0.0,
         le=2.0
     )
 
-    environment_variables: Dict[str, str] = Field(
+    environment_variables: dict[str, str] = Field(
         default_factory=dict,
         description="Required environment variables for provider authentication"
     )
 
-    additional_args: Dict[str, Union[str, int, float, bool, None]] = Field(
+    additional_args: dict[str, str | int | float | bool | None] = Field(
         default_factory=dict,
         description="Provider-specific additional CLI arguments (None for standalone flags)"
     )
@@ -69,7 +69,7 @@ class LLMProviderConfig(BaseModel):
         description="Whether provider supports streaming responses"
     )
 
-    context_window: Optional[int] = Field(
+    context_window: int | None = Field(
         None,
         description="Maximum context window size in tokens",
         gt=0
@@ -130,7 +130,7 @@ class LLMProviderConfig(BaseModel):
 
         return v
 
-    def build_cli_command(self, prompt: str, output_file: Optional[str] = None) -> List[str]:
+    def build_cli_command(self, prompt: str, output_file: str | None = None) -> list[str]:
         """
         Build complete CLI command for LLM execution.
 
@@ -177,11 +177,11 @@ class LLMProviderConfig(BaseModel):
 
         return command
 
-    def get_required_env_vars(self) -> List[str]:
+    def get_required_env_vars(self) -> list[str]:
         """Get list of required environment variable names."""
         return list(self.environment_variables.keys())
 
-    def validate_environment(self) -> List[str]:
+    def validate_environment(self) -> list[str]:
         """
         Validate that required environment variables are set.
 
@@ -197,7 +197,7 @@ class LLMProviderConfig(BaseModel):
 
         return missing
 
-    def estimate_context_usage(self, prompt_length: int) -> Dict[str, Union[int, float, bool]]:
+    def estimate_context_usage(self, prompt_length: int) -> dict[str, int | float | bool]:
         """
         Estimate context window usage for given prompt.
 
@@ -223,7 +223,7 @@ class LLMProviderConfig(BaseModel):
 
         return result
 
-    def get_provider_specific_limits(self) -> Dict[str, Optional[int]]:
+    def get_provider_specific_limits(self) -> dict[str, int | None]:
         """Get Gemini-specific limits and capabilities."""
         # Only Gemini is supported in current MVP
         if self.provider_name == 'gemini':
@@ -258,7 +258,7 @@ class LLMProviderConfig(BaseModel):
         }
 
     @classmethod
-    def get_default_configs(cls) -> Dict[str, 'LLMProviderConfig']:
+    def get_default_configs(cls) -> dict[str, 'LLMProviderConfig']:
         """
         Get default configurations for common providers.
 

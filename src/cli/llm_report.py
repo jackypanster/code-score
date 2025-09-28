@@ -5,15 +5,13 @@ This module provides the `llm-report` command interface for generating
 human-readable evaluation reports from score_input.json files.
 """
 
-import sys
-import click
 import logging
-from pathlib import Path
-from typing import Optional
+import sys
 
-from ..llm.report_generator import ReportGenerator, ReportGeneratorError, LLMProviderError
+import click
+
+from ..llm.report_generator import LLMProviderError, ReportGenerator, ReportGeneratorError
 from ..llm.template_loader import TemplateLoaderError
-
 
 # Configure logging
 logging.basicConfig(
@@ -46,11 +44,11 @@ logger = logging.getLogger(__name__)
               is_flag=True,
               help='Validate inputs and prerequisites without generating report')
 def main(score_input_path: str,
-         prompt: Optional[str],
+         prompt: str | None,
          output: str,
          provider: str,
          verbose: bool,
-         timeout: Optional[int],
+         timeout: int | None,
          validate_only: bool):
     """
     Generate human-readable evaluation reports from code quality analysis data.
@@ -169,20 +167,20 @@ def main(score_input_path: str,
 
 def _handle_validation_only(generator: ReportGenerator,
                            provider: str,
-                           template_path: Optional[str]) -> None:
+                           template_path: str | None) -> None:
     """Handle validation-only mode."""
     logger.info("🔍 Validating prerequisites and configuration...")
 
     # Validate provider
     validation_result = generator.validate_prerequisites(provider)
 
-    logger.info(f"\n📋 Validation Results:")
+    logger.info("\n📋 Validation Results:")
     logger.info(f"   Provider ({provider}): {'✅' if validation_result['provider_available'] else '❌'}")
     logger.info(f"   Environment: {'✅' if validation_result['environment_valid'] else '❌'}")
     logger.info(f"   Template: {'✅' if validation_result['template_available'] else '❌'}")
 
     if validation_result['issues']:
-        logger.info(f"\n⚠️  Issues found:")
+        logger.info("\n⚠️  Issues found:")
         for issue in validation_result['issues']:
             logger.info(f"   • {issue}")
 
@@ -197,17 +195,17 @@ def _handle_validation_only(generator: ReportGenerator,
 
     # Show available providers
     providers = generator.get_available_providers()
-    logger.info(f"\n🔌 Available Providers:")
+    logger.info("\n🔌 Available Providers:")
     for p in providers:
         status = "✅" if p['available'] and p['environment_ready'] else "❌"
         logger.info(f"   {status} {p['name']} ({p['model']})")
 
     # Exit with appropriate code
     if validation_result['valid']:
-        logger.info(f"\n✅ All validations passed - ready for report generation")
+        logger.info("\n✅ All validations passed - ready for report generation")
         sys.exit(0)
     else:
-        logger.info(f"\n❌ Validation failed - please resolve issues above")
+        logger.info("\n❌ Validation failed - please resolve issues above")
         sys.exit(2)
 
 
@@ -217,7 +215,7 @@ def _handle_generation_output(result: dict, verbose: bool) -> None:
     logger.info("✅ Report generated successfully")
 
     metadata = result['report_metadata']
-    logger.info(f"📄 Report Details:")
+    logger.info("📄 Report Details:")
     logger.info(f"   • Output: {result['output_path']}")
     logger.info(f"   • Word count: {metadata['word_count']:,}")
     logger.info(f"   • Generation time: {result['generation_time_seconds']:.1f}s")
@@ -232,12 +230,12 @@ def _handle_generation_output(result: dict, verbose: bool) -> None:
         provider_info = result['provider_metadata']
         template_info = result['template_metadata']
 
-        logger.info(f"\n🔧 Provider Details:")
+        logger.info("\n🔧 Provider Details:")
         logger.info(f"   • Provider: {provider_info['provider_name']}")
         logger.info(f"   • Model: {provider_info['model_name']}")
         logger.info(f"   • Response time: {provider_info['response_time_seconds']:.1f}s")
 
-        logger.info(f"\n📋 Template Details:")
+        logger.info("\n📋 Template Details:")
         logger.info(f"   • Template: {template_info['template_name']}")
         logger.info(f"   • Type: {template_info['template_type']}")
         logger.info(f"   • Path: {template_info['file_path']}")

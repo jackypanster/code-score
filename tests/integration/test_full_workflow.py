@@ -1,10 +1,10 @@
 """Integration tests for full metrics collection workflow with code-walker repository."""
 
-import pytest
 import json
-import jsonschema
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
+
+import pytest
 
 
 class TestFullWorkflowIntegration:
@@ -16,7 +16,7 @@ class TestFullWorkflowIntegration:
         return "git@github.com:AIGCInnovatorSpace/code-walker.git"
 
     @pytest.fixture
-    def output_schema(self) -> Dict[str, Any]:
+    def output_schema(self) -> dict[str, Any]:
         """Load the output schema for validation."""
         schema_path = Path(__file__).parent.parent.parent / "specs" / "001-docs-git-workflow" / "contracts" / "output_schema.json"
         with open(schema_path) as f:
@@ -148,7 +148,7 @@ class TestFullWorkflowIntegration:
         assert "python" in validation_requirements["expected_language"]
         assert len(validation_requirements["minimum_metrics_collected"]) >= 3
 
-    def test_output_schema_compliance_contract(self, output_schema: Dict[str, Any]) -> None:
+    def test_output_schema_compliance_contract(self, output_schema: dict[str, Any]) -> None:
         """Test that output will comply with the defined schema."""
         # Verify schema structure requirements
         required_top_level = {"repository", "metrics", "execution"}

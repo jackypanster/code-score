@@ -3,12 +3,13 @@ T007: Test for CLI evaluate command path resolution
 Tests that CLI evaluate command works with corrected configuration path.
 """
 
-import pytest
-import tempfile
 import json
+import tempfile
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 from click.testing import CliRunner
-from unittest.mock import patch, mock_open
 
 from src.cli.evaluate import evaluate
 

@@ -5,18 +5,18 @@ This test validates the complete end-to-end workflow when everything works corre
 These tests will initially fail until the implementation is complete.
 """
 
-import pytest
 import subprocess
 from pathlib import Path
-from typing import List
+
+import pytest
 
 # Import the smoke test implementation (will fail initially)
 # These imports will work once the implementation is created
 try:
-    from tests.smoke.test_full_pipeline import test_full_pipeline_execution
+    from tests.smoke.file_validator import validate_output_files
     from tests.smoke.models import SmokeTestExecution, ValidationResult
     from tests.smoke.pipeline_executor import execute_pipeline
-    from tests.smoke.file_validator import validate_output_files
+    from tests.smoke.test_full_pipeline import test_full_pipeline_execution
 except ImportError:
     # Expected to fail initially - implementation doesn't exist yet
     test_full_pipeline_execution = None
@@ -40,7 +40,7 @@ class TestSmokeTestIntegration:
         return "git@github.com:AIGCInnovatorSpace/code-walker.git"
 
     @pytest.fixture
-    def expected_output_files(self) -> List[str]:
+    def expected_output_files(self) -> list[str]:
         """Expected output files from pipeline."""
         return [
             "submission.json",
@@ -62,7 +62,7 @@ class TestSmokeTestIntegration:
         assert result is not None, "Smoke test should return a result"
         # Additional validation will be added based on actual implementation
 
-    def test_pipeline_execution_creates_expected_outputs(self, project_root: Path, expected_output_files: List[str]):
+    def test_pipeline_execution_creates_expected_outputs(self, project_root: Path, expected_output_files: list[str]):
         """Test that pipeline execution creates all expected output files."""
         if execute_pipeline is None:
             pytest.skip("Implementation not available yet")
@@ -96,7 +96,7 @@ class TestSmokeTestIntegration:
         # Will be implemented once models are created
         pass
 
-    def test_file_validation_integration(self, expected_output_files: List[str]):
+    def test_file_validation_integration(self, expected_output_files: list[str]):
         """Test integration with file validation utilities."""
         if validate_output_files is None:
             pytest.skip("Implementation not available yet")

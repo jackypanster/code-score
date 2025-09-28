@@ -1,11 +1,11 @@
 """EvaluationResult model for complete checklist evaluation results."""
 
-from typing import Dict, List
 from datetime import datetime
+
 from pydantic import BaseModel, Field, validator
 
-from .checklist_item import ChecklistItem
 from .category_breakdown import CategoryBreakdown
+from .checklist_item import ChecklistItem
 
 
 class RepositoryInfo(BaseModel):
@@ -24,20 +24,20 @@ class EvaluationMetadata(BaseModel):
 
     evaluator_version: str = Field(..., description="Version of evaluation logic")
     processing_duration: float = Field(..., ge=0.0, description="Seconds taken for evaluation")
-    warnings: List[str] = Field(default_factory=list, description="Non-fatal issues encountered")
+    warnings: list[str] = Field(default_factory=list, description="Non-fatal issues encountered")
     metrics_completeness: float = Field(..., ge=0.0, le=100.0, description="Percentage of required metrics available")
 
 
 class EvaluationResult(BaseModel):
     """Container for complete checklist evaluation results."""
 
-    checklist_items: List[ChecklistItem] = Field(..., description="All 11 evaluated items")
+    checklist_items: list[ChecklistItem] = Field(..., description="All 11 evaluated items")
     total_score: float = Field(..., ge=0.0, description="Sum of all item scores")
     max_possible_score: int = Field(default=100, description="Maximum possible total (100 points)")
     score_percentage: float = Field(..., ge=0.0, le=100.0, description="Percentage score")
-    category_breakdowns: Dict[str, CategoryBreakdown] = Field(..., description="Score by dimension")
+    category_breakdowns: dict[str, CategoryBreakdown] = Field(..., description="Score by dimension")
     evaluation_metadata: EvaluationMetadata = Field(..., description="Execution details")
-    evidence_summary: List[str] = Field(default_factory=list, description="Key evidence points for human review")
+    evidence_summary: list[str] = Field(default_factory=list, description="Key evidence points for human review")
 
     @validator("checklist_items")
     def must_have_exactly_11_items(cls, v):
@@ -87,7 +87,7 @@ class EvaluationResult(BaseModel):
         self.total_score = sum(item.score for item in self.checklist_items)
         self.score_percentage = self.calculate_score_percentage()
 
-    def get_items_by_dimension(self, dimension: str) -> List[ChecklistItem]:
+    def get_items_by_dimension(self, dimension: str) -> list[ChecklistItem]:
         """Get all checklist items for a specific dimension."""
         return [item for item in self.checklist_items if item.dimension == dimension]
 

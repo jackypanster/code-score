@@ -1,12 +1,16 @@
 """Integration tests for pipeline integration with checklist evaluation."""
 
 import json
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from src.metrics.submission_pipeline import SubmissionLoader, PipelineIntegrator, SubmissionValidationError
+import pytest
+
 from src.metrics.pipeline_output_manager import PipelineOutputManager
+from src.metrics.submission_pipeline import (
+    PipelineIntegrator,
+    SubmissionLoader,
+    SubmissionValidationError,
+)
 
 
 class TestSubmissionLoader:

@@ -1,15 +1,16 @@
 """Unit tests for output formatting functionality."""
 
-import pytest
 import json
 import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 from datetime import datetime
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from src.metrics.output_generators import OutputManager
+import pytest
+
+from src.metrics.models.metrics_collection import ExecutionMetadata, MetricsCollection
 from src.metrics.models.repository import Repository
-from src.metrics.models.metrics_collection import MetricsCollection, ExecutionMetadata
+from src.metrics.output_generators import OutputManager
 
 
 class TestOutputManager:

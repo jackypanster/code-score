@@ -4,9 +4,10 @@ This test validates that the checklist mapping YAML file contains all required
 evaluation criteria and can be loaded correctly.
 """
 
-import yaml
-import pytest
 from pathlib import Path
+
+import pytest
+import yaml
 
 # Get the mapping path relative to the test file
 MAPPING_PATH = Path(__file__).parent.parent.parent / "specs" / "contracts" / "checklist_mapping.yaml"
@@ -18,7 +19,7 @@ class TestChecklistMapping:
     @pytest.fixture
     def checklist_mapping(self):
         """Load the checklist mapping YAML file."""
-        with open(MAPPING_PATH, 'r') as f:
+        with open(MAPPING_PATH) as f:
             return yaml.safe_load(f)
 
     def test_mapping_file_loads_successfully(self, checklist_mapping):

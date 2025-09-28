@@ -5,10 +5,10 @@ specification defined in the contracts.
 """
 
 import json
-import pytest
 from pathlib import Path
+
 import jsonschema
-from datetime import datetime
+import pytest
 
 # Get the schema path relative to the test file
 SCHEMA_PATH = Path(__file__).parent.parent.parent / "specs" / "contracts" / "score_input_schema.json"

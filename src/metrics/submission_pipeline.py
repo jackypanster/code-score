@@ -2,11 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field, ValidationError
-
-from .models.repository import Repository
-from .models.metrics_collection import MetricsCollection
+from typing import Any
 
 
 class SubmissionValidationError(Exception):
@@ -22,7 +18,7 @@ class SubmissionLoader:
         self.required_repository_fields = ["url", "commit", "language", "timestamp"]
         self.required_metrics_sections = ["code_quality", "testing", "documentation"]
 
-    def load_and_validate(self, submission_path: str) -> Dict[str, Any]:
+    def load_and_validate(self, submission_path: str) -> dict[str, Any]:
         """
         Load and validate a submission.json file.
 
@@ -41,7 +37,7 @@ class SubmissionLoader:
             raise SubmissionValidationError(f"Submission file not found: {submission_path}")
 
         try:
-            with open(submission_path, 'r') as f:
+            with open(submission_path) as f:
                 data = json.load(f)
         except json.JSONDecodeError as e:
             raise SubmissionValidationError(f"Invalid JSON in submission file: {e}")
@@ -54,7 +50,7 @@ class SubmissionLoader:
 
         return data
 
-    def _validate_structure(self, data: Dict[str, Any]) -> List[str]:
+    def _validate_structure(self, data: dict[str, Any]) -> list[str]:
         """Validate the structure of submission data."""
         errors = []
 
@@ -87,7 +83,7 @@ class SubmissionLoader:
 
         return errors
 
-    def extract_repository_info(self, submission_data: Dict[str, Any]) -> Dict[str, Any]:
+    def extract_repository_info(self, submission_data: dict[str, Any]) -> dict[str, Any]:
         """Extract repository information from submission data."""
         repo_data = submission_data.get("repository", {})
 
@@ -100,7 +96,7 @@ class SubmissionLoader:
             "metrics_source": "submission.json"
         }
 
-    def validate_for_checklist_evaluation(self, submission_data: Dict[str, Any]) -> List[str]:
+    def validate_for_checklist_evaluation(self, submission_data: dict[str, Any]) -> list[str]:
         """
         Validate submission data specifically for checklist evaluation.
 
@@ -139,10 +135,10 @@ class SubmissionLoader:
 class PipelineIntegrator:
     """Integrates checklist evaluation with the existing metrics pipeline."""
 
-    def __init__(self, submission_loader: Optional[SubmissionLoader] = None):
+    def __init__(self, submission_loader: SubmissionLoader | None = None):
         self.submission_loader = submission_loader or SubmissionLoader()
 
-    def should_run_checklist_evaluation(self, submission_data: Dict[str, Any]) -> bool:
+    def should_run_checklist_evaluation(self, submission_data: dict[str, Any]) -> bool:
         """
         Determine if checklist evaluation should run based on submission data quality.
 
@@ -162,7 +158,7 @@ class PipelineIntegrator:
 
         return has_code_quality or has_testing or has_documentation
 
-    def prepare_submission_for_evaluation(self, submission_path: str) -> tuple[Dict[str, Any], List[str]]:
+    def prepare_submission_for_evaluation(self, submission_path: str) -> tuple[dict[str, Any], list[str]]:
         """
         Load, validate, and prepare submission data for checklist evaluation.
 
@@ -183,7 +179,7 @@ class PipelineIntegrator:
 
         return submission_data, warnings
 
-    def get_pipeline_metadata(self, submission_data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_pipeline_metadata(self, submission_data: dict[str, Any]) -> dict[str, Any]:
         """Extract metadata about the pipeline run from submission data."""
         execution = submission_data.get("execution", {})
 

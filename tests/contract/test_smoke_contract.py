@@ -6,11 +6,10 @@ implementation against the defined interface contract. Tests must fail initially
 (no implementation exists yet) and pass after implementation.
 """
 
-import pytest
 import subprocess
-import json
 from pathlib import Path
-from typing import Dict, Any, List
+
+import pytest
 
 
 class TestSmokeTestContract:
@@ -23,7 +22,7 @@ class TestSmokeTestContract:
         return Path(__file__).parent.parent.parent
 
     @pytest.fixture
-    def expected_output_files(self) -> List[str]:
+    def expected_output_files(self) -> list[str]:
         """List of expected output files from pipeline."""
         return [
             "submission.json",
@@ -122,7 +121,7 @@ class TestSmokeTestContract:
             for deprecated in deprecated_formats:
                 assert deprecated not in combination, f"Deprecated format {deprecated} found in valid combinations"
 
-    def test_expected_output_structure(self, project_root: Path, expected_output_files: List[str]):
+    def test_expected_output_structure(self, project_root: Path, expected_output_files: list[str]):
         """Contract: Pipeline must produce expected output file structure."""
         output_dir = project_root / "output"
 

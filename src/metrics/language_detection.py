@@ -1,9 +1,8 @@
 """Language detection for Git repositories using file extension analysis."""
 
 import os
-from pathlib import Path
-from typing import Dict, List, Tuple
 from collections import defaultdict
+from pathlib import Path
 
 
 class LanguageDetector:
@@ -50,7 +49,7 @@ class LanguageDetector:
             # Fail gracefully - return unknown if detection fails
             return "unknown"
 
-    def get_language_statistics(self, repository_path: str) -> Dict:
+    def get_language_statistics(self, repository_path: str) -> dict:
         """Get detailed language statistics for a repository."""
         language_counts = defaultdict(int)
         total_files = 0
@@ -110,7 +109,7 @@ class LanguageDetector:
             "total_files_analyzed": total_files
         }
 
-    def _calculate_config_bonuses(self, repository_path: str) -> Dict[str, float]:
+    def _calculate_config_bonuses(self, repository_path: str) -> dict[str, float]:
         """Calculate confidence bonuses based on config files."""
         bonuses = {}
         repo_path = Path(repository_path)

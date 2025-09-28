@@ -1,14 +1,14 @@
 """Integration tests for tool execution workflow."""
 
+
 import pytest
-from typing import Dict, List, Optional, Any
 
 
 class TestToolExecutionIntegration:
     """Test the complete tool execution workflow for different languages."""
 
     @pytest.fixture
-    def expected_tools_by_language(self) -> Dict[str, Dict[str, List[str]]]:
+    def expected_tools_by_language(self) -> dict[str, dict[str, list[str]]]:
         """Expected tools for each language based on research.md decisions."""
         return {
             "python": {
@@ -164,7 +164,7 @@ class TestToolExecutionIntegration:
         assert timeout_requirements["default_timeout_seconds"] == 300
         assert sum(timeout_requirements["per_tool_limits"].values()) <= 600
 
-    def test_graceful_degradation_contract(self, expected_tools_by_language: Dict[str, Dict[str, List[str]]]) -> None:
+    def test_graceful_degradation_contract(self, expected_tools_by_language: dict[str, dict[str, list[str]]]) -> None:
         """Test graceful degradation when tools are missing."""
         # Define expected graceful degradation behavior
         degradation_requirements = {

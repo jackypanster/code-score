@@ -5,11 +5,10 @@ This module handles the execution of the code analysis pipeline script
 and provides utilities for managing subprocess execution.
 """
 
-import subprocess
 import logging
+import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Tuple
 
 from .models import SmokeTestExecution
 
@@ -115,7 +114,7 @@ def _build_command_args(
     repository_url: str,
     enable_checklist: bool,
     generate_llm_report: bool
-) -> List[str]:
+) -> list[str]:
     """Build command line arguments for pipeline script."""
     args = [str(script_path), repository_url]
 
@@ -133,7 +132,7 @@ def _build_command_args(
     return args
 
 
-def validate_pipeline_environment(working_directory: Path) -> Tuple[bool, Optional[str]]:
+def validate_pipeline_environment(working_directory: Path) -> tuple[bool, str | None]:
     """
     Validate that the pipeline execution environment is ready.
 
@@ -217,7 +216,7 @@ def check_pipeline_script_availability() -> bool:
         return False
 
 
-def get_pipeline_version_info(working_directory: Path) -> Optional[str]:
+def get_pipeline_version_info(working_directory: Path) -> str | None:
     """
     Get version information from the pipeline script.
 

@@ -5,14 +5,18 @@ This test validates that the entire pipeline works correctly by executing
 the full workflow and verifying all expected outputs are generated.
 """
 
-import pytest
 import logging
 from pathlib import Path
-from typing import Dict, Any
 
-from .models import ValidationResult
-from .pipeline_executor import execute_pipeline, validate_pipeline_environment, PipelineExecutionError
+import pytest
+
 from .file_validator import validate_output_files
+from .models import ValidationResult
+from .pipeline_executor import (
+    PipelineExecutionError,
+    execute_pipeline,
+    validate_pipeline_environment,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

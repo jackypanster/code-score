@@ -3,11 +3,11 @@ T008: Integration test for full pipeline with checklist evaluation
 Tests that the complete metrics pipeline works with checklist evaluation enabled.
 """
 
-import pytest
 import tempfile
-import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
+import pytest
 
 from src.metrics.pipeline_output_manager import PipelineOutputManager
 

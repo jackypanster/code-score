@@ -5,21 +5,16 @@ This module tests all functionality of the PromptBuilder class including
 prompt building, context management, content truncation, and provider optimization.
 """
 
-import pytest
-import json
-from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
-from jinja2 import Template, TemplateSyntaxError
+import pytest
+from jinja2 import Template
+
+from src.llm.models.report_template import ReportTemplate
+from src.llm.models.template_context import TemplateContext
 
 # Import the modules to test
-from src.llm.prompt_builder import (
-    PromptBuilder,
-    PromptBuilderError,
-    ContextLimitExceededError
-)
-from src.llm.models.template_context import TemplateContext
-from src.llm.models.report_template import ReportTemplate
+from src.llm.prompt_builder import ContextLimitExceededError, PromptBuilder, PromptBuilderError
 from src.llm.template_loader import TemplateLoader
 
 
