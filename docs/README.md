@@ -7,34 +7,32 @@ This directory contains technical documentation for the Code Score system.
 ### Primary Documentation (in project root)
 - **[README.md](../README.md)** - Main project documentation with installation, usage, and examples
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines and project constitution
-- **[Quickstart Guide](../specs/002-git-log-docs/quickstart.md)** - Step-by-step tutorial with real examples
 
-### Technical Reference
+### User Guides
+- **[Quickstart Guide](./quickstart.md)** - Step-by-step tutorial with real examples
 - **[API Reference](./api-reference.md)** - Complete API documentation for programmatic usage
 
-### Specifications (specs directory)
-- **[Feature Specs](../specs/002-git-log-docs/)** - Detailed technical specifications
-  - `tasks.md` - Implementation task tracking
-  - `research.md` - Technical research and decisions
-  - `data-model.md` - Data model documentation
-  - `contracts/` - JSON schemas and configuration files
+### Technical Reference
+- **[Data Models](../specs/data-models.md)** - Complete data model documentation
+- **[Contract Schemas](../specs/contracts/)** - JSON schemas and configuration files
+- **[LLM Templates](../specs/prompts/)** - AI report generation templates
 
 ## Quick Navigation
 
 ### For Users
 - Want to get started? → [README.md](../README.md#usage)
-- Need working examples? → [Quickstart Guide](../specs/002-git-log-docs/quickstart.md)
+- Need working examples? → [Quickstart Guide](./quickstart.md)
 - Looking for CLI help? → `uv run python -m src.cli.main --help`
 
 ### For Developers
 - Want to contribute? → [CLAUDE.md](../CLAUDE.md)
 - Need API reference? → [API Reference](./api-reference.md)
-- Understanding architecture? → [Technical Specs](../specs/002-git-log-docs/)
+- Understanding data models? → [Data Models](../specs/data-models.md)
 
 ### For Integrators
 - Programmatic usage? → [API Reference](./api-reference.md#examples)
-- Custom checklist? → [Checklist Configuration](./api-reference.md#configuration)
-- Pipeline integration? → [Pipeline API](./api-reference.md#pipeline-integration)
+- Custom checklist? → [API Reference](./api-reference.md#checklist-evaluation)
+- LLM integration? → [API Reference](./api-reference.md#llm-report-generation)
 
 ## System Overview
 
