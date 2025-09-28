@@ -40,12 +40,12 @@ You are an expert software engineer reviewing a code repository. Based on the au
 ## Supporting Evidence
 
 {% for category in evidence_summary %}
-### {{category.category|title}} Evidence
-{% for item in category.items %}
-- **{{item.source}}**: {{item.description}} ({{(item.confidence * 100)|int}}% confidence)
+### {{ category['category']|title }} Evidence
+{% for item in category['items'] %}
+- **{{ item.source }}**: {{ item.description }} ({{ (item.confidence * 100)|int }}% confidence)
 {% endfor %}
-{% if category.truncated %}
-*Note: Evidence truncated - {{category.total_items}} total items available*
+{% if category['truncated'] %}
+*Note: Evidence truncated - {{ category['total_items'] }} total items available*
 {% endif %}
 
 {% endfor %}

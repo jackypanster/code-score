@@ -342,6 +342,13 @@ class ReportGenerator:
         repo_info = score_input_data['repository_info']
         eval_result = score_input_data['evaluation_result']
 
+        # Handle evidence summary that may be list of strings or structured dicts
+        evidence_summary = eval_result.get('evidence_summary', [])
+        if evidence_summary and isinstance(evidence_summary[0], dict):
+            evidence_items = sum(len(cat.get('items', [])) for cat in evidence_summary)
+        else:
+            evidence_items = len(evidence_summary)
+
         input_metadata = InputMetadata(
             repository_url=repo_info['url'],
             commit_sha=repo_info['commit_sha'],
@@ -349,7 +356,7 @@ class ReportGenerator:
             total_score=eval_result['total_score'],
             max_possible_score=eval_result['max_possible_score'],
             checklist_items_count=len(eval_result['checklist_items']),
-            evidence_items_count=sum(len(cat.get('items', [])) for cat in eval_result.get('evidence_summary', []))
+            evidence_items_count=evidence_items
         )
 
         # Create template metadata
