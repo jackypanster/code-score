@@ -18,7 +18,7 @@ class ChecklistEvaluator:
         """Initialize evaluator with checklist configuration."""
         if checklist_config_path is None:
             # Default to the checklist mapping in the contracts directory
-            base_path = Path(__file__).parent.parent.parent / "specs" / "002-git-log-docs" / "contracts"
+            base_path = Path(__file__).parent.parent.parent / "specs" / "contracts"
             checklist_config_path = str(base_path / "checklist_mapping.yaml")
 
         self.checklist_config_path = checklist_config_path

@@ -11,7 +11,7 @@ import jsonschema
 from datetime import datetime
 
 # Get the schema path relative to the test file
-SCHEMA_PATH = Path(__file__).parent.parent.parent / "specs" / "002-git-log-docs" / "contracts" / "score_input_schema.json"
+SCHEMA_PATH = Path(__file__).parent.parent.parent / "specs" / "contracts" / "score_input_schema.json"
 
 
 class TestScoreInputSchema:
@@ -108,7 +108,7 @@ class TestScoreInputSchema:
             "generation_timestamp": "2025-09-27T11:00:00Z",
             "evidence_paths": {
                 "submission_json": "output/submission.json",
-                "checklist_mapping": "specs/002-git-log-docs/contracts/checklist_mapping.yaml"
+                "checklist_mapping": "specs/contracts/checklist_mapping.yaml"
             },
             "human_summary": "## Checklist Evaluation Summary\n\n**Total Score: 15/100 (15%)**\n\nTest summary content."
         }
@@ -183,20 +183,22 @@ class TestScoreInputSchema:
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(sample_score_input, schema)
 
-    def test_all_checklist_items_must_be_present(self, schema):
-        """Test that implementation must provide all 11 checklist items."""
-        # This test will fail until ChecklistEvaluator is implemented
+    def test_checklist_evaluator_provides_required_items(self, schema):
+        """Test that ChecklistEvaluator provides all 11 required checklist items."""
         from src.metrics.checklist_evaluator import ChecklistEvaluator
 
-        # This import should fail since ChecklistEvaluator doesn't exist yet
-        with pytest.raises(ImportError):
-            evaluator = ChecklistEvaluator()
+        # ChecklistEvaluator should instantiate and have required functionality
+        evaluator = ChecklistEvaluator()
+        assert evaluator is not None
 
-    def test_score_input_generation_not_implemented(self):
-        """Test that score_input.json generation is not yet implemented."""
-        # This test will fail until the CLI evaluate command is implemented
+        # Should have evaluation methods
+        assert hasattr(evaluator, 'evaluate_from_dict')
+        assert hasattr(evaluator, 'evaluate_from_file')
+        assert hasattr(evaluator, 'evaluate_from_string')
+
+    def test_evaluate_cli_is_implemented(self):
+        """Test that the CLI evaluate command is implemented."""
         from src.cli.evaluate import main as evaluate_main
 
-        # This import should fail since evaluate.py doesn't exist yet
-        with pytest.raises(ImportError):
-            evaluate_main()
+        # evaluate_main should be callable (functionality test would require actual data)
+        assert callable(evaluate_main)

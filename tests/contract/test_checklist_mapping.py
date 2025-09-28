@@ -9,7 +9,7 @@ import pytest
 from pathlib import Path
 
 # Get the mapping path relative to the test file
-MAPPING_PATH = Path(__file__).parent.parent.parent / "specs" / "002-git-log-docs" / "contracts" / "checklist_mapping.yaml"
+MAPPING_PATH = Path(__file__).parent.parent.parent / "specs" / "contracts" / "checklist_mapping.yaml"
 
 
 class TestChecklistMapping:
@@ -113,16 +113,23 @@ class TestChecklistMapping:
             actual = dimension_totals.get(dimension, 0)
             assert actual == expected, f"Dimension {dimension}: expected {expected} points, got {actual}"
 
-    def test_checklist_loader_not_implemented(self):
-        """Test that ChecklistLoader is not yet implemented."""
-        # This test will fail until ChecklistLoader is implemented
-        with pytest.raises(ImportError):
-            from src.metrics.checklist_loader import ChecklistLoader
-            ChecklistLoader()
+    def test_checklist_loader_functionality(self):
+        """Test that ChecklistLoader works with the checklist mapping."""
+        from src.metrics.checklist_loader import ChecklistLoader
 
-    def test_evaluation_criteria_parsing_not_implemented(self):
-        """Test that evaluation criteria parsing is not yet implemented."""
-        # This test will fail until criteria parsing logic is implemented
-        with pytest.raises(ImportError):
-            from src.metrics.scoring_mapper import ScoringMapper
-            ScoringMapper()
+        # ChecklistLoader should successfully load the configuration
+        loader = ChecklistLoader()
+        assert loader.config_data is not None
+        assert 'checklist_items' in loader.config_data
+        assert 'language_adaptations' in loader.config_data
+
+        # Should have the expected number of checklist items
+        assert len(loader.checklist_items_config) == 11
+
+    def test_scoring_mapper_functionality(self):
+        """Test that ScoringMapper can be instantiated."""
+        from src.metrics.scoring_mapper import ScoringMapper
+
+        # ScoringMapper should instantiate without errors
+        mapper = ScoringMapper()
+        assert mapper is not None

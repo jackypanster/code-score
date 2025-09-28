@@ -41,7 +41,12 @@ class PipelineOutputManager:
 
         # Initialize components
         if enable_checklist_evaluation:
-            config_path = checklist_config_path or "specs/002-git-log-docs/contracts/checklist_mapping.yaml"
+            if checklist_config_path is None:
+                # Default to the checklist mapping in the contracts directory
+                base_path = Path(__file__).parent.parent.parent / "specs" / "contracts"
+                config_path = str(base_path / "checklist_mapping.yaml")
+            else:
+                config_path = checklist_config_path
             self.checklist_evaluator = ChecklistEvaluator(config_path)
             self.scoring_mapper = ScoringMapper(output_base_path=str(self.output_dir))
             self.pipeline_integrator = PipelineIntegrator()
