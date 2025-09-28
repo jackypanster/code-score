@@ -1,15 +1,15 @@
 """Enhanced output manager for pipeline integration with checklist evaluation."""
 
 import json
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from .checklist_evaluator import ChecklistEvaluator
 from .evidence_tracker import EvidenceTracker
+from .models.evaluation_result import EvaluationResult, RepositoryInfo
 from .scoring_mapper import ScoringMapper
 from .submission_pipeline import PipelineIntegrator
-from .models.evaluation_result import EvaluationResult, RepositoryInfo
 
 
 class PipelineOutputManager:
@@ -17,11 +17,11 @@ class PipelineOutputManager:
 
     def __init__(self,
                  output_dir: str,
-                 checklist_config_path: Optional[str] = None,
+                 checklist_config_path: str | None = None,
                  enable_checklist_evaluation: bool = True,
                  enable_llm_report: bool = False,
                  llm_provider: str = "gemini",
-                 llm_template_path: Optional[str] = None):
+                 llm_template_path: str | None = None):
         """
         Initialize the pipeline output manager.
 
@@ -69,7 +69,7 @@ class PipelineOutputManager:
 
     def process_submission_with_checklist(self,
                                         submission_path: str,
-                                        output_format: str = "both") -> Dict[str, List[str]]:
+                                        output_format: str = "both") -> dict[str, list[str]]:
         """
         Process a submission.json file and generate all outputs including checklist evaluation.
 
@@ -121,9 +121,9 @@ class PipelineOutputManager:
 
     def _generate_json_outputs(self,
                              evaluation_result: EvaluationResult,
-                             submission_data: Dict[str, Any],
-                             warnings: List[str],
-                             submission_path: str) -> List[str]:
+                             submission_data: dict[str, Any],
+                             warnings: list[str],
+                             submission_path: str) -> list[str]:
         """Generate JSON format outputs."""
         output_files = []
 
@@ -177,7 +177,7 @@ class PipelineOutputManager:
 
     def _generate_markdown_outputs(self,
                                  evaluation_result: EvaluationResult,
-                                 warnings: List[str]) -> List[str]:
+                                 warnings: list[str]) -> list[str]:
         """Generate Markdown format outputs."""
         output_files = []
 
@@ -192,7 +192,7 @@ class PipelineOutputManager:
 
         return output_files
 
-    def _generate_evidence_files(self, evaluation_result: EvaluationResult) -> List[str]:
+    def _generate_evidence_files(self, evaluation_result: EvaluationResult) -> list[str]:
         """Generate evidence files from evaluation result."""
         evidence_dir = self.output_dir / "evidence"
         tracker = EvidenceTracker(str(evidence_dir))
@@ -208,7 +208,7 @@ class PipelineOutputManager:
 
     def _create_markdown_report(self,
                               evaluation_result: EvaluationResult,
-                              warnings: List[str]) -> str:
+                              warnings: list[str]) -> str:
         """Create a comprehensive Markdown evaluation report."""
         lines = []
 
@@ -302,8 +302,8 @@ class PipelineOutputManager:
             return "F"
 
     def integrate_with_existing_pipeline(self,
-                                       existing_output_files: List[str],
-                                       submission_path: str) -> List[str]:
+                                       existing_output_files: list[str],
+                                       submission_path: str) -> list[str]:
         """
         Integrate checklist evaluation with existing pipeline outputs.
 
@@ -338,7 +338,7 @@ class PipelineOutputManager:
             print(f"⚠️  Checklist evaluation failed but existing pipeline succeeded: {e}")
             return all_files
 
-    def _generate_llm_report(self, existing_files: List[str]) -> List[str]:
+    def _generate_llm_report(self, existing_files: list[str]) -> list[str]:
         """
         Generate LLM report from score_input.json if available.
 
@@ -366,7 +366,7 @@ class PipelineOutputManager:
             # Validate prerequisites
             validation_result = self.llm_generator.validate_prerequisites(self.llm_provider)
             if not validation_result['valid']:
-                print(f"⚠️  LLM prerequisites not met, skipping report generation:")
+                print("⚠️  LLM prerequisites not met, skipping report generation:")
                 for issue in validation_result['issues']:
                     print(f"    • {issue}")
                 return []

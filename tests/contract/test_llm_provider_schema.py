@@ -6,9 +6,10 @@ defined JSON schema and that validation catches invalid configurations.
 """
 
 import json
-import pytest
-from jsonschema import validate, ValidationError
 from pathlib import Path
+
+import pytest
+from jsonschema import ValidationError, validate
 
 
 class TestLLMProviderSchema:

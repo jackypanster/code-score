@@ -3,10 +3,10 @@ T006: Test for PipelineOutputManager path resolution
 Tests that PipelineOutputManager uses correct default path for checklist evaluation.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import patch, mock_open, MagicMock
-import yaml
+from unittest.mock import patch
+
+import pytest
 
 from src.metrics.pipeline_output_manager import PipelineOutputManager
 

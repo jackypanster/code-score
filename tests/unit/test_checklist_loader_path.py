@@ -3,9 +3,10 @@ T004: Test for ChecklistLoader path resolution
 Tests that ChecklistLoader resolves to the correct configuration path after fix.
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
+
+import pytest
 import yaml
 
 from src.metrics.checklist_loader import ChecklistLoader

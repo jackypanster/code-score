@@ -6,7 +6,7 @@ and metadata used in LLM report generation.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -38,12 +38,12 @@ class ReportTemplate(BaseModel):
         max_length=500
     )
 
-    required_fields: List[str] = Field(
+    required_fields: list[str] = Field(
         default_factory=list,
         description="List of required template placeholders (Jinja2 variables)"
     )
 
-    content_limits: Dict[str, int] = Field(
+    content_limits: dict[str, int] = Field(
         default_factory=lambda: {
             "max_evidence_items": 3,
             "max_checklist_items": 20,
@@ -57,7 +57,7 @@ class ReportTemplate(BaseModel):
         description="Template category (general, hackathon, code_review, etc.)"
     )
 
-    target_providers: List[str] = Field(
+    target_providers: list[str] = Field(
         default_factory=lambda: ["gemini"],
         description="LLM providers this template is optimized for"
     )
@@ -168,7 +168,7 @@ class ReportTemplate(BaseModel):
         except Exception as e:
             raise ValueError(f"Template validation failed for {self.file_path}: {e}")
 
-    def check_required_fields(self, available_fields: List[str]) -> List[str]:
+    def check_required_fields(self, available_fields: list[str]) -> list[str]:
         """
         Check if all required fields are available in template context.
 

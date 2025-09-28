@@ -5,31 +5,30 @@ This module tests all Pydantic models in the src/llm/models/ package including
 validation, field constraints, computed fields, and model methods.
 """
 
-import pytest
-import tempfile
-from pathlib import Path
 from datetime import datetime
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
+import pytest
 from pydantic import ValidationError
+
+from src.llm.models.generated_report import (
+    GeneratedReport,
+    InputMetadata,
+    ProviderMetadata,
+    TemplateMetadata,
+    TruncationInfo,
+)
 
 # Import the models to test
 from src.llm.models.llm_provider_config import LLMProviderConfig
 from src.llm.models.report_template import ReportTemplate
-from src.llm.models.generated_report import (
-    GeneratedReport,
-    TruncationInfo,
-    ProviderMetadata,
-    TemplateMetadata,
-    InputMetadata
-)
 from src.llm.models.template_context import (
-    TemplateContext,
-    RepositoryInfo,
-    ScoreContext,
     CategoryScore,
     ChecklistItemContext,
-    EvidenceSummary
+    EvidenceSummary,
+    RepositoryInfo,
+    ScoreContext,
+    TemplateContext,
 )
 
 

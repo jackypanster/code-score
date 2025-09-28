@@ -1,17 +1,17 @@
 """CLI evaluate command for running checklist evaluation on submission.json files."""
 
-import click
 import json
 import sys
-from pathlib import Path
-from typing import Optional
 from datetime import datetime
+from pathlib import Path
+
+import click
 
 from ..metrics.checklist_evaluator import ChecklistEvaluator
-from ..metrics.scoring_mapper import ScoringMapper
-from ..metrics.evidence_tracker import EvidenceTracker
 from ..metrics.checklist_loader import ChecklistLoader
+from ..metrics.evidence_tracker import EvidenceTracker
 from ..metrics.models.evaluation_result import RepositoryInfo
+from ..metrics.scoring_mapper import ScoringMapper
 
 
 @click.command()
@@ -58,7 +58,7 @@ def evaluate(
     submission_file: Path,
     output_dir: Path,
     format: str,
-    checklist_config: Optional[Path],
+    checklist_config: Path | None,
     evidence_dir: Path,
     validate_only: bool,
     quiet: bool,
@@ -91,7 +91,7 @@ def evaluate(
     try:
         # Initialize components
         if verbose and not quiet:
-            click.echo(f"🔍 Initializing checklist evaluation...")
+            click.echo("🔍 Initializing checklist evaluation...")
 
         # Load checklist configuration
         if checklist_config:
@@ -100,7 +100,7 @@ def evaluate(
             loader = ChecklistLoader()
 
         if verbose and not quiet:
-            click.echo(f"📋 Loaded checklist configuration")
+            click.echo("📋 Loaded checklist configuration")
 
         # Validate checklist configuration
         validation = loader.validate_checklist_config()
@@ -119,7 +119,7 @@ def evaluate(
             click.echo(f"📄 Loading submission file: {submission_file}")
 
         try:
-            with open(submission_file, 'r', encoding='utf-8') as f:
+            with open(submission_file, encoding='utf-8') as f:
                 submission_data = json.load(f)
         except json.JSONDecodeError as e:
             click.echo(f"❌ Invalid JSON in submission file: {e}", err=True)
@@ -232,7 +232,7 @@ def evaluate(
                 for warning in evaluation_result.evaluation_metadata.warnings:
                     click.echo(f"   • {warning}")
 
-            click.echo(f"\n📁 Generated Files:")
+            click.echo("\n📁 Generated Files:")
             for file_path in generated_files:
                 click.echo(f"   • {file_path}")
 
@@ -242,7 +242,7 @@ def evaluate(
         # Exit with non-zero code if score is very low (optional quality gate)
         if evaluation_result.score_percentage < 30:
             if not quiet:
-                click.echo(f"\n⚠️  Quality gate: Score below 30% threshold", err=True)
+                click.echo("\n⚠️  Quality gate: Score below 30% threshold", err=True)
             sys.exit(2)
 
     except FileNotFoundError as e:

@@ -4,9 +4,9 @@ import os
 import shutil
 import subprocess
 import tempfile
-from pathlib import Path
-from typing import Optional, Dict, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from .models.repository import Repository
 
@@ -33,7 +33,7 @@ class GitOperations:
         """Initialize git operations with timeout."""
         self.timeout_seconds = timeout_seconds
 
-    def clone_repository(self, url: str, commit_sha: Optional[str] = None) -> Repository:
+    def clone_repository(self, url: str, commit_sha: str | None = None) -> Repository:
         """Clone repository to temporary directory and optionally checkout specific commit."""
         try:
             # Create temporary directory
@@ -110,7 +110,7 @@ class GitOperations:
         except subprocess.TimeoutExpired:
             raise GitOperationError(f"Checkout timed out for commit {commit_sha}")
 
-    def get_repository_info(self, local_path: str) -> Dict[str, Any]:
+    def get_repository_info(self, local_path: str) -> dict[str, Any]:
         """Get repository information from local clone."""
         try:
             # Get current commit SHA

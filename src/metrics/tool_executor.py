@@ -1,21 +1,19 @@
 """Tool execution coordinator for managing language-specific analysis."""
 
 import time
-import os
-from typing import Dict, Any, List, Optional, Type
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from .language_detection import LanguageDetector
-from .tool_runners.python_tools import PythonToolRunner
-from .tool_runners.javascript_tools import JavaScriptToolRunner
-from .tool_runners.java_tools import JavaToolRunner
-from .tool_runners.golang_tools import GolangToolRunner
 from .models.metrics_collection import (
-    MetricsCollection, CodeQualityMetrics, TestingMetrics,
-    DocumentationMetrics, ExecutionMetadata
+    MetricsCollection,
 )
+from .tool_runners.golang_tools import GolangToolRunner
+from .tool_runners.java_tools import JavaToolRunner
+from .tool_runners.javascript_tools import JavaScriptToolRunner
+from .tool_runners.python_tools import PythonToolRunner
 
 
 class ToolExecutor:
@@ -137,25 +135,25 @@ class ToolExecutor:
 
         return metrics
 
-    def _run_linting(self, runner: Any, repo_path: str) -> Dict[str, Any]:
+    def _run_linting(self, runner: Any, repo_path: str) -> dict[str, Any]:
         """Run linting analysis."""
         if hasattr(runner, 'run_linting'):
             return runner.run_linting(repo_path)
         return {"tool_used": "none", "passed": False, "issues_count": 0, "issues": []}
 
-    def _run_security_audit(self, runner: Any, repo_path: str) -> Dict[str, Any]:
+    def _run_security_audit(self, runner: Any, repo_path: str) -> dict[str, Any]:
         """Run security audit."""
         if hasattr(runner, 'run_security_audit'):
             return runner.run_security_audit(repo_path)
         return {"vulnerabilities_found": 0, "high_severity_count": 0, "tool_used": "none"}
 
-    def _run_testing(self, runner: Any, repo_path: str) -> Dict[str, Any]:
+    def _run_testing(self, runner: Any, repo_path: str) -> dict[str, Any]:
         """Run testing analysis."""
         if hasattr(runner, 'run_testing'):
             return runner.run_testing(repo_path)
         return {"tests_run": 0, "tests_passed": 0, "tests_failed": 0, "framework": "none"}
 
-    def _analyze_documentation(self, runner: Any, repo_path: str) -> Dict[str, Any]:
+    def _analyze_documentation(self, runner: Any, repo_path: str) -> dict[str, Any]:
         """Analyze documentation quality."""
         from pathlib import Path
 
@@ -217,7 +215,7 @@ class ToolExecutor:
         score = sum(checks) * 0.2
         return min(1.0, score)
 
-    def _populate_metrics(self, metrics: MetricsCollection, results: Dict[str, Any], language: str) -> None:
+    def _populate_metrics(self, metrics: MetricsCollection, results: dict[str, Any], language: str) -> None:
         """Populate metrics collection from tool results."""
         # Code quality metrics
         if "linting" in results:
@@ -254,7 +252,7 @@ class ToolExecutor:
                 metrics.documentation_metrics.setup_instructions = doc_result.get("setup_instructions", False)
                 metrics.documentation_metrics.usage_examples = doc_result.get("usage_examples", False)
 
-    def _get_tools_used(self, results: Dict[str, Any]) -> List[str]:
+    def _get_tools_used(self, results: dict[str, Any]) -> list[str]:
         """Extract list of tools that were actually used."""
         tools = []
 
@@ -325,7 +323,7 @@ class ToolExecutor:
             metrics.execution_metadata.errors.append(f"Failed to analyze repository size: {str(e)}")
             return True  # Assume analyzable if we can't determine size
 
-    def _analyze_documentation_optimized(self, runner: Any, repo_path: str) -> Dict[str, Any]:
+    def _analyze_documentation_optimized(self, runner: Any, repo_path: str) -> dict[str, Any]:
         """Optimized documentation analysis with file count limits."""
         repo = Path(repo_path)
         result = {
@@ -356,7 +354,7 @@ class ToolExecutor:
                     result["readme_present"] = True
                     try:
                         # Limit README size to prevent memory issues
-                        with open(readme_path, 'r', encoding='utf-8') as f:
+                        with open(readme_path, encoding='utf-8') as f:
                             readme_content = f.read(50000)  # Max 50KB
                         break
                     except Exception:

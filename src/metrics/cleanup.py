@@ -1,11 +1,10 @@
 """Temporary directory management and cleanup for metrics collection."""
 
+import logging
+import os
 import shutil
 import tempfile
-import os
 from pathlib import Path
-from typing import List, Optional
-import logging
 
 
 class RepositoryCleanup:
@@ -13,7 +12,7 @@ class RepositoryCleanup:
 
     def __init__(self):
         """Initialize cleanup manager."""
-        self.cleanup_paths: List[Path] = []
+        self.cleanup_paths: list[Path] = []
         self.logger = logging.getLogger('code_score.cleanup')
 
     def register_for_cleanup(self, path: Path) -> None:
@@ -75,7 +74,7 @@ class RepositoryCleanup:
         except Exception as e:
             raise Exception(f"Unexpected cleanup error: {e}")
 
-    def cleanup_cloned_repository(self, repository_path: Optional[str]) -> None:
+    def cleanup_cloned_repository(self, repository_path: str | None) -> None:
         """Clean up a cloned repository directory."""
         if not repository_path:
             return

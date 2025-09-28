@@ -1,6 +1,7 @@
 """ChecklistItem model for individual checklist evaluation criteria."""
 
-from typing import List, Literal
+from typing import Literal
+
 from pydantic import BaseModel, Field, validator
 
 from .evidence_reference import EvidenceReference
@@ -16,7 +17,7 @@ class ChecklistItem(BaseModel):
     description: str = Field(..., description="Evaluation criteria description")
     evaluation_status: Literal["met", "partial", "unmet"] = Field(default="unmet")
     score: float = Field(default=0.0, ge=0.0, description="Calculated score for this item")
-    evidence_references: List[EvidenceReference] = Field(default_factory=list)
+    evidence_references: list[EvidenceReference] = Field(default_factory=list)
 
     @validator("score")
     def score_must_not_exceed_max_points(cls, v, values):

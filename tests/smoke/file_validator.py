@@ -8,7 +8,7 @@ including existence checks, content validation, and metadata collection.
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 from .models import OutputArtifact, ValidationResult
 
@@ -103,7 +103,7 @@ def validate_single_file(file_path: Path, expected_name: str) -> OutputArtifact:
     return artifact
 
 
-def validate_json_schema(file_path: Path, schema_requirements: Optional[Dict[str, Any]] = None) -> bool:
+def validate_json_schema(file_path: Path, schema_requirements: dict[str, Any] | None = None) -> bool:
     """
     Validate JSON file against basic schema requirements.
 
@@ -115,7 +115,7 @@ def validate_json_schema(file_path: Path, schema_requirements: Optional[Dict[str
         True if valid, False otherwise
     """
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             data = json.load(f)
 
         # Basic validation: ensure it's a dict at the root level
@@ -129,14 +129,14 @@ def validate_json_schema(file_path: Path, schema_requirements: Optional[Dict[str
 
         return True
 
-    except (json.JSONDecodeError, IOError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         logger.warning(f"JSON validation failed for {file_path}: {e}")
         return False
 
 
 def _validate_json_requirements(
-    data: Dict[str, Any],
-    requirements: Dict[str, Any],
+    data: dict[str, Any],
+    requirements: dict[str, Any],
     file_path: Path
 ) -> bool:
     """Validate JSON data against schema requirements."""
@@ -202,7 +202,7 @@ def validate_markdown_file(file_path: Path) -> bool:
         True if valid, False otherwise
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             content = f.read()
 
         # Basic validation checks
@@ -220,12 +220,12 @@ def validate_markdown_file(file_path: Path) -> bool:
 
         return True
 
-    except (IOError, UnicodeDecodeError) as e:
+    except (OSError, UnicodeDecodeError) as e:
         logger.warning(f"Markdown validation failed for {file_path}: {e}")
         return False
 
 
-def get_output_file_summary(output_directory: Path) -> Dict[str, Any]:
+def get_output_file_summary(output_directory: Path) -> dict[str, Any]:
     """
     Get summary information about output files.
 
@@ -283,7 +283,7 @@ def get_output_file_summary(output_directory: Path) -> Dict[str, Any]:
     return summary
 
 
-def cleanup_invalid_output_files(output_directory: Path) -> List[str]:
+def cleanup_invalid_output_files(output_directory: Path) -> list[str]:
     """
     Clean up invalid output files.
 

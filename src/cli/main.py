@@ -1,16 +1,16 @@
 """Main CLI interface for Code Score metrics collection."""
 
 import sys
-import click
 from pathlib import Path
-from typing import Optional
 
-from ..metrics.git_operations import GitOperations, GitOperationError
-from ..metrics.language_detection import LanguageDetector
-from ..metrics.tool_executor import ToolExecutor
-from ..metrics.output_generators import OutputManager
-from ..metrics.error_handling import get_error_handler
+import click
+
 from ..metrics.cleanup import get_cleanup_manager
+from ..metrics.error_handling import get_error_handler
+from ..metrics.git_operations import GitOperationError, GitOperations
+from ..metrics.language_detection import LanguageDetector
+from ..metrics.output_generators import OutputManager
+from ..metrics.tool_executor import ToolExecutor
 
 
 @click.command()
@@ -26,9 +26,9 @@ from ..metrics.cleanup import get_cleanup_manager
 @click.option('--checklist-config', help='Path to checklist configuration YAML file')
 @click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
 @click.option('--llm-template', help='Path to custom LLM prompt template')
-def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
-         output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: Optional[str],
-         generate_llm_report: bool, llm_template: Optional[str]) -> None:
+def main(repository_url: str, commit_sha: str | None, output_dir: str,
+         output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: str | None,
+         generate_llm_report: bool, llm_template: str | None) -> None:
     """
     Analyze code quality metrics for a Git repository.
 
@@ -138,7 +138,11 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                     if verbose:
                         click.echo("Generating LLM report using Gemini...")
 
-                    from ..llm.report_generator import ReportGenerator, ReportGeneratorError, LLMProviderError
+                    from ..llm.report_generator import (
+                        LLMProviderError,
+                        ReportGenerator,
+                        ReportGeneratorError,
+                    )
 
                     # Find score_input.json file
                     score_input_file = None
@@ -194,7 +198,7 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                 except LLMProviderError as e:
                     if verbose:
                         click.echo(f"⚠️  Gemini error: {e}")
-                        click.echo(f"⚠️  Ensure Gemini CLI is installed and GEMINI_API_KEY is set")
+                        click.echo("⚠️  Ensure Gemini CLI is installed and GEMINI_API_KEY is set")
                 except Exception as e:
                     if verbose:
                         click.echo(f"⚠️  Unexpected error in LLM report generation: {e}")
@@ -206,7 +210,7 @@ def main(repository_url: str, commit_sha: Optional[str], output_dir: str,
                 click.echo(f"  - {file_path}")
 
             # Show summary
-            click.echo(f"\nSummary:")
+            click.echo("\nSummary:")
             click.echo(f"  Repository: {repository.url}")
             click.echo(f"  Language: {detected_language}")
             click.echo(f"  Duration: {metrics.execution_metadata.duration_seconds:.1f}s")
@@ -267,9 +271,9 @@ def cli() -> None:
 @click.option('--checklist-config', help='Path to checklist configuration YAML file')
 @click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
 @click.option('--llm-template', help='Path to custom LLM prompt template')
-def analyze(repository_url: str, commit_sha: Optional[str], output_dir: str,
-           output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: Optional[str],
-           generate_llm_report: bool, llm_template: Optional[str]) -> None:
+def analyze(repository_url: str, commit_sha: str | None, output_dir: str,
+           output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: str | None,
+           generate_llm_report: bool, llm_template: str | None) -> None:
     """Analyze a Git repository for code quality metrics."""
     # This is the same as main() but accessible via 'code-score analyze'
     ctx = click.Context(main)
@@ -288,10 +292,12 @@ def version() -> None:
 
 # Import and add the evaluate command
 from .evaluate import evaluate
+
 cli.add_command(evaluate)
 
 # Import and add the llm-report command
 from .llm_report import main as llm_report_main
+
 cli.add_command(llm_report_main)
 
 

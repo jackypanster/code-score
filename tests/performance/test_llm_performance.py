@@ -6,19 +6,21 @@ pipeline to ensure it meets the requirement of <5 seconds generation time
 (excluding external LLM API calls).
 """
 
-import pytest
-import time
 import json
 import tempfile
+import time
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
+
+from src.llm.models.llm_provider_config import LLMProviderConfig
+from src.llm.models.report_template import ReportTemplate
+from src.llm.prompt_builder import PromptBuilder
 
 # Import the modules to test
 from src.llm.report_generator import ReportGenerator
 from src.llm.template_loader import TemplateLoader
-from src.llm.prompt_builder import PromptBuilder
-from src.llm.models.report_template import ReportTemplate
-from src.llm.models.llm_provider_config import LLMProviderConfig
 
 
 class TestLLMPerformance:
@@ -331,8 +333,8 @@ class TestLLMPerformance:
 
     def test_concurrent_processing_performance(self, temp_performance_files):
         """Test performance under concurrent processing scenarios."""
-        import threading
         import queue
+        import threading
 
         generator = ReportGenerator()
         results_queue = queue.Queue()
@@ -544,7 +546,7 @@ class TestLLMPerformance:
             output_path = Path(temp_performance_files["output_dir"]) / "benchmark_report.md"
             assert output_path.exists(), "Output report file was not created"
 
-        print(f"\n✅ Performance Benchmark Results:")
+        print("\n✅ Performance Benchmark Results:")
         print(f"   Total pipeline time: {total_time:.3f}s (target: <5.0s)")
         print(f"   Status: {'PASS' if total_time < 5.0 else 'FAIL'}")
         print(f"   Report generated successfully: {result['success']}")
@@ -585,7 +587,7 @@ class TestLLMPerformance:
         assert max_time < 5.0, f"Maximum time {max_time:.3f}s exceeds 5.0s threshold"
         assert variance < 1.0, f"High variance {variance:.3f} indicates inconsistent performance"
 
-        print(f"\n📊 Performance Statistics:")
+        print("\n📊 Performance Statistics:")
         print(f"   Average: {avg_time:.3f}s")
         print(f"   Min: {min_time:.3f}s")
         print(f"   Max: {max_time:.3f}s")

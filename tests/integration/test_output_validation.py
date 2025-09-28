@@ -5,15 +5,16 @@ This test validates the file validation logic and output file processing.
 These tests will initially fail until the implementation is complete.
 """
 
-import pytest
 import json
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
+
+import pytest
 
 # Import the smoke test implementation (will fail initially)
 try:
-    from tests.smoke.models import OutputArtifact, ValidationResult
     from tests.smoke.file_validator import validate_output_files, validate_single_file
+    from tests.smoke.models import OutputArtifact, ValidationResult
 except ImportError:
     # Expected to fail initially - implementation doesn't exist yet
     OutputArtifact = None
@@ -36,7 +37,7 @@ class TestOutputValidation:
         return project_root / "output"
 
     @pytest.fixture
-    def expected_files(self) -> List[str]:
+    def expected_files(self) -> list[str]:
         """List of expected output files."""
         return [
             "submission.json",
@@ -45,7 +46,7 @@ class TestOutputValidation:
         ]
 
     @pytest.fixture
-    def sample_submission_json(self) -> Dict[str, Any]:
+    def sample_submission_json(self) -> dict[str, Any]:
         """Sample submission.json content for testing."""
         return {
             "schema_version": "1.0.0",
@@ -72,7 +73,7 @@ class TestOutputValidation:
         }
 
     @pytest.fixture
-    def sample_score_input_json(self) -> Dict[str, Any]:
+    def sample_score_input_json(self) -> dict[str, Any]:
         """Sample score_input.json content for testing."""
         return {
             "evaluation_result": {
@@ -132,7 +133,7 @@ class TestOutputValidation:
         # assert artifact.file_exists is True
         # assert artifact.file_size == 1024
 
-    def test_validate_existing_json_files(self, output_dir: Path, sample_submission_json: Dict[str, Any]):
+    def test_validate_existing_json_files(self, output_dir: Path, sample_submission_json: dict[str, Any]):
         """Test validation of existing valid JSON files."""
         if validate_single_file is None:
             pytest.skip("Implementation not available yet")
@@ -223,9 +224,9 @@ class TestOutputValidation:
         # Cleanup
         empty_file.unlink()
 
-    def test_validate_all_output_files(self, output_dir: Path, expected_files: List[str],
-                                     sample_submission_json: Dict[str, Any],
-                                     sample_score_input_json: Dict[str, Any],
+    def test_validate_all_output_files(self, output_dir: Path, expected_files: list[str],
+                                     sample_submission_json: dict[str, Any],
+                                     sample_score_input_json: dict[str, Any],
                                      sample_evaluation_report_md: str):
         """Test validation of all expected output files together."""
         if validate_output_files is None:

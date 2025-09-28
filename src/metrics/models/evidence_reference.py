@@ -1,6 +1,7 @@
 """EvidenceReference model for specific citations linking evaluation to source data."""
 
 from typing import Literal
+
 from pydantic import BaseModel, Field
 
 

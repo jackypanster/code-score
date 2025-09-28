@@ -1,20 +1,21 @@
 """ChecklistEvaluator class for processing submission.json against checklist."""
 
 import json
-import yaml
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 from .models.checklist_item import ChecklistItem
-from .models.evaluation_result import EvaluationResult, EvaluationMetadata, RepositoryInfo
+from .models.evaluation_result import EvaluationMetadata, EvaluationResult, RepositoryInfo
 from .models.evidence_reference import EvidenceReference
 
 
 class ChecklistEvaluator:
     """Core evaluation logic that processes submission.json against checklist."""
 
-    def __init__(self, checklist_config_path: Optional[str] = None):
+    def __init__(self, checklist_config_path: str | None = None):
         """Initialize evaluator with checklist configuration."""
         if checklist_config_path is None:
             # Default to the checklist mapping in the contracts directory
@@ -25,17 +26,17 @@ class ChecklistEvaluator:
         self.checklist_config = self._load_checklist_config()
         self.evaluator_version = "1.0.0"
 
-    def _load_checklist_config(self) -> Dict[str, Any]:
+    def _load_checklist_config(self) -> dict[str, Any]:
         """Load checklist configuration from YAML file."""
         try:
-            with open(self.checklist_config_path, 'r') as f:
+            with open(self.checklist_config_path) as f:
                 return yaml.safe_load(f)
         except FileNotFoundError:
             raise FileNotFoundError(f"Checklist configuration not found at {self.checklist_config_path}")
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML in checklist configuration: {e}")
 
-    def _extract_value_from_path(self, data: Dict[str, Any], json_path: str) -> Any:
+    def _extract_value_from_path(self, data: dict[str, Any], json_path: str) -> Any:
         """Extract value from JSON data using JSONPath-like syntax."""
         # Simple JSONPath implementation for our needs
         # Supports paths like "$.metrics.code_quality.lint_results.passed"
@@ -50,7 +51,7 @@ class ChecklistEvaluator:
 
         return current
 
-    def _evaluate_criteria(self, criteria: Dict[str, List[str]], submission_data: Dict[str, Any], metrics_mapping: Dict[str, Any]) -> tuple[str, float, List[EvidenceReference]]:
+    def _evaluate_criteria(self, criteria: dict[str, list[str]], submission_data: dict[str, Any], metrics_mapping: dict[str, Any]) -> tuple[str, float, list[EvidenceReference]]:
         """Evaluate criteria against submission data and return status, confidence, and evidence."""
         evidence_refs = []
 
@@ -66,7 +67,7 @@ class ChecklistEvaluator:
         self._add_unmet_evidence(criteria, submission_data, evidence_refs)
         return "unmet", 0.9, evidence_refs
 
-    def _check_criteria_group(self, criteria_list: List[str], submission_data: Dict[str, Any], evidence_refs: List[EvidenceReference], metrics_mapping: Dict[str, Any]) -> bool:
+    def _check_criteria_group(self, criteria_list: list[str], submission_data: dict[str, Any], evidence_refs: list[EvidenceReference], metrics_mapping: dict[str, Any]) -> bool:
         """Check if all criteria in a group are satisfied."""
         if not criteria_list:
             return False
@@ -141,7 +142,7 @@ class ChecklistEvaluator:
         # Do NOT remove parentheses - they're critical for logical precedence
         return criterion.strip()
 
-    def _evaluate_logical_expression(self, expression: str, submission_data: Dict[str, Any], evidence_refs: List[EvidenceReference], metrics_mapping: Dict[str, Any]) -> bool:
+    def _evaluate_logical_expression(self, expression: str, submission_data: dict[str, Any], evidence_refs: list[EvidenceReference], metrics_mapping: dict[str, Any]) -> bool:
         """Evaluate logical expression with proper parentheses and operator precedence."""
         expression = expression.strip()
 
@@ -200,7 +201,7 @@ class ChecklistEvaluator:
         else:
             return self._evaluate_single_criterion(expression, submission_data, evidence_refs, metrics_mapping)
 
-    def _handle_length_expression(self, left_field: str, operator: str, expected_value: Any, submission_data: Dict[str, Any], base_path: str) -> tuple[bool, str]:
+    def _handle_length_expression(self, left_field: str, operator: str, expected_value: Any, submission_data: dict[str, Any], base_path: str) -> tuple[bool, str]:
         """Handle expressions with .length by checking list/array length."""
         # Extract the field without .length
         actual_field = left_field.replace(".length", "")
@@ -241,7 +242,7 @@ class ChecklistEvaluator:
         except (ValueError, TypeError):
             return False, f"Invalid length comparison: {left_field} {operator} {expected_value}"
 
-    def _evaluate_single_criterion(self, criterion: str, submission_data: Dict[str, Any], evidence_refs: List[EvidenceReference], metrics_mapping: Dict[str, Any]) -> bool:
+    def _evaluate_single_criterion(self, criterion: str, submission_data: dict[str, Any], evidence_refs: list[EvidenceReference], metrics_mapping: dict[str, Any]) -> bool:
         """Evaluate a single criterion expression."""
         # Get base path from metrics mapping
         base_path = metrics_mapping.get("source_path", "$.metrics")
@@ -276,7 +277,7 @@ class ChecklistEvaluator:
                 source_path=full_path,
                 description=description,
                 confidence=0.95 if result else 0.85,
-                raw_data=str(self._extract_value_from_path(submission_data, full_path)) if not ".length" in left_field else f"length={len(self._extract_value_from_path(submission_data, full_path)) if isinstance(self._extract_value_from_path(submission_data, full_path), list) else 0}"
+                raw_data=str(self._extract_value_from_path(submission_data, full_path)) if ".length" not in left_field else f"length={len(self._extract_value_from_path(submission_data, full_path)) if isinstance(self._extract_value_from_path(submission_data, full_path), list) else 0}"
             ))
 
             return result
@@ -301,7 +302,7 @@ class ChecklistEvaluator:
                 source_path=full_path,
                 description=description,
                 confidence=0.95 if result else 0.85,
-                raw_data=str(self._extract_value_from_path(submission_data, full_path)) if not ".length" in left_field else f"length={len(self._extract_value_from_path(submission_data, full_path)) if isinstance(self._extract_value_from_path(submission_data, full_path), list) else 0}"
+                raw_data=str(self._extract_value_from_path(submission_data, full_path)) if ".length" not in left_field else f"length={len(self._extract_value_from_path(submission_data, full_path)) if isinstance(self._extract_value_from_path(submission_data, full_path), list) else 0}"
             ))
 
             return result
@@ -435,7 +436,7 @@ class ChecklistEvaluator:
             except ValueError:
                 return value_str
 
-    def _add_unmet_evidence(self, criteria: Dict[str, List[str]], submission_data: Dict[str, Any], evidence_refs: List[EvidenceReference]) -> None:
+    def _add_unmet_evidence(self, criteria: dict[str, list[str]], submission_data: dict[str, Any], evidence_refs: list[EvidenceReference]) -> None:
         """Add evidence explaining why criteria were not met."""
         evidence_refs.append(EvidenceReference(
             source_type="file_check",
@@ -445,7 +446,7 @@ class ChecklistEvaluator:
             raw_data="Evaluation criteria failed"
         ))
 
-    def _create_checklist_item(self, item_config: Dict[str, Any], submission_data: Dict[str, Any]) -> ChecklistItem:
+    def _create_checklist_item(self, item_config: dict[str, Any], submission_data: dict[str, Any]) -> ChecklistItem:
         """Create a ChecklistItem from configuration and evaluation."""
         start_time = datetime.now()
 
@@ -472,7 +473,7 @@ class ChecklistEvaluator:
 
         return item
 
-    def _create_repository_info(self, submission_data: Dict[str, Any], submission_path: str) -> RepositoryInfo:
+    def _create_repository_info(self, submission_data: dict[str, Any], submission_path: str) -> RepositoryInfo:
         """Create RepositoryInfo from submission data."""
         repo_data = submission_data.get("repository", {})
 
@@ -484,7 +485,7 @@ class ChecklistEvaluator:
             metrics_source=submission_path
         )
 
-    def _create_evaluation_metadata(self, start_time: datetime, warnings: List[str], submission_data: Dict[str, Any]) -> EvaluationMetadata:
+    def _create_evaluation_metadata(self, start_time: datetime, warnings: list[str], submission_data: dict[str, Any]) -> EvaluationMetadata:
         """Create EvaluationMetadata from evaluation process."""
         processing_duration = (datetime.now() - start_time).total_seconds()
 
@@ -498,7 +499,7 @@ class ChecklistEvaluator:
             metrics_completeness=metrics_completeness
         )
 
-    def _calculate_metrics_completeness(self, submission_data: Dict[str, Any]) -> float:
+    def _calculate_metrics_completeness(self, submission_data: dict[str, Any]) -> float:
         """Calculate what percentage of expected metrics are present."""
         expected_sections = ["code_quality", "testing", "documentation"]
         present_sections = 0
@@ -513,7 +514,7 @@ class ChecklistEvaluator:
     def evaluate_from_file(self, submission_path: str) -> EvaluationResult:
         """Evaluate checklist from submission.json file."""
         try:
-            with open(submission_path, 'r') as f:
+            with open(submission_path) as f:
                 submission_data = json.load(f)
         except FileNotFoundError:
             raise FileNotFoundError(f"Submission file not found: {submission_path}")
@@ -531,7 +532,7 @@ class ChecklistEvaluator:
 
         return self.evaluate_from_dict(submission_data, "<string>")
 
-    def evaluate_from_dict(self, submission_data: Dict[str, Any], submission_path: str = "<dict>") -> EvaluationResult:
+    def evaluate_from_dict(self, submission_data: dict[str, Any], submission_path: str = "<dict>") -> EvaluationResult:
         """Evaluate checklist from submission data dictionary."""
         start_time = datetime.now()
         warnings = []
@@ -606,7 +607,7 @@ class ChecklistEvaluator:
 
         return evaluation_result
 
-    def _generate_evidence_summary(self, checklist_items: List[ChecklistItem]) -> List[str]:
+    def _generate_evidence_summary(self, checklist_items: list[ChecklistItem]) -> list[str]:
         """Generate summary of key evidence points."""
         summary = []
 

@@ -1,8 +1,9 @@
 """ChecklistLoader utility for loading and managing checklist configurations."""
 
-import yaml
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any
+
+import yaml
 
 from .models.checklist_item import ChecklistItem
 
@@ -10,7 +11,7 @@ from .models.checklist_item import ChecklistItem
 class ChecklistLoader:
     """Utility for loading checklist configurations and language adaptations."""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         """Initialize loader with checklist configuration path."""
         if config_path is None:
             # Default to the checklist mapping in the contracts directory
@@ -22,39 +23,39 @@ class ChecklistLoader:
         self.checklist_items_config = self.config_data.get("checklist_items", [])
         self.language_adaptations = self.config_data.get("language_adaptations", {})
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """Load checklist configuration from YAML file."""
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
+            with open(self.config_path, encoding='utf-8') as f:
                 return yaml.safe_load(f)
         except FileNotFoundError:
             raise FileNotFoundError(f"Checklist configuration not found at {self.config_path}")
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML in checklist configuration: {e}")
 
-    def get_checklist_items_config(self) -> List[Dict[str, Any]]:
+    def get_checklist_items_config(self) -> list[dict[str, Any]]:
         """Get list of checklist item configurations."""
         return self.checklist_items_config
 
-    def get_checklist_item_config(self, item_id: str) -> Optional[Dict[str, Any]]:
+    def get_checklist_item_config(self, item_id: str) -> dict[str, Any] | None:
         """Get configuration for a specific checklist item."""
         for item_config in self.checklist_items_config:
             if item_config.get("id") == item_id:
                 return item_config
         return None
 
-    def get_items_by_dimension(self, dimension: str) -> List[Dict[str, Any]]:
+    def get_items_by_dimension(self, dimension: str) -> list[dict[str, Any]]:
         """Get all checklist items for a specific dimension."""
         return [
             item for item in self.checklist_items_config
             if item.get("dimension") == dimension
         ]
 
-    def get_language_adaptations(self, language: str) -> Optional[Dict[str, Any]]:
+    def get_language_adaptations(self, language: str) -> dict[str, Any] | None:
         """Get language-specific adaptations."""
         return self.language_adaptations.get(language.lower())
 
-    def get_language_criteria(self, language: str) -> Dict[str, Any]:
+    def get_language_criteria(self, language: str) -> dict[str, Any]:
         """Get language-specific evaluation criteria."""
         adaptations = self.get_language_adaptations(language)
         if not adaptations:
@@ -63,7 +64,7 @@ class ChecklistLoader:
 
         return adaptations
 
-    def get_adapted_tool_mapping(self, language: str, item_id: str) -> Optional[Dict[str, Any]]:
+    def get_adapted_tool_mapping(self, language: str, item_id: str) -> dict[str, Any] | None:
         """Get language-specific tool mapping for a checklist item."""
         adaptations = self.get_language_adaptations(language)
         if not adaptations or item_id not in adaptations:
@@ -71,7 +72,7 @@ class ChecklistLoader:
 
         return adaptations[item_id]
 
-    def validate_checklist_config(self) -> Dict[str, Any]:
+    def validate_checklist_config(self) -> dict[str, Any]:
         """Validate the loaded checklist configuration."""
         validation_results = {
             "valid": True,
@@ -171,7 +172,7 @@ class ChecklistLoader:
 
         return validation_results
 
-    def create_template_checklist_items(self) -> List[ChecklistItem]:
+    def create_template_checklist_items(self) -> list[ChecklistItem]:
         """Create template ChecklistItem objects from configuration."""
         template_items = []
 
@@ -194,7 +195,7 @@ class ChecklistLoader:
 
         return template_items
 
-    def get_dimension_summary(self) -> Dict[str, Dict[str, Any]]:
+    def get_dimension_summary(self) -> dict[str, dict[str, Any]]:
         """Get summary of checklist dimensions."""
         dimension_summary = {}
 

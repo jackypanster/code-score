@@ -5,25 +5,23 @@ This module tests all functionality of the ReportGenerator class including
 report generation, LLM integration, error handling, and validation.
 """
 
-import pytest
 import json
-import tempfile
 import subprocess
+import tempfile
 import threading
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, mock_open
+from unittest.mock import Mock, patch
+
+import pytest
+
+from src.llm.models.generated_report import GeneratedReport
+from src.llm.models.llm_provider_config import LLMProviderConfig
+from src.llm.models.report_template import ReportTemplate
+from src.llm.prompt_builder import PromptBuilder, PromptBuilderError
 
 # Import the modules to test
-from src.llm.report_generator import (
-    ReportGenerator,
-    ReportGeneratorError,
-    LLMProviderError
-)
-from src.llm.models.report_template import ReportTemplate
-from src.llm.models.llm_provider_config import LLMProviderConfig
-from src.llm.models.generated_report import GeneratedReport
+from src.llm.report_generator import LLMProviderError, ReportGenerator, ReportGeneratorError
 from src.llm.template_loader import TemplateLoader, TemplateLoaderError
-from src.llm.prompt_builder import PromptBuilder, PromptBuilderError
 
 
 class TestReportGenerator:
@@ -456,7 +454,7 @@ class TestReportGenerator:
     @patch('pathlib.Path.write_text')
     def test_save_report_error(self, mock_write_text, report_generator):
         """Test report saving with write error."""
-        mock_write_text.side_effect = IOError("Permission denied")
+        mock_write_text.side_effect = OSError("Permission denied")
         mock_report = Mock(spec=GeneratedReport)
         mock_report.to_file_content.return_value = "Report content"
 

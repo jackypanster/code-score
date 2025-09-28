@@ -2,8 +2,8 @@
 
 import logging
 import sys
-from typing import List, Dict, Any
 from enum import Enum
+from typing import Any
 
 
 class ErrorSeverity(Enum):
@@ -17,7 +17,7 @@ class ErrorSeverity(Enum):
 class MetricsError(Exception):
     """Base exception for metrics collection errors."""
 
-    def __init__(self, message: str, severity: ErrorSeverity = ErrorSeverity.ERROR, context: Dict[str, Any] = None):
+    def __init__(self, message: str, severity: ErrorSeverity = ErrorSeverity.ERROR, context: dict[str, Any] = None):
         super().__init__(message)
         self.message = message
         self.severity = severity
@@ -45,8 +45,8 @@ class ErrorHandler:
     def __init__(self, verbose: bool = False):
         """Initialize error handler with logging configuration."""
         self.verbose = verbose
-        self.errors: List[str] = []
-        self.warnings: List[str] = []
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
 
         # Configure logging
         self._setup_logging()
@@ -145,11 +145,11 @@ class ErrorHandler:
         """Check if any critical errors occurred."""
         return len(self.errors) > 0
 
-    def get_errors(self) -> List[str]:
+    def get_errors(self) -> list[str]:
         """Get list of all errors."""
         return self.errors.copy()
 
-    def get_warnings(self) -> List[str]:
+    def get_warnings(self) -> list[str]:
         """Get list of all warnings."""
         return self.warnings.copy()
 

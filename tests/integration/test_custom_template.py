@@ -9,10 +9,11 @@ implementation is complete.
 """
 
 import json
-import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
+import pytest
 
 # Import modules that don't exist yet - will fail until implementation
 pytest.importorskip("src.llm.template_loader", reason="Implementation not ready")
@@ -348,8 +349,8 @@ This project needs significant improvements across multiple quality dimensions b
 
     def test_hackathon_template_processing(self, sample_score_input, temp_directories, hackathon_template):
         """Test processing of custom hackathon template."""
-        from src.llm.template_loader import TemplateLoader
         from src.llm.prompt_builder import PromptBuilder
+        from src.llm.template_loader import TemplateLoader
 
         # Load and process hackathon template
         loader = TemplateLoader()
@@ -372,8 +373,8 @@ This project needs significant improvements across multiple quality dimensions b
 
     def test_minimal_template_processing(self, sample_score_input, temp_directories, minimal_template):
         """Test processing of minimal custom template."""
-        from src.llm.template_loader import TemplateLoader
         from src.llm.prompt_builder import PromptBuilder
+        from src.llm.template_loader import TemplateLoader
 
         loader = TemplateLoader()
         template = loader.load_template(str(minimal_template))
@@ -390,8 +391,8 @@ This project needs significant improvements across multiple quality dimensions b
 
     def test_detailed_template_processing(self, sample_score_input, temp_directories, detailed_template):
         """Test processing of detailed custom template with advanced features."""
-        from src.llm.template_loader import TemplateLoader
         from src.llm.prompt_builder import PromptBuilder
+        from src.llm.template_loader import TemplateLoader
 
         loader = TemplateLoader()
         template = loader.load_template(str(detailed_template))
@@ -462,8 +463,8 @@ This project shows solid Go development practices with comprehensive testing but
 
     def test_template_with_missing_variables(self, sample_score_input, temp_directories):
         """Test template with missing/undefined variables."""
-        from src.llm.template_loader import TemplateLoader
         from src.llm.prompt_builder import PromptBuilder
+        from src.llm.template_loader import TemplateLoader
 
         # Create template with undefined variables
         template_with_missing = temp_directories["template"] / "missing_vars_template.md"
@@ -495,8 +496,8 @@ Valid content: {{repository.primary_language}}
 
     def test_template_with_complex_conditionals(self, temp_directories):
         """Test template with complex conditional logic."""
-        from src.llm.template_loader import TemplateLoader
         from src.llm.prompt_builder import PromptBuilder
+        from src.llm.template_loader import TemplateLoader
 
         # Create template with complex conditionals
         complex_template = temp_directories["template"] / "complex_template.md"
@@ -552,8 +553,9 @@ Evaluation completed with {{checklist_items.length}} criteria assessed.
 
     def test_cli_with_custom_template(self, sample_score_input, temp_directories, hackathon_template):
         """Test CLI execution with custom template path."""
-        from src.cli.llm_report import main as llm_report_main
         import sys
+
+        from src.cli.llm_report import main as llm_report_main
 
         score_input_path = temp_directories["input"] / "score_input.json"
         with open(score_input_path, 'w') as f:

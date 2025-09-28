@@ -1,9 +1,8 @@
 """Python-specific tool runner for code analysis."""
 
-import subprocess
 import json
-from pathlib import Path
-from typing import Dict, Any, Optional, List
+import subprocess
+from typing import Any
 
 
 class PythonToolRunner:
@@ -14,7 +13,7 @@ class PythonToolRunner:
         self.timeout_seconds = timeout_seconds
         self.tools_available = {}
 
-    def run_linting(self, repo_path: str) -> Dict[str, Any]:
+    def run_linting(self, repo_path: str) -> dict[str, Any]:
         """Run Python linting tools (Ruff preferred, Flake8 fallback)."""
         result = {
             "tool_used": None,
@@ -86,7 +85,7 @@ class PythonToolRunner:
         result["issues"] = [{"severity": "warning", "message": "No Python linting tools available", "file": "", "line": 0}]
         return result
 
-    def run_testing(self, repo_path: str) -> Dict[str, Any]:
+    def run_testing(self, repo_path: str) -> dict[str, Any]:
         """Run Python tests using pytest."""
         result = {
             "tests_run": 0,
@@ -140,7 +139,7 @@ class PythonToolRunner:
         except Exception:
             return result
 
-    def run_security_audit(self, repo_path: str) -> Dict[str, Any]:
+    def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using pip-audit."""
         result = {
             "vulnerabilities_found": 0,
@@ -181,7 +180,7 @@ class PythonToolRunner:
         except Exception:
             return result
 
-    def run_formatting_check(self, repo_path: str) -> Dict[str, Any]:
+    def run_formatting_check(self, repo_path: str) -> dict[str, Any]:
         """Check Python code formatting using Black."""
         result = {
             "tool_used": "black",
@@ -238,7 +237,7 @@ class PythonToolRunner:
         self.tools_available[tool_name] = available
         return available
 
-    def _format_ruff_issues(self, issues: List[Dict]) -> List[Dict]:
+    def _format_ruff_issues(self, issues: list[dict]) -> list[dict]:
         """Format Ruff issues to standard format."""
         formatted = []
         for issue in issues:
@@ -251,7 +250,7 @@ class PythonToolRunner:
             })
         return formatted
 
-    def _format_flake8_issues(self, issues: List[Dict]) -> List[Dict]:
+    def _format_flake8_issues(self, issues: list[dict]) -> list[dict]:
         """Format Flake8 issues to standard format."""
         formatted = []
         for issue in issues:

@@ -3,7 +3,7 @@
 import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 
 class JavaToolRunner:
@@ -14,7 +14,7 @@ class JavaToolRunner:
         self.timeout_seconds = timeout_seconds
         self.tools_available = {}
 
-    def run_linting(self, repo_path: str) -> Dict[str, Any]:
+    def run_linting(self, repo_path: str) -> dict[str, Any]:
         """Run Java linting using Checkstyle or SpotBugs."""
         result = {
             "tool_used": None,
@@ -80,7 +80,7 @@ class JavaToolRunner:
         result["issues"] = [{"severity": "warning", "message": "No Java linting tools available", "file": "", "line": 0}]
         return result
 
-    def run_testing(self, repo_path: str) -> Dict[str, Any]:
+    def run_testing(self, repo_path: str) -> dict[str, Any]:
         """Run Java tests using Maven or Gradle."""
         result = {
             "tests_run": 0,
@@ -140,7 +140,7 @@ class JavaToolRunner:
         result["framework"] = "none"
         return result
 
-    def run_build(self, repo_path: str) -> Dict[str, Any]:
+    def run_build(self, repo_path: str) -> dict[str, Any]:
         """Run Java build to verify compilation."""
         result = {
             "build_success": False,
@@ -198,7 +198,7 @@ class JavaToolRunner:
         result["build_tool"] = "none"
         return result
 
-    def run_security_audit(self, repo_path: str) -> Dict[str, Any]:
+    def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using OWASP dependency check."""
         result = {
             "vulnerabilities_found": 0,
@@ -257,7 +257,7 @@ class JavaToolRunner:
         self.tools_available[tool_name] = available
         return available
 
-    def _parse_checkstyle_output(self, output: str) -> List[Dict]:
+    def _parse_checkstyle_output(self, output: str) -> list[dict]:
         """Parse Checkstyle output to standard format."""
         issues = []
         lines = output.split('\n')
@@ -285,7 +285,7 @@ class JavaToolRunner:
 
         return issues
 
-    def _parse_gradle_output(self, output: str) -> List[Dict]:
+    def _parse_gradle_output(self, output: str) -> list[dict]:
         """Parse Gradle output to standard format."""
         issues = []
         lines = output.split('\n')
@@ -302,7 +302,7 @@ class JavaToolRunner:
 
         return issues
 
-    def _parse_maven_test_output(self, output: str) -> Dict[str, Any]:
+    def _parse_maven_test_output(self, output: str) -> dict[str, Any]:
         """Parse Maven test output."""
         result = {"tests_run": 0, "tests_passed": 0, "tests_failed": 0}
 
@@ -322,7 +322,7 @@ class JavaToolRunner:
 
         return result
 
-    def _parse_gradle_test_output(self, output: str) -> Dict[str, Any]:
+    def _parse_gradle_test_output(self, output: str) -> dict[str, Any]:
         """Parse Gradle test output."""
         result = {"tests_run": 0, "tests_passed": 0, "tests_failed": 0}
 
@@ -337,7 +337,7 @@ class JavaToolRunner:
 
         return result
 
-    def _parse_compilation_errors(self, stderr: str) -> List[str]:
+    def _parse_compilation_errors(self, stderr: str) -> list[str]:
         """Parse compilation errors from stderr."""
         errors = []
         lines = stderr.split('\n')
@@ -348,7 +348,7 @@ class JavaToolRunner:
 
         return errors[:10]  # Limit to first 10 errors
 
-    def _parse_owasp_report(self, report_path: str) -> Dict[str, Any]:
+    def _parse_owasp_report(self, report_path: str) -> dict[str, Any]:
         """Parse OWASP dependency check XML report."""
         result = {"vulnerabilities_found": 0, "high_severity_count": 0}
 

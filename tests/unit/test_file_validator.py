@@ -5,23 +5,21 @@ This module contains unit tests for the file validation utilities,
 focusing on isolated testing of individual validation functions.
 """
 
-import pytest
 import json
-from pathlib import Path
-from unittest.mock import patch, mock_open
+
+import pytest
 
 from tests.smoke.file_validator import (
-    validate_output_files,
-    validate_single_file,
-    validate_json_schema,
-    validate_submission_json,
-    validate_score_input_json,
-    validate_markdown_file,
-    get_output_file_summary,
     cleanup_invalid_output_files,
-    FileValidationError
+    get_output_file_summary,
+    validate_json_schema,
+    validate_markdown_file,
+    validate_output_files,
+    validate_score_input_json,
+    validate_single_file,
+    validate_submission_json,
 )
-from tests.smoke.models import OutputArtifact, ValidationResult
+from tests.smoke.models import OutputArtifact
 
 
 class TestFileValidator:

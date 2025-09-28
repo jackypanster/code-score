@@ -1,10 +1,11 @@
 """Output generation for JSON and Markdown formats."""
 
 import json
-import jsonschema
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
+
+import jsonschema
 
 from .models.metrics_collection import MetricsCollection
 from .models.repository import Repository
@@ -22,7 +23,7 @@ class OutputFormat:
             with open(schema_path) as f:
                 self.schema = json.load(f)
 
-    def validate_schema(self, data: Dict[str, Any]) -> bool:
+    def validate_schema(self, data: dict[str, Any]) -> bool:
         """Validate data against JSON schema."""
         if not self.schema:
             return True  # No schema available, assume valid
@@ -46,7 +47,7 @@ class OutputFormat:
         md_content = []
 
         # Header
-        md_content.append(f"# Code Analysis Report")
+        md_content.append("# Code Analysis Report")
         md_content.append(f"**Generated**: {datetime.utcnow().isoformat()}Z")
         md_content.append("")
 
@@ -134,7 +135,7 @@ class OutputFormat:
 
         return "\n".join(md_content)
 
-    def _create_output_structure(self, repository: Repository, metrics: MetricsCollection) -> Dict[str, Any]:
+    def _create_output_structure(self, repository: Repository, metrics: MetricsCollection) -> dict[str, Any]:
         """Create standardized output structure."""
         return {
             "schema_version": "1.0.0",
@@ -202,7 +203,7 @@ class OutputManager:
         self.metrics_dir.mkdir(parents=True, exist_ok=True)
 
     def save_results(self, repository: Repository, metrics: MetricsCollection,
-                    format_type: str = "both") -> List[str]:
+                    format_type: str = "both") -> list[str]:
         """Save analysis results in specified format(s)."""
         formatter = OutputFormat()
         saved_files = []

@@ -1,24 +1,25 @@
 """Contract tests for CLI interface output schema validation."""
 
 import json
+from pathlib import Path
+from typing import Any
+
 import jsonschema
 import pytest
-from pathlib import Path
-from typing import Dict, Any
 
 
 class TestOutputSchemaContract:
     """Test that CLI output conforms to the defined JSON schema."""
 
     @pytest.fixture
-    def schema(self) -> Dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         """Load the output schema."""
         schema_path = Path(__file__).parent.parent.parent / "specs" / "001-docs-git-workflow" / "contracts" / "output_schema.json"
         with open(schema_path) as f:
             return json.load(f)
 
     @pytest.fixture
-    def valid_output_sample(self) -> Dict[str, Any]:
+    def valid_output_sample(self) -> dict[str, Any]:
         """Sample output that should validate against the schema."""
         return {
             "schema_version": "1.0.0",
@@ -77,7 +78,7 @@ class TestOutputSchemaContract:
             }
         }
 
-    def test_schema_validation_passes_for_valid_output(self, schema: Dict[str, Any], valid_output_sample: Dict[str, Any]) -> None:
+    def test_schema_validation_passes_for_valid_output(self, schema: dict[str, Any], valid_output_sample: dict[str, Any]) -> None:
         """Test that valid output passes schema validation."""
         # This test MUST fail initially as the CLI doesn't exist yet
         try:
@@ -85,12 +86,12 @@ class TestOutputSchemaContract:
         except jsonschema.ValidationError as e:
             pytest.fail(f"Valid output sample should pass schema validation: {e}")
 
-    def test_schema_requires_all_top_level_fields(self, schema: Dict[str, Any]) -> None:
+    def test_schema_requires_all_top_level_fields(self, schema: dict[str, Any]) -> None:
         """Test that schema requires repository, metrics, and execution fields."""
         required_fields = {"repository", "metrics", "execution"}
         assert set(schema["required"]) == required_fields
 
-    def test_repository_field_validation(self, schema: Dict[str, Any]) -> None:
+    def test_repository_field_validation(self, schema: dict[str, Any]) -> None:
         """Test repository field requirements."""
         repo_schema = schema["properties"]["repository"]
         required_repo_fields = {"url", "commit", "language", "timestamp"}
@@ -104,13 +105,13 @@ class TestOutputSchemaContract:
         allowed_languages = {"python", "javascript", "typescript", "java", "go", "unknown"}
         assert set(repo_schema["properties"]["language"]["enum"]) == allowed_languages
 
-    def test_metrics_field_validation(self, schema: Dict[str, Any]) -> None:
+    def test_metrics_field_validation(self, schema: dict[str, Any]) -> None:
         """Test metrics field requirements."""
         metrics_schema = schema["properties"]["metrics"]
         required_metrics_fields = {"code_quality", "testing", "documentation"}
         assert set(metrics_schema["required"]) == required_metrics_fields
 
-    def test_execution_field_validation(self, schema: Dict[str, Any]) -> None:
+    def test_execution_field_validation(self, schema: dict[str, Any]) -> None:
         """Test execution field requirements."""
         execution_schema = schema["properties"]["execution"]
         required_execution_fields = {"tools_used", "duration_seconds", "timestamp"}
@@ -129,7 +130,7 @@ class TestOutputSchemaContract:
         except ImportError:
             pytest.fail("CLI should be implemented and importable")
 
-    def test_invalid_output_fails_validation(self, schema: Dict[str, Any]) -> None:
+    def test_invalid_output_fails_validation(self, schema: dict[str, Any]) -> None:
         """Test that invalid output properly fails schema validation."""
         invalid_output = {
             "repository": {

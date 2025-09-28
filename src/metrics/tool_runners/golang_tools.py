@@ -1,9 +1,9 @@
 """Go-specific tool runner for code analysis."""
 
-import subprocess
 import json
+import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 
 class GolangToolRunner:
@@ -14,7 +14,7 @@ class GolangToolRunner:
         self.timeout_seconds = timeout_seconds
         self.tools_available = {}
 
-    def run_linting(self, repo_path: str) -> Dict[str, Any]:
+    def run_linting(self, repo_path: str) -> dict[str, Any]:
         """Run Go linting using golangci-lint."""
         result = {
             "tool_used": "golangci-lint",
@@ -56,7 +56,7 @@ class GolangToolRunner:
         except Exception:
             return result
 
-    def run_testing(self, repo_path: str) -> Dict[str, Any]:
+    def run_testing(self, repo_path: str) -> dict[str, Any]:
         """Run Go tests using go test."""
         result = {
             "tests_run": 0,
@@ -104,7 +104,7 @@ class GolangToolRunner:
         except Exception:
             return result
 
-    def run_security_audit(self, repo_path: str) -> Dict[str, Any]:
+    def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using osv-scanner."""
         result = {
             "vulnerabilities_found": 0,
@@ -158,7 +158,7 @@ class GolangToolRunner:
         except Exception:
             return result
 
-    def run_formatting_check(self, repo_path: str) -> Dict[str, Any]:
+    def run_formatting_check(self, repo_path: str) -> dict[str, Any]:
         """Check Go code formatting using gofmt."""
         result = {
             "tool_used": "gofmt",
@@ -197,7 +197,7 @@ class GolangToolRunner:
         except Exception:
             return result
 
-    def run_build_check(self, repo_path: str) -> Dict[str, Any]:
+    def run_build_check(self, repo_path: str) -> dict[str, Any]:
         """Check if Go code builds successfully."""
         result = {
             "build_success": False,
@@ -255,7 +255,7 @@ class GolangToolRunner:
         self.tools_available[tool_name] = available
         return available
 
-    def _format_golangci_issues(self, issues: List[Dict]) -> List[Dict]:
+    def _format_golangci_issues(self, issues: list[dict]) -> list[dict]:
         """Format golangci-lint issues to standard format."""
         formatted = []
 
@@ -275,7 +275,7 @@ class GolangToolRunner:
 
         return formatted
 
-    def _parse_go_test_events(self, events: List[Dict]) -> Dict[str, Any]:
+    def _parse_go_test_events(self, events: list[dict]) -> dict[str, Any]:
         """Parse Go test JSON events."""
         result = {"tests_run": 0, "tests_passed": 0, "tests_failed": 0}
 

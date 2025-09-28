@@ -6,7 +6,8 @@ output with metadata and generation tracking.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -36,7 +37,7 @@ class TruncationInfo(BaseModel):
         ge=0
     )
 
-    truncation_reason: Optional[str] = Field(
+    truncation_reason: str | None = Field(
         None,
         description="Reason for truncation (context_limit, max_tokens, etc.)"
     )
@@ -50,31 +51,31 @@ class ProviderMetadata(BaseModel):
         description="Name of the LLM provider"
     )
 
-    model_name: Optional[str] = Field(
+    model_name: str | None = Field(
         None,
         description="Specific model used for generation"
     )
 
-    temperature: Optional[float] = Field(
+    temperature: float | None = Field(
         None,
         description="Temperature setting used",
         ge=0.0,
         le=2.0
     )
 
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         None,
         description="Maximum tokens setting",
         gt=0
     )
 
-    response_time_seconds: Optional[float] = Field(
+    response_time_seconds: float | None = Field(
         None,
         description="Time taken for LLM response",
         ge=0.0
     )
 
-    token_usage: Optional[Dict[str, int]] = Field(
+    token_usage: dict[str, int] | None = Field(
         None,
         description="Token usage statistics (prompt_tokens, completion_tokens, total_tokens)"
     )
@@ -98,7 +99,7 @@ class TemplateMetadata(BaseModel):
         description="Template category"
     )
 
-    required_fields_used: List[str] = Field(
+    required_fields_used: list[str] = Field(
         default_factory=list,
         description="List of template fields that were populated"
     )
@@ -188,7 +189,7 @@ class GeneratedReport(BaseModel):
         description="Information about any content truncation"
     )
 
-    generation_warnings: List[str] = Field(
+    generation_warnings: list[str] = Field(
         default_factory=list,
         description="Warnings or issues during generation process"
     )
@@ -249,7 +250,7 @@ class GeneratedReport(BaseModel):
         if warning not in self.generation_warnings:
             self.generation_warnings.append(warning)
 
-    def get_content_summary(self) -> Dict[str, Any]:
+    def get_content_summary(self) -> dict[str, Any]:
         """Get summary statistics about the generated content."""
         lines = self.content.split('\n')
 
@@ -268,7 +269,7 @@ class GeneratedReport(BaseModel):
             'estimated_reading_time': self.estimated_reading_time_minutes
         }
 
-    def validate_markdown_structure(self) -> List[str]:
+    def validate_markdown_structure(self) -> list[str]:
         """
         Validate markdown structure and return list of issues.
 
