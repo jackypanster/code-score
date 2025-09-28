@@ -1,0 +1,103 @@
+cli_commands:
+  llm_report:
+    description: "Generate human-readable report from evaluation data using LLM"
+    command: "llm-report"
+    arguments:
+      - name: "score_input_path"
+        type: "string"
+        required: true
+        description: "Path to score_input.json file"
+        validation: "file_must_exist"
+
+      - name: "prompt"
+        type: "string"
+        required: false
+        default: "specs/prompts/llm_report.md"
+        description: "Path to prompt template file"
+        validation: "file_must_exist"
+
+      - name: "output"
+        type: "string"
+        required: false
+        default: "output/final_report.md"
+        description: "Output path for generated report"
+        validation: "directory_must_exist"
+
+
+      - name: "provider"
+        type: "string"
+        required: false
+        default: "gemini"
+        description: "LLM provider to use"
+        choices: ["gemini"]
+
+      - name: "verbose"
+        type: "boolean"
+        required: false
+        default: false
+        description: "Enable detailed logging"
+
+    examples:
+      - description: "Generate report with default settings"
+        command: "code-score llm-report ./output/score_input.json"
+
+      - description: "Use custom template and output path"
+        command: "code-score llm-report ./output/score_input.json --prompt ./custom_template.md --output ./reports/final.md"
+
+
+      - description: "Generate with verbose logging"
+        command: "code-score llm-report ./output/score_input.json --verbose"
+
+  analyze_with_llm:
+    description: "Run full analysis pipeline with automatic LLM report generation"
+    command: "analyze"
+    new_arguments:
+      - name: "generate_llm_report"
+        type: "boolean"
+        required: false
+        default: false
+        description: "Generate LLM report after evaluation"
+
+      - name: "llm_template"
+        type: "string"
+        required: false
+        default: "specs/prompts/llm_report.md"
+        description: "Template for LLM report generation"
+
+      - name: "llm_provider"
+        type: "string"
+        required: false
+        default: "gemini"
+        description: "LLM provider for report generation"
+
+    examples:
+      - description: "Full analysis with LLM report"
+        command: "code-score analyze https://github.com/user/repo.git --generate-llm-report"
+
+      - description: "Analysis with custom LLM template"
+        command: "code-score analyze https://github.com/user/repo.git --generate-llm-report --llm-template ./custom.md"
+
+exit_codes:
+  0: "Success"
+  1: "Invalid arguments or file not found"
+  2: "Template processing error"
+  3: "LLM provider error or timeout"
+  4: "Output file write error"
+  5: "Score input validation error"
+
+error_handling:
+  file_not_found:
+    message: "File not found: {path}"
+    suggestion: "Check file path and permissions"
+
+  template_error:
+    message: "Template processing failed: {error}"
+    suggestion: "Validate template syntax and required fields"
+
+  llm_provider_error:
+    message: "LLM provider '{provider}' failed: {error}"
+    suggestion: "Check provider installation and authentication"
+
+  validation_error:
+    message: "Input validation failed: {error}"
+    suggestion: "Ensure score_input.json matches expected schema"

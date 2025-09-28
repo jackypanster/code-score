@@ -15,6 +15,7 @@ dependencies = [
     "gitpython>=3.1.40",
     "python-dateutil>=2.8.2",
     "pyyaml>=6.0.3",
+    "jinja2>=3.1.6",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,8 @@ packages = ["src"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -53,7 +56,7 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["src"]
 
 [tool.mypy]
