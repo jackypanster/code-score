@@ -322,15 +322,34 @@ The tool generates multiple output files depending on the analysis mode:
 ### Basic Analysis Output
 
 **Files generated:**
-- `submission.json` - Raw metrics data
-- `report.md` - Human-readable analysis report
+- `output/submission.json` - Raw metrics data (consolidated)
+- `output/metrics/{repo_name}_{timestamp}.md` - Human-readable analysis report
+- `output/metrics/{repo_name}_{timestamp}.json` - Detailed metrics data
+
+**Example filenames:**
+```
+output/submission.json
+output/metrics/code-walker_20250928_143022.md
+output/metrics/code-walker_20250928_143022.json
+```
+
+**Finding the latest report:**
+```bash
+# Find the most recent markdown report
+ls -lt output/metrics/*.md | head -1
+
+# If you need a fixed filename, you can copy:
+cp output/metrics/*.md output/report.md
+```
 
 ### Checklist Evaluation Output
 
 **Files generated:**
-- `score_input.json` - Structured evaluation results for LLM processing
-- `evaluation_report.md` - Detailed human-readable evaluation report
+- `output/score_input.json` - Structured evaluation results for LLM processing
+- `output/evaluation_report.md` - Detailed human-readable evaluation report (when checklist enabled)
 - `evidence/` directory - Detailed evidence files supporting all evaluation decisions
+
+**Note**: Checklist evaluation requires `--enable-checklist` flag to generate `score_input.json` and `evaluation_report.md`. Reports use timestamps to prevent overwrites. If you need fixed filenames, you can manually copy the files or wait for a future version that provides alias files.
 
 ### JSON Output
 
