@@ -14,7 +14,7 @@ class ChecklistLoader:
         """Initialize loader with checklist configuration path."""
         if config_path is None:
             # Default to the checklist mapping in the contracts directory
-            base_path = Path(__file__).parent.parent.parent / "specs" / "002-git-log-docs" / "contracts"
+            base_path = Path(__file__).parent.parent.parent / "specs" / "contracts"
             config_path = str(base_path / "checklist_mapping.yaml")
 
         self.config_path = config_path

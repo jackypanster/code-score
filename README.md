@@ -516,8 +516,7 @@ code-score/
 ├── scripts/
 │   └── run_metrics.sh     # Entry point script
 ├── specs/                 # Design documentation
-│   └── 002-git-log-docs/  # Checklist evaluation specs
-│       ├── contracts/     # JSON schemas and YAML configs
+│   └── contracts/         # JSON schemas and YAML configs (checklist evaluation)
 │       ├── tasks.md       # Implementation tasks
 │       ├── research.md    # Technical decisions
 │       ├── data-model.md  # Data model documentation
