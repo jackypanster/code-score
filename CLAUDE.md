@@ -6,27 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Code Score is a parameterized Git repository metrics collection tool with integrated checklist evaluation for automated code quality assessment. It analyzes any public Git repository and produces standardized JSON/Markdown reports with evidence-based scoring suitable for hackathon judging, code review automation, and project quality assessment.
 
-The system consists of two integrated pipelines:
+The system consists of three integrated pipelines:
 1. **Metrics Collection Pipeline**: Collects raw quality metrics (linting, testing, documentation)
 2. **Checklist Evaluation Pipeline**: Evaluates metrics against 11-item quality checklist with evidence tracking
+3. **LLM Report Generation Pipeline**: Transforms structured data into human-readable narrative reports using Gemini
 
 ## Core Architecture
 
-### Dual Pipeline Architecture
+### Triple Pipeline Architecture
 
 **Metrics Collection Pipeline**: **Clone → Detect → Analyze → Report → Cleanup**
-1. **Git Operations** (`src/metrics/git_operations.py`): Repository cloning and commit switching
-2. **Language Detection** (`src/metrics/language_detection.py`): Identifies primary programming language
-3. **Tool Execution** (`src/metrics/tool_executor.py`): Parallel execution of language-specific tools
-4. **Tool Runners** (`src/metrics/tool_runners/`): Language-specific analysis implementations
-5. **Output Generation** (`src/metrics/output_generators.py`): Produces submission.json
+1. **Git Operations** ([src/metrics/git_operations.py](src/metrics/git_operations.py)): Repository cloning and commit switching
+2. **Language Detection** ([src/metrics/language_detection.py](src/metrics/language_detection.py)): Identifies primary programming language
+3. **Tool Execution** ([src/metrics/tool_executor.py](src/metrics/tool_executor.py)): Parallel execution of language-specific tools
+4. **Tool Runners** ([src/metrics/tool_runners/](src/metrics/tool_runners/)): Language-specific analysis implementations (Python, JavaScript, Java, Go)
+5. **Output Generation** ([src/metrics/output_generators.py](src/metrics/output_generators.py)): Produces submission.json
 
 **Checklist Evaluation Pipeline**: **Load → Evaluate → Evidence → Score → Report**
-1. **ChecklistEvaluator** (`src/metrics/checklist_evaluator.py`): Rule-based evaluation engine with 11 quality criteria
-2. **EvidenceTracker** (`src/metrics/evidence_tracker.py`): Collects and organizes supporting evidence with confidence levels
-3. **ScoringMapper** (`src/metrics/scoring_mapper.py`): Transforms evaluation results to structured output for LLM processing
-4. **ChecklistLoader** (`src/metrics/checklist_loader.py`): Manages configuration and language adaptations
-5. **PipelineOutputManager** (`src/metrics/pipeline_output_manager.py`): Integrates both pipelines
+1. **ChecklistEvaluator** ([src/metrics/checklist_evaluator.py](src/metrics/checklist_evaluator.py)): Rule-based evaluation engine with 11 quality criteria
+2. **EvidenceTracker** ([src/metrics/evidence_tracker.py](src/metrics/evidence_tracker.py)): Collects and organizes supporting evidence with confidence levels
+3. **ScoringMapper** ([src/metrics/scoring_mapper.py](src/metrics/scoring_mapper.py)): Transforms evaluation results to structured output for LLM processing
+4. **ChecklistLoader** ([src/metrics/checklist_loader.py](src/metrics/checklist_loader.py)): Manages configuration and language adaptations
+5. **PipelineOutputManager** ([src/metrics/pipeline_output_manager.py](src/metrics/pipeline_output_manager.py)): Integrates both pipelines
+
+**LLM Report Generation Pipeline**: **Template → Build → Execute → Format**
+1. **TemplateLoader** ([src/llm/template_loader.py](src/llm/template_loader.py)): Loads and validates Jinja2 templates from specs/prompts/
+2. **PromptBuilder** ([src/llm/prompt_builder.py](src/llm/prompt_builder.py)): Constructs prompts from score_input.json and templates
+3. **ReportGenerator** ([src/llm/report_generator.py](src/llm/report_generator.py)): Executes Gemini CLI for report generation
+4. **Output Formatter**: Generates final_report.md and generation_metadata.json
 
 ### Multi-Language Tool Runners
 - **Python**: `ruff`/`flake8` (linting), `pytest` (testing), `pip-audit` (security)
@@ -56,8 +63,13 @@ uv run pytest
 
 # Run specific test categories
 uv run pytest tests/unit/           # Unit tests
-uv run pytest tests/integration/   # Integration tests
+uv run pytest tests/integration/   # Integration tests (currently smoke tests)
 uv run pytest tests/contract/      # Schema validation tests
+uv run pytest tests/smoke/          # End-to-end smoke tests
+
+# Run individual test files or functions
+uv run pytest tests/unit/test_language_detection.py -v
+uv run pytest tests/unit/test_checklist_evaluator_path.py::test_specific_function -v
 
 # Code quality checks
 uv run ruff check src/ tests/       # Linting
@@ -104,6 +116,23 @@ uv run python -m src.cli.evaluate output/submission.json
 uv run python -m src.cli.evaluate output/submission.json --checklist-config custom_checklist.yaml
 ```
 
+### LLM Report Generation Workflow
+```bash
+# Generate human-readable report from evaluation data
+uv run python -m src.cli.llm_report output/score_input.json
+
+# Custom output path and template
+uv run python -m src.cli.llm_report output/score_input.json \
+  --prompt ./templates/custom.md \
+  --output ./reports/final.md
+
+# Integrated workflow (analysis + evaluation + LLM report)
+./scripts/run_metrics.sh https://github.com/user/repo.git --generate-llm-report
+
+# Validation without generation
+uv run python -m src.cli.llm_report output/score_input.json --validate-only
+```
+
 ### Test and Validation
 ```bash
 # Run validation against default test repository
@@ -127,12 +156,17 @@ uv run pytest tests/contract/ -v
 - **DocumentationMetrics**: README analysis and documentation quality
 - **ExecutionMetadata**: Tool execution tracking and performance data
 
-### Checklist Evaluation Models (`src/metrics/models/`)
+### Checklist Evaluation Models ([src/metrics/models/](src/metrics/models/))
 - **ChecklistItem**: Individual evaluation criterion with scoring and evidence
 - **EvaluationResult**: Complete evaluation with 11 items, scores, and category breakdowns
 - **ScoreInput**: LLM-ready structured output format
 - **EvidenceReference**: Supporting evidence with confidence levels and source tracking
 - **CategoryBreakdown**: Score summaries by dimension (Code Quality, Testing, Documentation)
+
+### LLM Models ([src/llm/models/](src/llm/models/))
+- **LLMProviderConfig**: Configuration for LLM providers (Gemini settings, timeouts, API keys)
+- **ReportTemplate**: Template metadata and validation for Jinja2 templates
+- **GeneratedReport**: Container for generated reports with metadata and statistics
 
 ### Output Schema
 **Metrics Collection** produces `submission.json` with:
@@ -143,6 +177,28 @@ uv run pytest tests/contract/ -v
 - `repository_info`: Analysis context and metadata
 - `evidence_paths`: File paths to detailed evidence files
 - `human_summary`: Comprehensive markdown evaluation report
+
+**LLM Report Generation** produces:
+- `final_report.md`: Human-readable narrative report
+- `generation_metadata.json`: Generation statistics and provider info
+
+### CLI Command Structure
+The tool provides three main CLI commands ([src/cli/](src/cli/)):
+
+1. **Main Analysis** ([main.py](src/cli/main.py)): `uv run python -m src.cli.main <repo_url>`
+   - Entry point for repository analysis
+   - Coordinates metrics collection and optional checklist evaluation
+   - Can trigger LLM report generation via `--generate-llm-report` flag
+
+2. **Checklist Evaluation** ([evaluate.py](src/cli/evaluate.py)): `uv run python -m src.cli.evaluate <submission_json>`
+   - Standalone checklist evaluation from existing metrics
+   - Generates score_input.json and evaluation reports
+   - Can run independently of metrics collection
+
+3. **LLM Report** ([llm_report.py](src/cli/llm_report.py)): `uv run python -m src.cli.llm_report <score_input_json>`
+   - Generates human-readable reports from evaluation data
+   - Supports custom templates and output paths
+   - Requires Gemini CLI and GEMINI_API_KEY
 
 ## Constitutional Principles
 
@@ -214,12 +270,19 @@ The evaluation system uses a rule-based approach with evidence tracking:
 ### Environment Variables
 - `METRICS_OUTPUT_DIR`: Default output directory override
 - `METRICS_TOOL_TIMEOUT`: Default timeout override in seconds
+- `GEMINI_API_KEY`: Required for LLM report generation (Gemini provider)
 
 ### Tool Detection Logic
 - Check tool availability before execution
 - Prefer more comprehensive tools (e.g., `ruff` over `flake8`)
 - Fallback to simpler alternatives when advanced tools unavailable
 - Clear error messages when required tools missing
+
+### Checklist Configuration
+- Default checklist: [specs/contracts/checklist_mapping.yaml](specs/contracts/checklist_mapping.yaml)
+- Contains 11 evaluation criteria with scoring rules and metrics mappings
+- Language-specific adaptations can be defined for each checklist item
+- Custom checklists can be provided via `--checklist-config` flag to the evaluate command
 
 ## Debugging and Troubleshooting
 
@@ -228,14 +291,21 @@ The evaluation system uses a rule-based approach with evidence tracking:
 - **Tool timeouts**: Increase timeout or check repository size
 - **Missing tool dependencies**: Install language-specific tools or use `--verbose` for details
 - **Schema validation errors**: Check JSON output structure against contract tests
+- **LLM report generation failures**:
+  - Verify Gemini CLI is installed: `which gemini`
+  - Check `GEMINI_API_KEY` environment variable is set: `echo $GEMINI_API_KEY`
+  - Ensure score_input.json exists and is valid
+  - Use `--validate-only` flag to test prerequisites without generating report
 
 ### Debugging Techniques
-- Use `--verbose` flag for detailed execution logging in both pipelines
-- Check `htmlcov/` directory for test coverage analysis
-- Examine `output/` directory for generated reports and error logs
-- Inspect `evidence/` directory for detailed evaluation evidence files
-- Run contract tests to validate output format compliance
-- Use `uv run python -c "from src.metrics.checklist_loader import ChecklistLoader; print(ChecklistLoader().validate_checklist_config())"` to validate checklist configuration
+- Use `--verbose` flag for detailed execution logging in all pipelines
+- Check [htmlcov/](htmlcov/) directory for test coverage analysis (run `uv run pytest --cov=src --cov-report=html`)
+- Examine [output/](output/) directory for generated reports and error logs
+- Inspect [evidence/](evidence/) directory for detailed evaluation evidence files
+- Run contract tests to validate output format compliance: `uv run pytest tests/contract/ -v`
+- Validate checklist configuration: `uv run python -c "from src.metrics.checklist_loader import ChecklistLoader; print(ChecklistLoader().validate_checklist_config())"`
+- Test LLM report generation in validation mode: `uv run python -m src.cli.llm_report output/score_input.json --validate-only`
+- Check Gemini CLI availability: `which gemini` or `gemini --version`
 
 ## Key Implementation Notes
 
@@ -243,7 +313,30 @@ The evaluation system uses a rule-based approach with evidence tracking:
 Evidence files are organized by dimension (`evidence/code_quality/`, `evidence/testing/`, `evidence/documentation/`, `evidence/system/`) with each file containing detailed JSON data supporting evaluation decisions. The evidence system ensures transparency and auditability of all scoring decisions.
 
 ### Integration Points
-- The `PipelineOutputManager` coordinates both pipelines and handles evidence file generation
-- The `evaluate` CLI command can run independently on existing submission.json files
+- The `PipelineOutputManager` coordinates metrics collection and checklist evaluation pipelines
+- The `evaluate` CLI command ([src/cli/evaluate.py](src/cli/evaluate.py)) can run independently on existing submission.json files
+- The `llm-report` CLI command ([src/cli/llm_report.py](src/cli/llm_report.py)) generates reports from score_input.json files
 - The main analysis pipeline can optionally run checklist evaluation (default: enabled)
-- Schema validation ensures compatibility between metrics collection and evaluation phases
+- LLM report generation requires Gemini CLI installation and GEMINI_API_KEY environment variable
+- Schema validation ensures compatibility between all pipeline phases
+
+### LLM Report Generation Details
+**Prerequisites:**
+- Gemini CLI must be installed and available in PATH
+- `GEMINI_API_KEY` environment variable must be set
+- Currently only Gemini provider is supported (OpenAI/Claude support planned)
+
+**Template System:**
+- Templates use Jinja2 syntax and are located in [specs/prompts/](specs/prompts/)
+- Default template: [specs/prompts/llm_report.md](specs/prompts/llm_report.md)
+- Templates receive full score_input.json context including evaluation results, evidence, and repository metadata
+- Custom templates can be provided via `--prompt` flag
+
+**Output Files:**
+- `final_report.md`: AI-generated narrative evaluation report
+- `generation_metadata.json`: Generation statistics and provider information
+
+**Performance:**
+- Typical generation time: 10-30 seconds (Gemini)
+- Large evaluations are automatically truncated to fit context window
+- Timeout defaults to provider-specific values (customizable via `--timeout`)
