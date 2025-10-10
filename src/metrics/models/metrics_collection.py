@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .build_validation import BuildValidationResult
+
 
 class LintIssue(BaseModel):
     """Individual linting issue."""
@@ -28,6 +30,7 @@ class CodeQualityMetrics(BaseModel):
     """Code quality analysis results."""
     lint_results: dict[str, Any] | None = Field(None, description="Linting tool results")
     build_success: bool | None = Field(None, description="Build success status")
+    build_details: BuildValidationResult | None = Field(None, description="Detailed build validation results")
     security_issues: list[SecurityIssue] = Field(default_factory=list, description="Security vulnerabilities")
     dependency_audit: dict[str, Any] | None = Field(None, description="Dependency audit results")
 

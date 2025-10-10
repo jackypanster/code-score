@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
@@ -197,16 +198,46 @@ class GolangToolRunner:
         except Exception:
             return result
 
-    def run_build_check(self, repo_path: str) -> dict[str, Any]:
-        """Check if Go code builds successfully."""
-        result = {
-            "build_success": False,
-            "compilation_errors": []
-        }
+    def run_build(self, repo_path: str) -> dict[str, Any]:
+        """
+        Run Go build validation using go build.
 
-        if not self._has_go_module(repo_path) or not self._check_tool_available("go"):
-            return result
+        Checks for go.mod and attempts to build all packages in the module.
 
+        Args:
+            repo_path: Path to the repository to build
+
+        Returns:
+            Dictionary matching BuildValidationResult schema with keys:
+            - success: bool | None (True=pass, False=fail, None=unavailable)
+            - tool_used: str (name of build tool used: "go" or "none")
+            - execution_time_seconds: float (build duration)
+            - error_message: str | None (truncated to 1000 chars)
+            - exit_code: int | None (process exit code)
+        """
+        start_time = time.time()
+
+        # Check for go.mod
+        if not self._has_go_module(repo_path):
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "No go.mod file found",
+                "exit_code": None
+            }
+
+        # Check if go is available
+        if not self._check_tool_available("go"):
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "Go toolchain not available in PATH",
+                "exit_code": None
+            }
+
+        # Run go build
         try:
             cmd_result = subprocess.run(
                 ["go", "build", "./..."],
@@ -216,21 +247,47 @@ class GolangToolRunner:
                 cwd=repo_path
             )
 
-            result["build_success"] = cmd_result.returncode == 0
+            execution_time = time.time() - start_time
 
-            if cmd_result.stderr:
-                # Parse build errors
-                errors = [line.strip() for line in cmd_result.stderr.split('\n') if line.strip()]
-                result["compilation_errors"] = errors[:10]  # Limit to first 10 errors
+            if cmd_result.returncode == 0:
+                return {
+                    "success": True,
+                    "tool_used": "go",
+                    "execution_time_seconds": execution_time,
+                    "error_message": None,
+                    "exit_code": 0
+                }
+            else:
+                # Build failed - capture error
+                error_msg = cmd_result.stderr or cmd_result.stdout or "Build failed"
+                # Truncate to 1000 chars (NFR-002)
+                if len(error_msg) > 1000:
+                    error_msg = error_msg[:997] + "..."
 
-            return result
+                return {
+                    "success": False,
+                    "tool_used": "go",
+                    "execution_time_seconds": execution_time,
+                    "error_message": error_msg,
+                    "exit_code": cmd_result.returncode
+                }
 
         except subprocess.TimeoutExpired:
-            result["compilation_errors"] = ["Build timed out"]
-            return result
-
-        except Exception:
-            return result
+            return {
+                "success": False,
+                "tool_used": "go",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "Build timed out (exceeded timeout limit)",
+                "exit_code": None
+            }
+        except Exception as e:
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": f"Unexpected error during build: {str(e)}",
+                "exit_code": None
+            }
 
     def _has_go_module(self, repo_path: str) -> bool:
         """Check if repository has Go module configuration."""
