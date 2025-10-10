@@ -2,6 +2,8 @@
 
 import json
 import subprocess
+import time
+from pathlib import Path
 from typing import Any
 
 
@@ -262,3 +264,158 @@ class PythonToolRunner:
                 "column": issue.get("column_number", 0)
             })
         return formatted
+
+    def run_build(self, repo_path: str) -> dict[str, Any]:
+        """
+        Run Python build validation using uv build (preferred) or python -m build (fallback).
+        
+        Constitutional Principle I: UV-based dependency management - prioritize uv build.
+        
+        Args:
+            repo_path: Path to the repository to build
+            
+        Returns:
+            Dictionary matching BuildValidationResult schema with keys:
+            - success: bool | None (True=pass, False=fail, None=unavailable)
+            - tool_used: str (name of build tool used)
+            - execution_time_seconds: float (build duration)
+            - error_message: str | None (truncated to 1000 chars)
+            - exit_code: int | None (process exit code)
+        """
+        start_time = time.time()
+        
+        # Check for build configuration files
+        repo = Path(repo_path)
+        has_pyproject = (repo / "pyproject.toml").exists()
+        has_setup_py = (repo / "setup.py").exists()
+        has_setup_cfg = (repo / "setup.cfg").exists()
+        
+        if not (has_pyproject or has_setup_py or has_setup_cfg):
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "No Python build configuration found (pyproject.toml, setup.py, or setup.cfg)",
+                "exit_code": None
+            }
+        
+        # Try uv build first (Constitutional Principle I: UV-based dependency management)
+        if self._check_tool_available("uv"):
+            try:
+                cmd_result = subprocess.run(
+                    ["uv", "build"],
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout_seconds,
+                    cwd=repo_path
+                )
+                
+                execution_time = time.time() - start_time
+                
+                if cmd_result.returncode == 0:
+                    return {
+                        "success": True,
+                        "tool_used": "uv",
+                        "execution_time_seconds": execution_time,
+                        "error_message": None,
+                        "exit_code": 0
+                    }
+                else:
+                    # Build failed - capture error
+                    error_msg = cmd_result.stderr or cmd_result.stdout or "Build failed"
+                    # Truncate to 1000 chars (NFR-002)
+                    if len(error_msg) > 1000:
+                        error_msg = error_msg[:997] + "..."
+                    
+                    return {
+                        "success": False,
+                        "tool_used": "uv",
+                        "execution_time_seconds": execution_time,
+                        "error_message": error_msg,
+                        "exit_code": cmd_result.returncode
+                    }
+                    
+            except subprocess.TimeoutExpired:
+                return {
+                    "success": False,
+                    "tool_used": "uv",
+                    "execution_time_seconds": time.time() - start_time,
+                    "error_message": "Build timed out (exceeded timeout limit)",
+                    "exit_code": None
+                }
+            except Exception as e:
+                # Fall through to python -m build
+                pass
+        
+        # Fallback to python -m build
+        # Check if build module is available
+        try:
+            check_build = subprocess.run(
+                ["python3", "-c", "import build"],
+                capture_output=True,
+                timeout=5
+            )
+            build_available = check_build.returncode == 0
+        except Exception:
+            build_available = False
+        
+        if not build_available:
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "Neither uv nor python build module available",
+                "exit_code": None
+            }
+        
+        # Run python -m build
+        try:
+            cmd_result = subprocess.run(
+                ["python3", "-m", "build", "--no-isolation"],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds,
+                cwd=repo_path
+            )
+            
+            execution_time = time.time() - start_time
+            
+            if cmd_result.returncode == 0:
+                return {
+                    "success": True,
+                    "tool_used": "build",
+                    "execution_time_seconds": execution_time,
+                    "error_message": None,
+                    "exit_code": 0
+                }
+            else:
+                # Build failed - capture error
+                error_msg = cmd_result.stderr or cmd_result.stdout or "Build failed"
+                # Truncate to 1000 chars (NFR-002)
+                if len(error_msg) > 1000:
+                    error_msg = error_msg[:997] + "..."
+                
+                return {
+                    "success": False,
+                    "tool_used": "build",
+                    "execution_time_seconds": execution_time,
+                    "error_message": error_msg,
+                    "exit_code": cmd_result.returncode
+                }
+                
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "tool_used": "build",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "Build timed out (exceeded timeout limit)",
+                "exit_code": None
+            }
+        except Exception as e:
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": f"Unexpected error during build: {str(e)}",
+                "exit_code": None
+            }

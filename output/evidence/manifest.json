@@ -1,0 +1,20 @@
+{
+  "generated_at": "2025-09-29T09:48:49.751371",
+  "evidence_base_path": "output/evidence",
+  "files": {
+    "code_quality_lint_file_check": "output/evidence/code_quality/code_quality_lint_file_check.json",
+    "code_quality_build_file_check": "output/evidence/code_quality/code_quality_build_file_check.json",
+    "code_quality_security_file_check": "output/evidence/code_quality/code_quality_security_file_check.json",
+    "code_quality_structure_file_check": "output/evidence/code_quality/code_quality_structure_file_check.json",
+    "testing_automation_file_check": "output/evidence/testing/testing_automation_file_check.json",
+    "testing_coverage_file_check": "output/evidence/testing/testing_coverage_file_check.json",
+    "testing_integration_file_check": "output/evidence/testing/testing_integration_file_check.json",
+    "testing_results_file_check": "output/evidence/testing/testing_results_file_check.json",
+    "documentation_readme_file_check": "output/evidence/documentation/documentation_readme_file_check.json",
+    "documentation_config_file_check": "output/evidence/documentation/documentation_config_file_check.json",
+    "documentation_api_file_check": "output/evidence/documentation/documentation_api_file_check.json",
+    "evaluation_metadata": "output/evidence/system/evaluation_metadata.json",
+    "evidence_summary": "output/evidence/evidence_summary.json"
+  },
+  "total_files": 13
+}

@@ -1,6 +1,7 @@
 """Java-specific tool runner for code analysis."""
 
 import subprocess
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
@@ -141,62 +142,140 @@ class JavaToolRunner:
         return result
 
     def run_build(self, repo_path: str) -> dict[str, Any]:
-        """Run Java build to verify compilation."""
-        result = {
-            "build_success": False,
-            "build_tool": None,
-            "compilation_errors": []
-        }
+        """
+        Run Java build validation using Maven or Gradle.
+
+        Detects Maven (pom.xml) or Gradle (build.gradle) and compiles the project.
+
+        Args:
+            repo_path: Path to the repository to build
+
+        Returns:
+            Dictionary matching BuildValidationResult schema with keys:
+            - success: bool | None (True=pass, False=fail, None=unavailable)
+            - tool_used: str (name of build tool: "mvn", "gradle", or "none")
+            - execution_time_seconds: float (build duration)
+            - error_message: str | None (truncated to 1000 chars)
+            - exit_code: int | None (process exit code)
+        """
+        start_time = time.time()
 
         # Try Maven build
-        if self._has_maven(repo_path) and self._check_tool_available("mvn"):
-            result["build_tool"] = "maven"
+        if self._has_maven(repo_path):
+            if not self._check_tool_available("mvn"):
+                return {
+                    "success": None,
+                    "tool_used": "none",
+                    "execution_time_seconds": time.time() - start_time,
+                    "error_message": "Maven not available in PATH (pom.xml found)",
+                    "exit_code": None
+                }
+
             try:
                 cmd_result = subprocess.run(
-                    ["mvn", "compile", "-q"],
+                    ["mvn", "compile", "-q", "-DskipTests"],
                     capture_output=True,
                     text=True,
                     timeout=self.timeout_seconds,
                     cwd=repo_path
                 )
 
-                result["build_success"] = cmd_result.returncode == 0
+                execution_time = time.time() - start_time
 
-                if cmd_result.stderr:
-                    result["compilation_errors"] = self._parse_compilation_errors(cmd_result.stderr)
+                if cmd_result.returncode == 0:
+                    return {
+                        "success": True,
+                        "tool_used": "mvn",
+                        "execution_time_seconds": execution_time,
+                        "error_message": None,
+                        "exit_code": 0
+                    }
+                else:
+                    # Build failed - capture error
+                    error_msg = cmd_result.stderr or cmd_result.stdout or "Maven compile failed"
+                    # Truncate to 1000 chars (NFR-002)
+                    if len(error_msg) > 1000:
+                        error_msg = error_msg[:997] + "..."
 
-                return result
+                    return {
+                        "success": False,
+                        "tool_used": "mvn",
+                        "execution_time_seconds": execution_time,
+                        "error_message": error_msg,
+                        "exit_code": cmd_result.returncode
+                    }
 
             except subprocess.TimeoutExpired:
-                result["compilation_errors"] = ["Build timed out"]
-                return result
+                return {
+                    "success": False,
+                    "tool_used": "mvn",
+                    "execution_time_seconds": time.time() - start_time,
+                    "error_message": "Build timed out (exceeded timeout limit)",
+                    "exit_code": None
+                }
 
         # Try Gradle build
-        elif self._has_gradle(repo_path) and self._check_tool_available("gradle"):
-            result["build_tool"] = "gradle"
+        elif self._has_gradle(repo_path):
+            if not self._check_tool_available("gradle"):
+                return {
+                    "success": None,
+                    "tool_used": "none",
+                    "execution_time_seconds": time.time() - start_time,
+                    "error_message": "Gradle not available in PATH (build.gradle found)",
+                    "exit_code": None
+                }
+
             try:
                 cmd_result = subprocess.run(
-                    ["gradle", "compileJava", "-q"],
+                    ["gradle", "compileJava", "--console=plain", "-q"],
                     capture_output=True,
                     text=True,
                     timeout=self.timeout_seconds,
                     cwd=repo_path
                 )
 
-                result["build_success"] = cmd_result.returncode == 0
+                execution_time = time.time() - start_time
 
-                if cmd_result.stderr:
-                    result["compilation_errors"] = self._parse_compilation_errors(cmd_result.stderr)
+                if cmd_result.returncode == 0:
+                    return {
+                        "success": True,
+                        "tool_used": "gradle",
+                        "execution_time_seconds": execution_time,
+                        "error_message": None,
+                        "exit_code": 0
+                    }
+                else:
+                    # Build failed - capture error
+                    error_msg = cmd_result.stderr or cmd_result.stdout or "Gradle compile failed"
+                    # Truncate to 1000 chars (NFR-002)
+                    if len(error_msg) > 1000:
+                        error_msg = error_msg[:997] + "..."
 
-                return result
+                    return {
+                        "success": False,
+                        "tool_used": "gradle",
+                        "execution_time_seconds": execution_time,
+                        "error_message": error_msg,
+                        "exit_code": cmd_result.returncode
+                    }
 
             except subprocess.TimeoutExpired:
-                result["compilation_errors"] = ["Build timed out"]
-                return result
+                return {
+                    "success": False,
+                    "tool_used": "gradle",
+                    "execution_time_seconds": time.time() - start_time,
+                    "error_message": "Build timed out (exceeded timeout limit)",
+                    "exit_code": None
+                }
 
-        # No build tools available
-        result["build_tool"] = "none"
-        return result
+        # No build configuration found
+        return {
+            "success": None,
+            "tool_used": "none",
+            "execution_time_seconds": time.time() - start_time,
+            "error_message": "No Maven or Gradle configuration found (pom.xml or build.gradle)",
+            "exit_code": None
+        }
 
     def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using OWASP dependency check."""

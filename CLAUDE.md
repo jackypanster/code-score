@@ -340,3 +340,4 @@ Evidence files are organized by dimension (`evidence/code_quality/`, `evidence/t
 - Typical generation time: 10-30 seconds (Gemini)
 - Large evaluations are automatically truncated to fit context window
 - Timeout defaults to provider-specific values (customizable via `--timeout`)
+- 使用Google Gemini 2.5 Pro Preview (gemini-2.5-pro-preview-03-25)模型进行测试，如果有问题请及时提出！

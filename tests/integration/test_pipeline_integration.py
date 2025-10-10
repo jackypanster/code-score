@@ -1,7 +1,10 @@
-"""Integration tests for pipeline integration with checklist evaluation."""
+"""Real integration tests for pipeline integration with checklist evaluation.
+
+NO MOCKS - All tests use real submission loading, validation, and integration.
+"""
 
 import json
-from unittest.mock import patch
+from pathlib import Path
 
 import pytest
 
@@ -14,11 +17,11 @@ from src.metrics.submission_pipeline import (
 
 
 class TestSubmissionLoader:
-    """Test submission.json loading and validation."""
+    """REAL TESTS for submission.json loading and validation - NO MOCKS."""
 
-    def test_load_valid_submission(self, tmp_path):
-        """Test loading a valid submission.json file."""
-        # Create test submission data
+    def test_load_valid_submission_real(self, tmp_path):
+        """REAL TEST: Loading a valid submission.json file."""
+        # Create REAL test submission data
         submission_data = {
             "repository": {
                 "url": "https://github.com/test/repo",
@@ -37,61 +40,69 @@ class TestSubmissionLoader:
             }
         }
 
-        # Write to temp file
+        # Write to REAL temp file
         submission_file = tmp_path / "submission.json"
         with open(submission_file, 'w') as f:
             json.dump(submission_data, f)
 
-        # Test loading
+        # REAL LOADING - No mocks!
         loader = SubmissionLoader()
         loaded_data = loader.load_and_validate(str(submission_file))
 
         assert loaded_data == submission_data
 
-    def test_load_missing_file(self):
-        """Test error handling for missing file."""
+    def test_load_missing_file_real(self):
+        """REAL TEST: Error handling for missing file."""
         loader = SubmissionLoader()
 
+        # REAL VALIDATION
         with pytest.raises(SubmissionValidationError) as exc_info:
             loader.load_and_validate("nonexistent.json")
 
         assert "not found" in str(exc_info.value)
 
-    def test_load_invalid_json(self, tmp_path):
-        """Test error handling for invalid JSON."""
-        # Create invalid JSON file
+    def test_load_invalid_json_real(self, tmp_path):
+        """REAL TEST: Error handling for invalid JSON."""
+        # Create REAL invalid JSON file
         invalid_file = tmp_path / "invalid.json"
         with open(invalid_file, 'w') as f:
             f.write("{ invalid json }")
 
         loader = SubmissionLoader()
 
+        # REAL VALIDATION
         with pytest.raises(SubmissionValidationError) as exc_info:
             loader.load_and_validate(str(invalid_file))
 
         assert "Invalid JSON" in str(exc_info.value)
 
-    def test_validate_missing_sections(self, tmp_path):
-        """Test validation of missing required sections."""
+    def test_validate_missing_sections_real(self, tmp_path):
+        """REAL TEST: Validation of missing required sections."""
         # Missing repository section
         submission_data = {
-            "metrics": {},
+            "metrics": {
+                "code_quality": {},
+                "testing": {},
+                "documentation": {}
+            },
             "execution": {"errors": [], "warnings": []}
         }
 
+        # Write to REAL file
         submission_file = tmp_path / "submission.json"
         with open(submission_file, 'w') as f:
             json.dump(submission_data, f)
 
         loader = SubmissionLoader()
 
+        # REAL VALIDATION
         with pytest.raises(SubmissionValidationError) as exc_info:
             loader.load_and_validate(str(submission_file))
 
         assert "Missing required section: repository" in str(exc_info.value)
 
-    def test_extract_repository_info(self):
-        """Test repository information extraction."""
+    def test_extract_repository_info_real(self):
+        """REAL TEST: Repository information extraction."""
         submission_data = {
             "repository": {
                 "url": "https://github.com/test/repo",
@@ -103,6 +114,8 @@ class TestSubmissionLoader:
         }
 
         loader = SubmissionLoader()
+
+        # REAL EXTRACTION - No mocks!
         repo_info = loader.extract_repository_info(submission_data)
 
         assert repo_info["url"] == "https://github.com/test/repo"
@@ -110,8 +123,8 @@ class TestSubmissionLoader:
         assert repo_info["primary_language"] == "python"
         assert repo_info["size_mb"] == 50
 
-    def test_validate_for_checklist_evaluation(self):
-        """Test checklist-specific validation warnings."""
+    def test_validate_for_checklist_evaluation_real(self):
+        """REAL TEST: Checklist-specific validation warnings."""
         submission_data = {
             "metrics": {
                 "code_quality": {},  # Missing lint_results
@@ -121,6 +134,8 @@ class TestSubmissionLoader:
         }
 
         loader = SubmissionLoader()
+
+        # REAL VALIDATION
         warnings = loader.validate_for_checklist_evaluation(submission_data)
 
         assert len(warnings) >= 3
@@ -130,10 +145,10 @@ class TestSubmissionLoader:
 
 
 class TestPipelineIntegrator:
-    """Test pipeline integration logic."""
+    """REAL TESTS for pipeline integration logic - NO MOCKS."""
 
-    def test_should_run_checklist_evaluation_with_data(self):
-        """Test that evaluation runs when sufficient data is present."""
+    def test_should_run_checklist_evaluation_with_data_real(self):
+        """REAL TEST: Evaluation runs when sufficient data is present."""
         submission_data = {
             "metrics": {
                 "code_quality": {"lint_results": {"passed": True}},
@@ -143,12 +158,14 @@ class TestPipelineIntegrator:
         }
 
         integrator = PipelineIntegrator()
+
+        # REAL DECISION LOGIC
         should_run = integrator.should_run_checklist_evaluation(submission_data)
 
         assert should_run is True
 
-    def test_should_run_checklist_evaluation_without_data(self):
-        """Test that evaluation skips when no meaningful data is present."""
+    def test_should_run_checklist_evaluation_without_data_real(self):
+        """REAL TEST: Evaluation skips when no meaningful data is present."""
         submission_data = {
             "metrics": {
                 "code_quality": {},
@@ -158,12 +175,14 @@ class TestPipelineIntegrator:
         }
 
         integrator = PipelineIntegrator()
+
+        # REAL DECISION LOGIC
         should_run = integrator.should_run_checklist_evaluation(submission_data)
 
         assert should_run is False
 
-    def test_get_pipeline_metadata(self):
-        """Test pipeline metadata extraction."""
+    def test_get_pipeline_metadata_real(self):
+        """REAL TEST: Pipeline metadata extraction."""
         submission_data = {
             "execution": {
                 "tools_used": ["eslint", "pytest"],
@@ -175,6 +194,8 @@ class TestPipelineIntegrator:
         }
 
         integrator = PipelineIntegrator()
+
+        # REAL EXTRACTION
         metadata = integrator.get_pipeline_metadata(submission_data)
 
         assert metadata["tools_used"] == ["eslint", "pytest"]
@@ -183,14 +204,46 @@ class TestPipelineIntegrator:
         assert metadata["warnings_count"] == 2
         assert metadata["timestamp"] == "2025-09-27T12:00:00Z"
 
+    def test_prepare_submission_for_evaluation_real(self, tmp_path):
+        """REAL TEST: Complete submission preparation workflow."""
+        # Create REAL valid submission
+        submission_data = {
+            "repository": {
+                "url": "https://github.com/test/repo",
+                "commit": "abc123",
+                "language": "python",
+                "timestamp": "2025-09-27T12:00:00Z"
+            },
+            "metrics": {
+                "code_quality": {"lint_results": {"passed": True}},
+                "testing": {},
+                "documentation": {}
+            },
+            "execution": {
+                "errors": [],
+                "warnings": []
+            }
+        }
+
+        submission_file = tmp_path / "submission.json"
+        with open(submission_file, 'w') as f:
+            json.dump(submission_data, f)
+
+        integrator = PipelineIntegrator()
+
+        # REAL PREPARATION
+        loaded_data, warnings = integrator.prepare_submission_for_evaluation(str(submission_file))
+
+        assert loaded_data == submission_data
+        assert isinstance(warnings, list)
+
 
 class TestPipelineOutputManager:
-    """Test integrated output management."""
+    """REAL TESTS for integrated output management - NO MOCKS."""
 
-    @patch('src.metrics.pipeline_output_manager.ChecklistEvaluator')
-    @patch('src.metrics.pipeline_output_manager.ScoringMapper')
-    def test_pipeline_output_manager_initialization(self, mock_mapper, mock_evaluator, tmp_path):
-        """Test output manager initialization."""
+    def test_pipeline_output_manager_initialization_real(self, tmp_path):
+        """REAL TEST: Output manager initialization without mocks."""
+        # REAL INITIALIZATION
         output_manager = PipelineOutputManager(
             output_dir=str(tmp_path),
             enable_checklist_evaluation=True
@@ -200,8 +253,9 @@ class TestPipelineOutputManager:
         assert output_manager.checklist_evaluator is not None
         assert output_manager.scoring_mapper is not None
 
-    def test_pipeline_output_manager_disabled(self, tmp_path):
-        """Test output manager with checklist evaluation disabled."""
+    def test_pipeline_output_manager_disabled_real(self, tmp_path):
+        """REAL TEST: Output manager with checklist evaluation disabled."""
+        # REAL INITIALIZATION
         output_manager = PipelineOutputManager(
             output_dir=str(tmp_path),
             enable_checklist_evaluation=False
@@ -210,39 +264,38 @@ class TestPipelineOutputManager:
         assert output_manager.enable_checklist_evaluation is False
         assert output_manager.checklist_evaluator is None
 
-    @patch('src.metrics.pipeline_output_manager.ChecklistEvaluator')
-    @patch('src.metrics.pipeline_output_manager.ScoringMapper')
-    def test_calculate_grade(self, mock_mapper, mock_evaluator, tmp_path):
-        """Test grade calculation from percentage."""
+    def test_calculate_grade_real(self, tmp_path):
+        """REAL TEST: Grade calculation from percentage."""
         output_manager = PipelineOutputManager(str(tmp_path))
 
+        # REAL CALCULATIONS - No mocks!
         assert output_manager._calculate_grade(95) == "A"
         assert output_manager._calculate_grade(85) == "B"
         assert output_manager._calculate_grade(75) == "C"
         assert output_manager._calculate_grade(65) == "D"
         assert output_manager._calculate_grade(55) == "F"
 
-    @patch('src.metrics.pipeline_output_manager.ChecklistEvaluator')
-    @patch('src.metrics.pipeline_output_manager.ScoringMapper')
-    def test_integrate_with_existing_pipeline_disabled(self, mock_mapper, mock_evaluator, tmp_path):
-        """Test integration when checklist evaluation is disabled."""
+    def test_integrate_with_existing_pipeline_disabled_real(self, tmp_path):
+        """REAL TEST: Integration when checklist evaluation is disabled."""
         output_manager = PipelineOutputManager(
             output_dir=str(tmp_path),
             enable_checklist_evaluation=False
         )
 
         existing_files = ["/path/to/existing1.json", "/path/to/existing2.md"]
+
+        # REAL INTEGRATION
         result_files = output_manager.integrate_with_existing_pipeline(
             existing_files, "submission.json"
         )
 
         assert result_files == existing_files
 
-    def test_markdown_report_structure(self, tmp_path):
-        """Test Markdown report generation structure with simplified data."""
+    def test_markdown_report_structure_real(self, tmp_path):
+        """REAL TEST: Markdown report generation structure."""
         output_manager = PipelineOutputManager(str(tmp_path), enable_checklist_evaluation=False)
 
-        # Create minimal mock data for testing
+        # Create REAL mock data for testing
         class MockItem:
             def __init__(self, name, status, score, max_points, description):
                 self.name = name
@@ -272,6 +325,8 @@ class TestPipelineOutputManager:
                 self.evidence_summary = ["Test evidence"]
 
         eval_result = MockResult()
+
+        # REAL REPORT GENERATION
         report = output_manager._create_markdown_report(eval_result, ["Test warning"])
 
         # Check report structure

@@ -1,0 +1,46 @@
+[
+  {
+    "evidence_key": "code_quality_build_file_check",
+    "item_id": "code_quality_build",
+    "source_type": "file_check",
+    "source_path": "$.metrics.code_quality.build_success",
+    "description": "Checked build_success: expected True, got None",
+    "confidence": 0.85,
+    "raw_data": "None",
+    "timestamp": "2025-09-29T09:48:49.747289",
+    "source_data": {}
+  },
+  {
+    "evidence_key": "code_quality_build_file_check",
+    "item_id": "code_quality_build",
+    "source_type": "file_check",
+    "source_path": "$.metrics.code_quality.build_success",
+    "description": "Checked build_success: expected None, got None",
+    "confidence": 0.95,
+    "raw_data": "None",
+    "timestamp": "2025-09-29T09:48:49.747293",
+    "source_data": {}
+  },
+  {
+    "evidence_key": "code_quality_build_file_check",
+    "item_id": "code_quality_build",
+    "source_type": "file_check",
+    "source_path": "$.metrics.code_quality.build_success.other quality indicators present",
+    "description": "Checked existence of other quality indicators present",
+    "confidence": 0.9,
+    "raw_data": "null",
+    "timestamp": "2025-09-29T09:48:49.747296",
+    "source_data": {}
+  },
+  {
+    "evidence_key": "code_quality_build_file_check",
+    "item_id": "code_quality_build",
+    "source_type": "file_check",
+    "source_path": "$.metrics",
+    "description": "Criteria not satisfied for 'met' or 'partial' status",
+    "confidence": 0.8,
+    "raw_data": "Evaluation criteria failed",
+    "timestamp": "2025-09-29T09:48:49.747298",
+    "source_data": {}
+  }
+]

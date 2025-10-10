@@ -150,6 +150,7 @@ class OutputFormat:
                 "code_quality": {
                     "lint_results": metrics.code_quality.lint_results,
                     "build_success": metrics.code_quality.build_success,
+                    "build_details": metrics.code_quality.build_details.model_dump() if metrics.code_quality.build_details else None,
                     "security_issues": [
                         {
                             "severity": issue.severity,

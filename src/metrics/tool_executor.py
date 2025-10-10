@@ -80,6 +80,7 @@ class ToolExecutor:
         parallel_tasks.extend([
             ("linting", self._run_linting),
             ("security_audit", self._run_security_audit),
+            ("build_validation", self._run_build_validation),
         ])
 
         # Sequential tasks (may modify files or have dependencies)
@@ -146,6 +147,27 @@ class ToolExecutor:
         if hasattr(runner, 'run_security_audit'):
             return runner.run_security_audit(repo_path)
         return {"vulnerabilities_found": 0, "high_severity_count": 0, "tool_used": "none"}
+
+    def _run_build_validation(self, runner: Any, repo_path: str) -> dict[str, Any]:
+        """Run build validation if the runner supports it."""
+        if hasattr(runner, "run_build"):
+            try:
+                return runner.run_build(repo_path)
+            except Exception as e:
+                return {
+                    "success": None,
+                    "tool_used": "none",
+                    "execution_time_seconds": 0.0,
+                    "error_message": f"Build validation failed: {str(e)}",
+                    "exit_code": None
+                }
+        return {
+            "success": None,
+            "tool_used": "none",
+            "execution_time_seconds": 0.0,
+            "error_message": "Build validation not supported for this language",
+            "exit_code": None
+        }
 
     def _run_testing(self, runner: Any, repo_path: str) -> dict[str, Any]:
         """Run testing analysis."""
@@ -228,13 +250,22 @@ class ToolExecutor:
             if "error" not in security_result:
                 metrics.code_quality.dependency_audit = security_result
 
-        # Build success (for languages that support it)
-        if language in ["java", "go"]:
-            # Try to get build results from runners
-            # For now, assume build passes if no compilation errors in linting
-            lint_result = results.get("linting", {})
-            if lint_result.get("passed", False):
-                metrics.code_quality.build_success = True
+        # Build validation results
+        if "build_validation" in results:
+            build_result = results["build_validation"]
+            if "error" not in build_result:
+                # Map BuildValidationResult to CodeQualityMetrics
+                from .models.build_validation import BuildValidationResult
+
+                metrics.code_quality.build_success = build_result.get("success")
+
+                # Create BuildValidationResult instance for build_details
+                try:
+                    build_details = BuildValidationResult(**build_result)
+                    metrics.code_quality.build_details = build_details
+                except Exception:
+                    # If validation fails, still record build_success
+                    pass
 
         # Testing metrics
         if "testing" in results:

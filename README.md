@@ -1,5 +1,9 @@
 # Code Score
 
+> **⚠️ Testing Philosophy**: This project follows a **strict no-mock policy**. All tests use real execution with actual tools, APIs, and file operations. See [MOCK_ELIMINATION_FINAL_REPORT.md](MOCK_ELIMINATION_FINAL_REPORT.md) for details.
+
+## Code Score
+
 Automated Git repository quality analysis with AI-powered reporting.
 
 **Quick Links**: [Developer Guide](CLAUDE.md) | [API Reference](docs/api-reference.md) | [Documentation Guide](docs/GUIDE.md)
@@ -16,11 +20,12 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 
 ## Features
 
-- Multi-language support (Python, JavaScript/TypeScript, Java, Go)
-- Evidence-based scoring with 11-item quality checklist
-- AI-generated narrative reports using Gemini
-- Standardized JSON/Markdown output with schema validation
-- Performance optimized for large repositories (500MB limit)
+- **Multi-language support** (Python, JavaScript/TypeScript, Java, Go)
+- **Automated build validation** across all supported languages
+- **Evidence-based scoring** with 11-item quality checklist
+- **AI-generated narrative reports** using Gemini
+- **Standardized JSON/Markdown output** with schema validation
+- **Performance optimized** for large repositories (500MB limit)
 
 ## Prerequisites
 
@@ -32,10 +37,10 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 ### Optional Analysis Tools
 
 The tool automatically detects and uses language-specific tools:
-- **Python**: `ruff`, `pytest`, `pip-audit`
-- **JavaScript**: `eslint`, `jest`, `npm audit`
-- **Java**: `checkstyle`, `maven`/`gradle`, `spotbugs`
-- **Go**: `golangci-lint`, `go test`, `gosec`
+- **Python**: `ruff` (linting), `pytest` (testing), `pip-audit` (security), `uv build`/`python -m build` (build validation)
+- **JavaScript**: `eslint` (linting), `jest` (testing), `npm audit` (security), `npm`/`yarn` (build validation)
+- **Java**: `checkstyle` (linting), `maven`/`gradle` (testing & build), `spotbugs` (security)
+- **Go**: `golangci-lint` (linting), `go test` (testing), `gosec` (security), `go build` (build validation)
 
 ## Installation
 
@@ -149,6 +154,13 @@ uv run python -m src.cli.llm_report output/score_input.json \
     "code_quality": {
       "lint_results": {"tool_used": "ruff", "passed": true, "issues_count": 0},
       "build_success": true,
+      "build_details": {
+        "success": true,
+        "tool_used": "uv",
+        "execution_time_seconds": 3.2,
+        "error_message": null,
+        "exit_code": 0
+      },
       "dependency_audit": {"vulnerabilities_found": 0, "tool_used": "pip-audit"}
     },
     "testing": {

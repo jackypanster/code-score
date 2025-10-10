@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://code-score.dev/schemas/build-validation-result.json",
+  "title": "BuildValidationResult",
+  "description": "Schema for build validation result structure",
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Build outcome: true (success), false (failure), null (tool unavailable)",
+      "type": ["boolean", "null"]
+    },
+    "tool_used": {
+      "description": "Name of build tool executed",
+      "type": "string",
+      "enum": ["uv", "build", "npm", "yarn", "go", "mvn", "gradle", "none"],
+      "minLength": 1
+    },
+    "execution_time_seconds": {
+      "description": "Duration of build execution in seconds",
+      "type": "number",
+      "minimum": 0
+    },
+    "error_message": {
+      "description": "Error details if build failed (truncated to 1000 chars)",
+      "type": ["string", "null"],
+      "maxLength": 1000
+    },
+    "exit_code": {
+      "description": "Process exit code from build tool",
+      "type": ["integer", "null"]
+    }
+  },
+  "required": ["success", "tool_used", "execution_time_seconds"],
+  "additionalProperties": false
+}

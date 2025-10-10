@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
@@ -279,3 +280,128 @@ class JavaScriptToolRunner:
                 })
 
         return formatted
+
+    def run_build(self, repo_path: str) -> dict[str, Any]:
+        """
+        Run JavaScript/TypeScript build validation using npm or yarn.
+
+        Checks for build script in package.json and executes it using the appropriate
+        package manager (yarn if yarn.lock exists, otherwise npm).
+
+        Args:
+            repo_path: Path to the repository to build
+
+        Returns:
+            Dictionary matching BuildValidationResult schema with keys:
+            - success: bool | None (True=pass, False=fail, None=unavailable)
+            - tool_used: str (name of build tool used: "npm", "yarn", or "none")
+            - execution_time_seconds: float (build duration)
+            - error_message: str | None (truncated to 1000 chars)
+            - exit_code: int | None (process exit code)
+        """
+        start_time = time.time()
+
+        # Check for package.json
+        repo = Path(repo_path)
+        package_json_path = repo / "package.json"
+
+        if not package_json_path.exists():
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "No package.json found",
+                "exit_code": None
+            }
+
+        # Parse package.json to check for build script
+        try:
+            with open(package_json_path) as f:
+                package_data = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": f"Failed to parse package.json: {str(e)}",
+                "exit_code": None
+            }
+
+        # Check if build script exists
+        scripts = package_data.get("scripts", {})
+        if "build" not in scripts:
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "No build script defined in package.json",
+                "exit_code": None
+            }
+
+        # Determine which package manager to use
+        has_yarn_lock = (repo / "yarn.lock").exists()
+        tool_cmd = ["yarn", "build"] if has_yarn_lock else ["npm", "run", "build", "--if-present"]
+        tool_name = "yarn" if has_yarn_lock else "npm"
+
+        # Check if tool is available
+        tool_check_cmd = "yarn" if has_yarn_lock else "npm"
+        if not self._check_tool_available(tool_check_cmd):
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": f"{tool_name} not available in PATH",
+                "exit_code": None
+            }
+
+        # Run build command
+        try:
+            cmd_result = subprocess.run(
+                tool_cmd,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds,
+                cwd=repo_path
+            )
+
+            execution_time = time.time() - start_time
+
+            if cmd_result.returncode == 0:
+                return {
+                    "success": True,
+                    "tool_used": tool_name,
+                    "execution_time_seconds": execution_time,
+                    "error_message": None,
+                    "exit_code": 0
+                }
+            else:
+                # Build failed - capture error
+                error_msg = cmd_result.stderr or cmd_result.stdout or "Build failed"
+                # Truncate to 1000 chars (NFR-002)
+                if len(error_msg) > 1000:
+                    error_msg = error_msg[:997] + "..."
+
+                return {
+                    "success": False,
+                    "tool_used": tool_name,
+                    "execution_time_seconds": execution_time,
+                    "error_message": error_msg,
+                    "exit_code": cmd_result.returncode
+                }
+
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "tool_used": tool_name,
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": "Build timed out (exceeded timeout limit)",
+                "exit_code": None
+            }
+        except Exception as e:
+            return {
+                "success": None,
+                "tool_used": "none",
+                "execution_time_seconds": time.time() - start_time,
+                "error_message": f"Unexpected error during build: {str(e)}",
+                "exit_code": None
+            }

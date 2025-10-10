@@ -1,0 +1,14 @@
+{
+  "total_evidence_items": 47,
+  "evidence_by_type": {
+    "file_check": 46,
+    "evaluation_metadata": 1
+  },
+  "confidence_distribution": {
+    "high": 47,
+    "medium": 0,
+    "low": 0
+  },
+  "unique_evidence_keys": 12,
+  "generation_timestamp": "2025-09-29T09:48:49.751142"
+}
