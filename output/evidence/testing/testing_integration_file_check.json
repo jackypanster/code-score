@@ -4,10 +4,10 @@
     "item_id": "testing_integration",
     "source_type": "file_check",
     "source_path": "$.metrics.testing.test_execution.framework",
-    "description": "Checked test_execution.framework: should not be none, got none",
-    "confidence": 0.85,
-    "raw_data": "none",
-    "timestamp": "2025-09-29T09:48:49.747346",
+    "description": "Checked test_execution.framework: should not be none, got pytest",
+    "confidence": 0.95,
+    "raw_data": "pytest",
+    "timestamp": "2025-10-11T19:56:45.193950",
     "source_data": {}
   },
   {
@@ -18,7 +18,7 @@
     "description": "Checked test_execution.tests_run: expected >= 3, got 0",
     "confidence": 0.85,
     "raw_data": "0",
-    "timestamp": "2025-09-29T09:48:49.747349",
+    "timestamp": "2025-10-11T19:56:45.193950",
     "source_data": {}
   },
   {
@@ -29,7 +29,7 @@
     "description": "Checked test_execution.tests_run: expected >= 1, got 0",
     "confidence": 0.85,
     "raw_data": "0",
-    "timestamp": "2025-09-29T09:48:49.747352",
+    "timestamp": "2025-10-11T19:56:45.193951",
     "source_data": {}
   },
   {
@@ -40,7 +40,7 @@
     "description": "Checked existence of test_execution.tests_run < 3",
     "confidence": 0.9,
     "raw_data": "null",
-    "timestamp": "2025-09-29T09:48:49.747354",
+    "timestamp": "2025-10-11T19:56:45.193952",
     "source_data": {}
   },
   {
@@ -51,7 +51,7 @@
     "description": "Criteria not satisfied for 'met' or 'partial' status",
     "confidence": 0.8,
     "raw_data": "Evaluation criteria failed",
-    "timestamp": "2025-09-29T09:48:49.747357",
+    "timestamp": "2025-10-11T19:56:45.193953",
     "source_data": {}
   }
 ]

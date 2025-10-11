@@ -6,11 +6,12 @@ from pathlib import Path
 import click
 
 from ..metrics.cleanup import get_cleanup_manager
-from ..metrics.error_handling import get_error_handler
+from ..metrics.error_handling import ToolchainValidationError, get_error_handler
 from ..metrics.git_operations import GitOperationError, GitOperations
 from ..metrics.language_detection import LanguageDetector
 from ..metrics.output_generators import OutputManager
 from ..metrics.tool_executor import ToolExecutor
+from ..metrics.toolchain_manager import ToolchainManager
 
 
 @click.command()
@@ -22,12 +23,14 @@ from ..metrics.tool_executor import ToolExecutor
               help='Output format')
 @click.option('--timeout', default=300, help='Analysis timeout in seconds')
 @click.option('--verbose', is_flag=True, help='Enable verbose logging')
+@click.option('--skip-toolchain-check', is_flag=True, default=False, help='Skip toolchain validation (emergency bypass)')
 @click.option('--enable-checklist', type=bool, default=True, help='Enable checklist evaluation (default: enabled)')
 @click.option('--checklist-config', help='Path to checklist configuration YAML file')
 @click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
 @click.option('--llm-template', help='Path to custom LLM prompt template')
 def main(repository_url: str, commit_sha: str | None, output_dir: str,
-         output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: str | None,
+         output_format: str, timeout: int, verbose: bool, skip_toolchain_check: bool,
+         enable_checklist: bool, checklist_config: str | None,
          generate_llm_report: bool, llm_template: str | None) -> None:
     """
     Analyze code quality metrics for a Git repository.
@@ -76,7 +79,37 @@ def main(repository_url: str, commit_sha: str | None, output_dir: str,
             if verbose:
                 click.echo(f"Detected language: {detected_language}")
 
-            # Step 3: Execute analysis tools
+            # Step 3: Toolchain validation (FR-001, FR-003)
+            # Validate all required tools for the detected language before analysis
+            if not skip_toolchain_check:
+                if verbose:
+                    click.echo(f"Validating toolchain for {detected_language}...")
+
+                try:
+                    toolchain_manager = ToolchainManager()
+                    report = toolchain_manager.validate_for_language(detected_language)
+
+                    # Validation passed - print success message (FR-009)
+                    if verbose:
+                        click.echo(report.format_error_message())
+
+                except ToolchainValidationError as e:
+                    # Validation failed - print error and exit immediately (FR-003)
+                    click.echo(f"✗ 工具链验证失败:", err=True)
+                    click.echo(e.message, err=True)
+
+                    # Clean up cloned repository before exiting
+                    try:
+                        git_ops.cleanup_repository(repository)
+                    except Exception:
+                        pass  # Ignore cleanup errors when already failing
+
+                    sys.exit(1)
+            else:
+                # Skip flag used - print warning
+                click.echo("⚠ 警告: 已跳过工具链验证 (--skip-toolchain-check)", err=True)
+
+            # Step 4: Execute analysis tools
             if verbose:
                 click.echo("Running analysis tools...")
 

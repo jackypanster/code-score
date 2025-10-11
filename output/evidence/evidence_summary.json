@@ -1,14 +1,14 @@
 {
-  "total_evidence_items": 47,
+  "total_evidence_items": 38,
   "evidence_by_type": {
-    "file_check": 46,
+    "file_check": 37,
     "evaluation_metadata": 1
   },
   "confidence_distribution": {
-    "high": 47,
+    "high": 38,
     "medium": 0,
     "low": 0
   },
   "unique_evidence_keys": 12,
-  "generation_timestamp": "2025-09-29T09:48:49.751142"
+  "generation_timestamp": "2025-10-11T19:56:45.195617"
 }

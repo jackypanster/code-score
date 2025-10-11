@@ -7,7 +7,7 @@
     "description": "Checked readme_present: expected True, got True",
     "confidence": 0.95,
     "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747377",
+    "timestamp": "2025-10-11T19:56:45.193958",
     "source_data": {}
   },
   {
@@ -18,7 +18,7 @@
     "description": "Checked setup_instructions: expected True, got True",
     "confidence": 0.95,
     "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747380",
+    "timestamp": "2025-10-11T19:56:45.193959",
     "source_data": {}
   },
   {
@@ -26,43 +26,10 @@
     "item_id": "documentation_readme",
     "source_type": "file_check",
     "source_path": "$.metrics.documentation.usage_examples",
-    "description": "Checked usage_examples: expected True, got False",
-    "confidence": 0.85,
-    "raw_data": "False",
-    "timestamp": "2025-09-29T09:48:49.747382",
-    "source_data": {}
-  },
-  {
-    "evidence_key": "documentation_readme_file_check",
-    "item_id": "documentation_readme",
-    "source_type": "file_check",
-    "source_path": "$.metrics.documentation.setup_instructions",
-    "description": "Checked setup_instructions: expected True, got True",
+    "description": "Checked usage_examples: expected True, got True",
     "confidence": 0.95,
     "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747385",
-    "source_data": {}
-  },
-  {
-    "evidence_key": "documentation_readme_file_check",
-    "item_id": "documentation_readme",
-    "source_type": "file_check",
-    "source_path": "$.metrics.documentation.usage_examples",
-    "description": "Checked usage_examples: expected True, got False",
-    "confidence": 0.85,
-    "raw_data": "False",
-    "timestamp": "2025-09-29T09:48:49.747388",
-    "source_data": {}
-  },
-  {
-    "evidence_key": "documentation_readme_file_check",
-    "item_id": "documentation_readme",
-    "source_type": "file_check",
-    "source_path": "$.metrics.documentation.readme_present",
-    "description": "Checked readme_present: expected True, got True",
-    "confidence": 0.95,
-    "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747391",
+    "timestamp": "2025-10-11T19:56:45.193960",
     "source_data": {}
   },
   {
@@ -70,10 +37,10 @@
     "item_id": "documentation_readme",
     "source_type": "file_check",
     "source_path": "$.metrics.documentation.readme_quality_score",
-    "description": "Checked readme_quality_score: expected >= 0.5, got 0.8",
+    "description": "Checked readme_quality_score: expected >= 0.8, got 0.8",
     "confidence": 0.95,
     "raw_data": "0.8",
-    "timestamp": "2025-09-29T09:48:49.747394",
+    "timestamp": "2025-10-11T19:56:45.193960",
     "source_data": {}
   }
 ]

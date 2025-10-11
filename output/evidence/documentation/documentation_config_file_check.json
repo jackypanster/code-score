@@ -7,7 +7,7 @@
     "description": "Checked setup_instructions: expected True, got True",
     "confidence": 0.95,
     "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747397",
+    "timestamp": "2025-10-11T19:56:45.193961",
     "source_data": {}
   },
   {
@@ -18,7 +18,7 @@
     "description": "Checked readme_quality_score: expected >= 0.7, got 0.8",
     "confidence": 0.95,
     "raw_data": "0.8",
-    "timestamp": "2025-09-29T09:48:49.747399",
+    "timestamp": "2025-10-11T19:56:45.193962",
     "source_data": {}
   }
 ]

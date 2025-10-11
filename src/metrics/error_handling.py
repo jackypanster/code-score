@@ -39,6 +39,50 @@ class OutputGenerationError(MetricsError):
     pass
 
 
+class ToolchainValidationError(MetricsError):
+    """Raised when toolchain validation fails.
+
+    This exception is raised by ToolchainManager when any required tool
+    is missing, outdated, or has permission issues. The exception contains
+    a ValidationReport with categorized errors and a formatted Chinese
+    error message ready for display.
+
+    Attributes:
+        report: ValidationReport with detailed categorized errors
+        message: Formatted multi-line Chinese error message (from report.format_error_message())
+
+    Usage:
+        try:
+            manager.validate_for_language("python")
+        except ToolchainValidationError as e:
+            print(e.message, file=sys.stderr)
+            sys.exit(1)
+    """
+
+    def __init__(self, report):
+        """Initialize ToolchainValidationError with a ValidationReport.
+
+        Args:
+            report: ValidationReport instance with validation failures
+        """
+        from .models.validation_report import ValidationReport
+
+        if not isinstance(report, ValidationReport):
+            raise TypeError(f"Expected ValidationReport, got {type(report)}")
+
+        self.report = report
+        self.message = report.format_error_message()
+        super().__init__(
+            message=self.message,
+            severity=ErrorSeverity.CRITICAL,
+            context={
+                "language": report.language,
+                "failed_tools": report.get_failed_tools(),
+                "error_count": report.get_error_count()
+            }
+        )
+
+
 class ErrorHandler:
     """Handles errors and logging throughout the metrics collection pipeline."""
 
