@@ -31,8 +31,10 @@ class ToolDetector:
     # Version regex pattern: matches "1.2.3", "v1.2.3", "1.2"
     VERSION_PATTERN = re.compile(r'v?(\d+\.\d+(?:\.\d+)?)')
 
-    # Subprocess timeout (500ms per research decision #2)
-    TIMEOUT_MS = 0.5
+    # Subprocess timeout: 3 seconds to accommodate JVM tools (mvn, gradle)
+    # Lightweight tools (ruff, npm) respond in <100ms
+    # JVM tools (mvn, gradle) need 1-2s to start JVM
+    TIMEOUT_MS = 3.0
 
     def check_availability(self, tool_name: str) -> str | None:
         """Check if a tool is available in the system PATH.

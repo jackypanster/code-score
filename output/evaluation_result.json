@@ -6,36 +6,29 @@
       "dimension": "code_quality",
       "max_points": 15,
       "description": "Lint/static analysis pipeline covers core rules and passes successfully",
-      "evaluation_status": "unmet",
-      "score": 0.0,
+      "evaluation_status": "met",
+      "score": 15.0,
       "evidence_references": [
         {
           "source_type": "file_check",
           "source_path": "$.metrics.code_quality.lint_results.passed",
-          "description": "Checked lint_results.passed: expected True, got False",
-          "confidence": 0.85,
-          "raw_data": "False"
+          "description": "Checked lint_results.passed: expected True, got True",
+          "confidence": 0.95,
+          "raw_data": "True"
         },
         {
           "source_type": "file_check",
           "source_path": "$.metrics.code_quality.lint_results.tool_used",
-          "description": "Checked lint_results.tool_used: should not be none, got none",
-          "confidence": 0.85,
-          "raw_data": "none"
+          "description": "Checked lint_results.tool_used: should not be none, got ruff",
+          "confidence": 0.95,
+          "raw_data": "ruff"
         },
         {
           "source_type": "file_check",
-          "source_path": "$.metrics.code_quality.lint_results.lint_results.issues_count < 10",
-          "description": "Checked existence of lint_results.issues_count < 10",
-          "confidence": 0.9,
-          "raw_data": "null"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics",
-          "description": "Criteria not satisfied for 'met' or 'partial' status",
-          "confidence": 0.8,
-          "raw_data": "Evaluation criteria failed"
+          "source_path": "$.metrics.code_quality.lint_results.issues_count",
+          "description": "Checked lint_results.issues_count: expected 0, got 0",
+          "confidence": 0.95,
+          "raw_data": "0"
         }
       ]
     },
@@ -45,36 +38,15 @@
       "dimension": "code_quality",
       "max_points": 10,
       "description": "Provides recent build or package success log/CI record",
-      "evaluation_status": "unmet",
-      "score": 0.0,
+      "evaluation_status": "met",
+      "score": 10.0,
       "evidence_references": [
         {
           "source_type": "file_check",
           "source_path": "$.metrics.code_quality.build_success",
-          "description": "Checked build_success: expected True, got None",
-          "confidence": 0.85,
-          "raw_data": "None"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.code_quality.build_success",
-          "description": "Checked build_success: expected None, got None",
+          "description": "Checked build_success: expected True, got True",
           "confidence": 0.95,
-          "raw_data": "None"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.code_quality.build_success.other quality indicators present",
-          "description": "Checked existence of other quality indicators present",
-          "confidence": 0.9,
-          "raw_data": "null"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics",
-          "description": "Criteria not satisfied for 'met' or 'partial' status",
-          "confidence": 0.8,
-          "raw_data": "Evaluation criteria failed"
+          "raw_data": "True"
         }
       ]
     },
@@ -239,9 +211,9 @@
         {
           "source_type": "file_check",
           "source_path": "$.metrics.testing.test_execution.framework",
-          "description": "Checked test_execution.framework: should not be none, got none",
-          "confidence": 0.85,
-          "raw_data": "none"
+          "description": "Checked test_execution.framework: should not be none, got pytest",
+          "confidence": 0.95,
+          "raw_data": "pytest"
         },
         {
           "source_type": "file_check",
@@ -325,8 +297,8 @@
       "dimension": "documentation",
       "max_points": 12,
       "description": "README includes project overview, dependency install, start/test commands, sample data",
-      "evaluation_status": "partial",
-      "score": 6.0,
+      "evaluation_status": "met",
+      "score": 12.0,
       "evidence_references": [
         {
           "source_type": "file_check",
@@ -345,35 +317,14 @@
         {
           "source_type": "file_check",
           "source_path": "$.metrics.documentation.usage_examples",
-          "description": "Checked usage_examples: expected True, got False",
-          "confidence": 0.85,
-          "raw_data": "False"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.documentation.setup_instructions",
-          "description": "Checked setup_instructions: expected True, got True",
-          "confidence": 0.95,
-          "raw_data": "True"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.documentation.usage_examples",
-          "description": "Checked usage_examples: expected True, got False",
-          "confidence": 0.85,
-          "raw_data": "False"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.documentation.readme_present",
-          "description": "Checked readme_present: expected True, got True",
+          "description": "Checked usage_examples: expected True, got True",
           "confidence": 0.95,
           "raw_data": "True"
         },
         {
           "source_type": "file_check",
           "source_path": "$.metrics.documentation.readme_quality_score",
-          "description": "Checked readme_quality_score: expected >= 0.5, got 0.8",
+          "description": "Checked readme_quality_score: expected >= 0.8, got 0.8",
           "confidence": 0.95,
           "raw_data": "0.8"
         }
@@ -410,8 +361,8 @@
       "dimension": "documentation",
       "max_points": 6,
       "description": "Lists main API/CLI/UI entry points with example parameters/responses/screenshots",
-      "evaluation_status": "partial",
-      "score": 3.0,
+      "evaluation_status": "met",
+      "score": 6.0,
       "evidence_references": [
         {
           "source_type": "file_check",
@@ -423,37 +374,23 @@
         {
           "source_type": "file_check",
           "source_path": "$.metrics.documentation.usage_examples",
-          "description": "Checked usage_examples: expected True, got False",
-          "confidence": 0.85,
-          "raw_data": "False"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.documentation.api_documentation",
-          "description": "Checked api_documentation: expected True, got True",
+          "description": "Checked usage_examples: expected True, got True",
           "confidence": 0.95,
           "raw_data": "True"
-        },
-        {
-          "source_type": "file_check",
-          "source_path": "$.metrics.documentation.usage_examples",
-          "description": "Checked usage_examples: expected True, got False",
-          "confidence": 0.85,
-          "raw_data": "False"
         }
       ]
     }
   ],
-  "total_score": 23.0,
+  "total_score": 57.0,
   "max_possible_score": 100,
-  "score_percentage": 23.0,
+  "score_percentage": 56.99999999999999,
   "category_breakdowns": {
     "code_quality": {
       "dimension": "code_quality",
       "items_count": 4,
       "max_points": 40,
-      "actual_points": 7.0,
-      "percentage": 17.5
+      "actual_points": 32.0,
+      "percentage": 80.0
     },
     "testing": {
       "dimension": "testing",
@@ -466,30 +403,29 @@
       "dimension": "documentation",
       "items_count": 3,
       "max_points": 25,
-      "actual_points": 16.0,
-      "percentage": 64.0
+      "actual_points": 25.0,
+      "percentage": 100.0
     }
   },
   "evaluation_metadata": {
     "evaluator_version": "1.0.0",
-    "processing_duration": 0.006845,
+    "processing_duration": 0.000315,
     "warnings": [
-      "No build_success data found in code_quality section",
       "No coverage_report found in testing section"
     ],
     "metrics_completeness": 100.0
   },
   "evidence_summary": [
-    "\u274c Static Linting Passed: Not satisfied - Lint/static analysis pipeline covers core rules and passes successfully",
-    "\u274c Build/Package Success: Not satisfied - Provides recent build or package success log/CI record",
+    "\u2705 Static Linting Passed: Lint/static analysis pipeline covers core rules and passes successfully",
+    "\u2705 Build/Package Success: Provides recent build or package success log/CI record",
     "\u274c Dependency Security Scan: Not satisfied - Executes dependency security scan, lists high-risk items with handling plan",
     "\u2705 Core Module Documentation: README or code comments clearly mark key directories, service entry points",
     "\u274c Automated Test Execution: Not satisfied - At least one type of automated test executes and passes in CI",
     "\u274c Coverage or Core Test Evidence: Not satisfied - Coverage >=60% or core functionality test list with execution proof",
     "\u274c Integration/Smoke Test Scripts: Not satisfied - Provides 2-3 typical scenario integration or smoke test scripts with results",
     "\u274c Test Result Documentation: Not satisfied - Provides CI pipeline link or execution log archive proving test success",
-    "\u26a0\ufe0f README Quick Start Guide: Partially satisfied - README includes project overview, dependency install, start/test commands, sample data",
+    "\u2705 README Quick Start Guide: README includes project overview, dependency install, start/test commands, sample data",
     "\u2705 Configuration and Environment Setup: Provides .env.example or config docs listing required environment variables",
-    "\u26a0\ufe0f API/Interface Usage Documentation: Partially satisfied - Lists main API/CLI/UI entry points with example parameters/responses/screenshots"
+    "\u2705 API/Interface Usage Documentation: Lists main API/CLI/UI entry points with example parameters/responses/screenshots"
   ]
 }

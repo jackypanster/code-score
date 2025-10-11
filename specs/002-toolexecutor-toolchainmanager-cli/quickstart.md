@@ -433,7 +433,7 @@ The toolchain validation system is implemented across the following files:
 
 - `tool_detector.py` - Low-level tool detection functions
   - `ToolDetector.check_availability(tool_name)` - Uses `shutil.which()`
-  - `ToolDetector.get_version(tool_path, version_command)` - Runs subprocess with 500ms timeout
+  - `ToolDetector.get_version(tool_path, version_command)` - Runs subprocess with 3-second timeout (accommodates JVM tools)
   - `ToolDetector.compare_versions(current, minimum)` - Tuple-based semver comparison
   - `ToolDetector.check_permissions(tool_path)` - Uses `os.access()` and `stat.filemode()`
 
@@ -476,13 +476,13 @@ The toolchain validation system is implemented across the following files:
 4. **Permission Checking (FR-016)**: Uses `os.access(os.X_OK)` and shows Unix-style permissions
 5. **Error Categorization (FR-017)**: Groups errors into missing/outdated/permission/other
 6. **Chinese Messages (FR-013)**: All user-facing messages in Chinese with documentation URLs
-7. **Timeout Handling**: 500ms timeout for subprocess calls to prevent hanging
+7. **Timeout Handling**: 3-second timeout for subprocess calls (accommodates JVM tools like mvn/gradle)
 8. **Global Tools (FR-014)**: git and uv validated for ALL languages
 
 ### Performance Characteristics
 
-- **Validation Time**: <3 seconds for typical setup (6 tools for Python)
-- **Individual Tool Timeout**: 500ms maximum
+- **Validation Time**: <10 seconds for typical setup (6 tools for Python)
+- **Individual Tool Timeout**: 3 seconds maximum (accommodates JVM startup time)
 - **Parallel Checking**: Tools checked sequentially (simple, reliable)
 - **Memory Usage**: Minimal - no caching, stateless detection
 

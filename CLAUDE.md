@@ -58,7 +58,7 @@ Load tools (global + language-specific) →
 For each tool:
   - Check PATH availability (shutil.which)
   - Verify execute permissions (os.access)
-  - Extract version (subprocess with 500ms timeout)
+  - Extract version (subprocess with 3-second timeout, accommodates JVM tools)
   - Compare semver (tuple comparison)
   - Create ValidationResult →
 Group errors by category (missing/outdated/permission/other) →
@@ -72,7 +72,7 @@ Otherwise: continue analysis
 - **Permission diagnostics** (FR-016): Reports exact path and Unix permissions for non-executable tools
 - **Error categorization** (FR-017): Groups all errors into clear categories for efficient debugging
 - **Emergency bypass**: `--skip-toolchain-check` flag for debugging scenarios
-- **Performance**: <3 seconds validation time, 500ms per-tool timeout
+- **Performance**: <10 seconds validation time, 3-second per-tool timeout (accommodates JVM startup)
 
 **Testing**: 136 tests (23 contract + 96 unit + 10 integration + 7 smoke), 96-100% coverage
 

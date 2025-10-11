@@ -46,7 +46,7 @@ def check_tool_availability(tool_name: str) -> Optional[str]:
 - **Heterogeneous Tools**: Different tools use different version flags and output formats (no universal standard)
 - **Pragmatic Parsing**: Most tools output version in first line/token; simple split/regex sufficient for semver comparison
 - **Graceful Degradation**: If version cannot be determined, report "unknown" and skip version validation for that tool (but warn in logs)
-- **Performance**: Subprocess calls timeout at 500ms per tool to prevent hangs
+- **Performance**: Subprocess calls timeout at 3 seconds per tool (accommodates JVM tools like mvn/gradle)
 
 **Version Command Registry** (tool-specific):
 ```python
@@ -122,7 +122,7 @@ def compare_versions(current: str, minimum: str) -> bool:
   - **Why rejected**: Platform-specific, less portable than Python stdlib
 
 **Implementation Notes**:
-- Timeout: 500ms per tool (using `subprocess.run(timeout=0.5)`)
+- Timeout: 3 seconds per tool (using `subprocess.run(timeout=3.0)`) to accommodate JVM startup
 - Edge case: Tool exists but `--version` hangs → timeout, treat as "unknown version", skip validation
 - Edge case: Version format doesn't match regex → return None, log warning, skip validation for that tool
 - Edge case: Tool returns non-zero exit code for version check → capture anyway (some tools do this)

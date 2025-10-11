@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/anthropics/anthropic-sdk-python.git",
+    "commit": "1f233dfdeee145af6f86039b3cd6f9c89b49efd9",
+    "language": "python",
+    "timestamp": "2025-10-11T11:56:31.006781",
+    "size_mb": 3.0
+  },
+  "metrics": {
+    "code_quality": {
+      "lint_results": {
+        "tool_used": "ruff",
+        "passed": true,
+        "issues_count": 0,
+        "issues": []
+      },
+      "build_success": true,
+      "build_details": {
+        "success": true,
+        "tool_used": "uv",
+        "execution_time_seconds": 14.09354305267334,
+        "error_message": null,
+        "exit_code": 0
+      },
+      "security_issues": [],
+      "dependency_audit": {
+        "vulnerabilities_found": 0,
+        "high_severity_count": 0,
+        "tool_used": "none"
+      }
+    },
+    "testing": {
+      "test_execution": {
+        "tests_run": 0,
+        "tests_passed": 0,
+        "tests_failed": 0,
+        "framework": "pytest",
+        "execution_time_seconds": 0.0
+      },
+      "coverage_report": null
+    },
+    "documentation": {
+      "readme_present": true,
+      "readme_quality_score": 0.8,
+      "api_documentation": true,
+      "setup_instructions": true,
+      "usage_examples": true
+    }
+  },
+  "execution": {
+    "tools_used": [
+      "ruff",
+      "pytest"
+    ],
+    "errors": [],
+    "warnings": [
+      "Repository size: 3.0 MB, Files: 522"
+    ],
+    "duration_seconds": 14.177407026290894,
+    "timestamp": "2025-10-11T11:56:31.008604"
+  }
+}

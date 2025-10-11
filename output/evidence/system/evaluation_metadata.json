@@ -6,17 +6,17 @@
     "source_path": "$.evaluation_metadata",
     "description": "Evaluation process metadata and statistics",
     "confidence": 1.0,
-    "raw_data": "{\"evaluator_version\": \"1.0.0\", \"processing_duration\": 0.006845, \"warnings\": [\"No build_success data found in code_quality section\", \"No coverage_report found in testing section\"], \"metrics_completeness\": 100.0}",
-    "timestamp": "2025-09-29T09:48:49.747442",
+    "raw_data": "{\"evaluator_version\": \"1.0.0\", \"processing_duration\": 0.000315, \"warnings\": [\"No coverage_report found in testing section\"], \"metrics_completeness\": 100.0}",
+    "timestamp": "2025-10-11T19:56:45.193974",
     "source_data": {
-      "total_score": 23.0,
-      "score_percentage": 23.0,
+      "total_score": 57.0,
+      "score_percentage": 56.99999999999999,
       "category_breakdowns": {
         "code_quality": {
           "items_count": 4,
           "max_points": 40,
-          "actual_points": 7.0,
-          "percentage": 17.5
+          "actual_points": 32.0,
+          "percentage": 80.0
         },
         "testing": {
           "items_count": 4,
@@ -27,8 +27,8 @@
         "documentation": {
           "items_count": 3,
           "max_points": 25,
-          "actual_points": 16.0,
-          "percentage": 64.0
+          "actual_points": 25.0,
+          "percentage": 100.0
         }
       }
     }

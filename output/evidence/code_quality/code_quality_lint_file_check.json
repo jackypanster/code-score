@@ -4,10 +4,10 @@
     "item_id": "code_quality_lint",
     "source_type": "file_check",
     "source_path": "$.metrics.code_quality.lint_results.passed",
-    "description": "Checked lint_results.passed: expected True, got False",
-    "confidence": 0.85,
-    "raw_data": "False",
-    "timestamp": "2025-09-29T09:48:49.747243",
+    "description": "Checked lint_results.passed: expected True, got True",
+    "confidence": 0.95,
+    "raw_data": "True",
+    "timestamp": "2025-10-11T19:56:45.193929",
     "source_data": {}
   },
   {
@@ -15,32 +15,21 @@
     "item_id": "code_quality_lint",
     "source_type": "file_check",
     "source_path": "$.metrics.code_quality.lint_results.tool_used",
-    "description": "Checked lint_results.tool_used: should not be none, got none",
-    "confidence": 0.85,
-    "raw_data": "none",
-    "timestamp": "2025-09-29T09:48:49.747276",
+    "description": "Checked lint_results.tool_used: should not be none, got ruff",
+    "confidence": 0.95,
+    "raw_data": "ruff",
+    "timestamp": "2025-10-11T19:56:45.193931",
     "source_data": {}
   },
   {
     "evidence_key": "code_quality_lint_file_check",
     "item_id": "code_quality_lint",
     "source_type": "file_check",
-    "source_path": "$.metrics.code_quality.lint_results.lint_results.issues_count < 10",
-    "description": "Checked existence of lint_results.issues_count < 10",
-    "confidence": 0.9,
-    "raw_data": "null",
-    "timestamp": "2025-09-29T09:48:49.747282",
-    "source_data": {}
-  },
-  {
-    "evidence_key": "code_quality_lint_file_check",
-    "item_id": "code_quality_lint",
-    "source_type": "file_check",
-    "source_path": "$.metrics",
-    "description": "Criteria not satisfied for 'met' or 'partial' status",
-    "confidence": 0.8,
-    "raw_data": "Evaluation criteria failed",
-    "timestamp": "2025-09-29T09:48:49.747285",
+    "source_path": "$.metrics.code_quality.lint_results.issues_count",
+    "description": "Checked lint_results.issues_count: expected 0, got 0",
+    "confidence": 0.95,
+    "raw_data": "0",
+    "timestamp": "2025-10-11T19:56:45.193932",
     "source_data": {}
   }
 ]

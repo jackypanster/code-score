@@ -173,7 +173,7 @@ class TestGetVersion:
         # Verify timeout parameter
         mock_run.assert_called_once()
         call_kwargs = mock_run.call_args[1]
-        assert call_kwargs['timeout'] == 0.5  # 500ms
+        assert call_kwargs['timeout'] == 3.0  # 3 seconds (accommodates JVM tools)
 
     def test_subprocess_captures_output(self):
         """Test that subprocess captures both stdout and stderr."""
@@ -436,8 +436,8 @@ class TestVersionPattern:
 class TestTimeoutConstant:
     """Tests for ToolDetector.TIMEOUT_MS constant."""
 
-    def test_timeout_value_is_500ms(self):
-        """Test that timeout constant is set to 500ms per research decision."""
+    def test_timeout_value_is_3_seconds(self):
+        """Test that timeout constant is set to 3 seconds to accommodate JVM tools."""
         detector = ToolDetector()
 
-        assert detector.TIMEOUT_MS == 0.5  # 500ms = 0.5 seconds
+        assert detector.TIMEOUT_MS == 3.0  # 3 seconds (JVM tools like mvn/gradle need 1-2s)

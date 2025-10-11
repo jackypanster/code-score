@@ -7,7 +7,7 @@
     "description": "Checked coverage_report: expected None, got None",
     "confidence": 0.95,
     "raw_data": "None",
-    "timestamp": "2025-09-29T09:48:49.747337",
+    "timestamp": "2025-10-11T19:56:45.193947",
     "source_data": {}
   },
   {
@@ -18,7 +18,7 @@
     "description": "Checked test_execution.tests_run: expected >= 5, got 0",
     "confidence": 0.85,
     "raw_data": "0",
-    "timestamp": "2025-09-29T09:48:49.747340",
+    "timestamp": "2025-10-11T19:56:45.193948",
     "source_data": {}
   },
   {
@@ -29,7 +29,7 @@
     "description": "Criteria not satisfied for 'met' or 'partial' status",
     "confidence": 0.8,
     "raw_data": "Evaluation criteria failed",
-    "timestamp": "2025-09-29T09:48:49.747343",
+    "timestamp": "2025-10-11T19:56:45.193949",
     "source_data": {}
   }
 ]

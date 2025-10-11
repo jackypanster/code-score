@@ -7,7 +7,7 @@
     "description": "Checked api_documentation: expected True, got True",
     "confidence": 0.95,
     "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747402",
+    "timestamp": "2025-10-11T19:56:45.193963",
     "source_data": {}
   },
   {
@@ -15,32 +15,10 @@
     "item_id": "documentation_api",
     "source_type": "file_check",
     "source_path": "$.metrics.documentation.usage_examples",
-    "description": "Checked usage_examples: expected True, got False",
-    "confidence": 0.85,
-    "raw_data": "False",
-    "timestamp": "2025-09-29T09:48:49.747406",
-    "source_data": {}
-  },
-  {
-    "evidence_key": "documentation_api_file_check",
-    "item_id": "documentation_api",
-    "source_type": "file_check",
-    "source_path": "$.metrics.documentation.api_documentation",
-    "description": "Checked api_documentation: expected True, got True",
+    "description": "Checked usage_examples: expected True, got True",
     "confidence": 0.95,
     "raw_data": "True",
-    "timestamp": "2025-09-29T09:48:49.747408",
-    "source_data": {}
-  },
-  {
-    "evidence_key": "documentation_api_file_check",
-    "item_id": "documentation_api",
-    "source_type": "file_check",
-    "source_path": "$.metrics.documentation.usage_examples",
-    "description": "Checked usage_examples: expected True, got False",
-    "confidence": 0.85,
-    "raw_data": "False",
-    "timestamp": "2025-09-29T09:48:49.747411",
+    "timestamp": "2025-10-11T19:56:45.193964",
     "source_data": {}
   }
 ]
