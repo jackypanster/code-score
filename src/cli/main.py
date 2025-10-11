@@ -100,7 +100,7 @@ def main(repository_url: str, commit_sha: str | None, output_dir: str,
 
                     # Clean up cloned repository before exiting
                     try:
-                        git_ops.cleanup_repository(repository.local_path)
+                        git_ops.cleanup_repository(repository)
                     except Exception:
                         pass  # Ignore cleanup errors when already failing
 
