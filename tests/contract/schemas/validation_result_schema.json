@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ValidationResult",
+  "description": "Schema for the outcome of validating a single tool's availability and compatibility",
+  "type": "object",
+  "required": ["tool_name", "found"],
+  "properties": {
+    "tool_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the validated tool"
+    },
+    "found": {
+      "type": "boolean",
+      "description": "Whether tool was found in PATH via shutil.which()"
+    },
+    "path": {
+      "type": ["string", "null"],
+      "description": "Absolute path to tool executable (if found)"
+    },
+    "version": {
+      "type": ["string", "null"],
+      "description": "Detected version string (if retrievable)"
+    },
+    "version_ok": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether version meets minimum requirement (true if no requirement)"
+    },
+    "permissions": {
+      "type": ["string", "null"],
+      "description": "File permission string in Unix format (e.g., '-rwxr-xr-x')"
+    },
+    "error_category": {
+      "type": ["string", "null"],
+      "enum": ["missing", "outdated", "permission", "other", null],
+      "description": "Classification of validation error: missing, outdated, permission, or other"
+    },
+    "error_details": {
+      "type": ["string", "null"],
+      "description": "Human-readable error explanation with specific details"
+    }
+  },
+  "additionalProperties": false
+}

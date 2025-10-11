@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ToolRequirement",
+  "description": "Schema for a required CLI tool specification with validation criteria",
+  "type": "object",
+  "required": ["name", "language", "category", "doc_url"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "CLI command name (e.g., 'ruff', 'npm', 'go')"
+    },
+    "language": {
+      "type": "string",
+      "enum": ["python", "javascript", "typescript", "java", "go", "global"],
+      "description": "Target programming language or 'global' for all repositories"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["lint", "test", "security", "build"],
+      "description": "Tool purpose category"
+    },
+    "doc_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://",
+      "description": "Official documentation URL for error messages"
+    },
+    "min_version": {
+      "type": ["string", "null"],
+      "description": "Optional minimum version requirement (semver format)",
+      "pattern": "^(\\d+\\.\\d+(\\.\\d+)?)$|^null$"
+    },
+    "version_command": {
+      "type": "string",
+      "minLength": 1,
+      "default": "--version",
+      "description": "CLI flag to retrieve version information"
+    }
+  },
+  "additionalProperties": false
+}

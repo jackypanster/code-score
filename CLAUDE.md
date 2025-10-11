@@ -41,6 +41,41 @@ The system consists of three integrated pipelines:
 - **Java**: `checkstyle` (linting), `maven`/`gradle` (testing), `spotbugs` (security)
 - **Go**: `golangci-lint`/`gofmt` (linting), `go test` (testing), `gosec` (security)
 
+### Toolchain Validation Layer (FR-003 Fail-Fast)
+**Purpose**: Pre-flight validation to prevent partial analysis due to missing/outdated tools
+
+**Components** ([specs/002-toolexecutor-toolchainmanager-cli/](specs/002-toolexecutor-toolchainmanager-cli/)):
+1. **ToolRegistry** ([src/metrics/tool_registry.py](src/metrics/tool_registry.py)): Centralized registry of tool requirements for all languages (global + language-specific)
+2. **ToolDetector** ([src/metrics/tool_detector.py](src/metrics/tool_detector.py)): Low-level tool availability, version, and permission checking
+3. **ToolchainManager** ([src/metrics/toolchain_manager.py](src/metrics/toolchain_manager.py)): High-level validation orchestrator that groups errors by category
+4. **ValidationModels** ([src/metrics/models/](src/metrics/models/)): ToolRequirement, ValidationResult, ValidationReport data models
+5. **Chinese Messages** ([src/metrics/toolchain_messages.py](src/metrics/toolchain_messages.py)): User-facing error message templates with documentation URLs
+
+**Validation Flow**:
+```
+CLI Entry → ToolchainManager.validate_for_language(language) →
+Load tools (global + language-specific) →
+For each tool:
+  - Check PATH availability (shutil.which)
+  - Verify execute permissions (os.access)
+  - Extract version (subprocess with 500ms timeout)
+  - Compare semver (tuple comparison)
+  - Create ValidationResult →
+Group errors by category (missing/outdated/permission/other) →
+If any errors: raise ToolchainValidationError (Chinese formatted) →
+Otherwise: continue analysis
+```
+
+**Key Features**:
+- **Language-specific validation** (FR-007): Only checks tools for detected language + global tools (git, uv)
+- **Version enforcement** (FR-015): Validates minimum versions (Python ≥3.11, npm ≥8.0, Java ≥17)
+- **Permission diagnostics** (FR-016): Reports exact path and Unix permissions for non-executable tools
+- **Error categorization** (FR-017): Groups all errors into clear categories for efficient debugging
+- **Emergency bypass**: `--skip-toolchain-check` flag for debugging scenarios
+- **Performance**: <3 seconds validation time, 500ms per-tool timeout
+
+**Testing**: 136 tests (23 contract + 96 unit + 10 integration + 7 smoke), 96-100% coverage
+
 ### Performance Optimizations
 - Repository size limit: 500MB maximum
 - File count warning: >10,000 files

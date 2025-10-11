@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ValidationReport",
+  "description": "Schema for comprehensive toolchain validation report with categorized errors",
+  "type": "object",
+  "required": ["passed", "language", "checked_tools", "errors_by_category", "timestamp"],
+  "properties": {
+    "passed": {
+      "type": "boolean",
+      "description": "Overall validation status (true if all tools valid)"
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Target language being validated (e.g., 'python', 'javascript')"
+    },
+    "checked_tools": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "List of tool names that were validated"
+    },
+    "errors_by_category": {
+      "type": "object",
+      "description": "Dict mapping error categories to lists of failed ValidationResults",
+      "patternProperties": {
+        "^(missing|outdated|permission|other)$": {
+          "type": "array",
+          "items": {
+            "$ref": "validation_result_schema.json"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when validation was performed"
+    }
+  },
+  "additionalProperties": false
+}
