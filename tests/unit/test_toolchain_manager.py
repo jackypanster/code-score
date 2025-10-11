@@ -316,11 +316,32 @@ class TestGlobalAndLanguageTools:
 class TestUnknownLanguageHandling:
     """Tests for unknown language error handling."""
 
-    def test_unknown_language_raises_value_error(self):
-        """Test that unknown language raises ValueError from tool registry."""
+    def test_unknown_language_validates_global_tools_only(self):
+        """Test that 'unknown' language validates only global tools (git, uv)."""
         manager = ToolchainManager()
 
-        # Mock get_tools_for_language to raise ValueError
+        # Mock ToolDetector to return success for all tools
+        mock_detector = Mock()
+        mock_detector.check_availability.return_value = "/usr/bin/git"
+        mock_detector.check_permissions.return_value = (True, "-rwxr-xr-x")
+        mock_detector.get_version.return_value = "2.40.0"
+        mock_detector.compare_versions.return_value = True
+
+        with patch.object(manager, 'detector', mock_detector):
+            report = manager.validate_for_language('unknown')
+
+        # Should pass validation (only global tools checked)
+        assert report.passed is True
+        # Should only check global tools (git, uv)
+        assert len(report.checked_tools) == 2
+        assert "git" in report.checked_tools
+        assert "uv" in report.checked_tools
+
+    def test_unsupported_language_raises_value_error(self):
+        """Test that truly unsupported language (not 'unknown') raises ValueError."""
+        manager = ToolchainManager()
+
+        # Mock get_tools_for_language to raise ValueError for unsupported language
         with patch('src.metrics.toolchain_manager.get_tools_for_language',
                   side_effect=ValueError("Unsupported language: ruby")):
             with pytest.raises(ValueError) as exc_info:

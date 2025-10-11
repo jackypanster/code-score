@@ -10,7 +10,7 @@ from .error_handling import ToolchainValidationError
 from .models.validation_report import ValidationReport
 from .models.validation_result import ValidationResult
 from .tool_detector import ToolDetector
-from .tool_registry import get_tools_for_language
+from .tool_registry import get_tools_for_language, GLOBAL_TOOLS
 from .toolchain_messages import ValidationMessages
 
 
@@ -65,8 +65,14 @@ class ToolchainManager:
             >>> len(report.checked_tools) > 0
             True
         """
-        # Load tool requirements for the language (includes global tools)
-        tool_requirements = get_tools_for_language(language)
+        # Handle unknown language (multi-language repos, low confidence detection)
+        # Validate only global tools (git, uv) and continue analysis
+        # This prevents blocking analysis when language detection is uncertain
+        if language == "unknown":
+            tool_requirements = GLOBAL_TOOLS
+        else:
+            # Load tool requirements for the language (includes global tools)
+            tool_requirements = get_tools_for_language(language)
 
         # Collect validation results for all tools
         results: list[ValidationResult] = []
