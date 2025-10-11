@@ -48,33 +48,6 @@ def main(repository_url: str, commit_sha: str | None, output_dir: str,
             if commit_sha:
                 click.echo(f"Target commit: {commit_sha}")
 
-        # Step 0: Toolchain validation (FR-001, FR-003)
-        # Validate all required tools before any repository operations
-        if not skip_toolchain_check:
-            # Detect language early for toolchain validation
-            # For now, default to Python (can be enhanced to detect from URL/args)
-            target_language = "python"  # TODO: Improve language detection from URL
-
-            if verbose:
-                click.echo(f"Validating toolchain for language: {target_language}...")
-
-            try:
-                toolchain_manager = ToolchainManager()
-                report = toolchain_manager.validate_for_language(target_language)
-
-                # Validation passed - print success message
-                if verbose:
-                    click.echo(report.format_error_message())
-
-            except ToolchainValidationError as e:
-                # Validation failed - print error and exit immediately (FR-003)
-                click.echo(f"✗ 工具链验证失败:", err=True)
-                click.echo(e.message, err=True)
-                sys.exit(1)
-        else:
-            # Skip flag used - print warning
-            click.echo("⚠ 警告: 已跳过工具链验证 (--skip-toolchain-check)", err=True)
-
         # Initialize components
         git_ops = GitOperations(timeout_seconds=timeout)
         language_detector = LanguageDetector()
@@ -106,7 +79,37 @@ def main(repository_url: str, commit_sha: str | None, output_dir: str,
             if verbose:
                 click.echo(f"Detected language: {detected_language}")
 
-            # Step 3: Execute analysis tools
+            # Step 3: Toolchain validation (FR-001, FR-003)
+            # Validate all required tools for the detected language before analysis
+            if not skip_toolchain_check:
+                if verbose:
+                    click.echo(f"Validating toolchain for {detected_language}...")
+
+                try:
+                    toolchain_manager = ToolchainManager()
+                    report = toolchain_manager.validate_for_language(detected_language)
+
+                    # Validation passed - print success message (FR-009)
+                    if verbose:
+                        click.echo(report.format_error_message())
+
+                except ToolchainValidationError as e:
+                    # Validation failed - print error and exit immediately (FR-003)
+                    click.echo(f"✗ 工具链验证失败:", err=True)
+                    click.echo(e.message, err=True)
+
+                    # Clean up cloned repository before exiting
+                    try:
+                        git_ops.cleanup_repository(repository.local_path)
+                    except Exception:
+                        pass  # Ignore cleanup errors when already failing
+
+                    sys.exit(1)
+            else:
+                # Skip flag used - print warning
+                click.echo("⚠ 警告: 已跳过工具链验证 (--skip-toolchain-check)", err=True)
+
+            # Step 4: Execute analysis tools
             if verbose:
                 click.echo("Running analysis tools...")
 

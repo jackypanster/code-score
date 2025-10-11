@@ -4,10 +4,17 @@ This module tests end-to-end CLI behavior with the toolchain validation gate.
 Uses REAL subprocess calls (NO MOCKS per user requirement).
 
 Test Strategy:
-- T014: Test CLI fails immediately on missing tools before repository operations
+- T014: Test CLI fails immediately on missing tools after language detection
 - Use real subprocess.run() to invoke CLI
 - Verify exit codes and error messages
-- Confirm repository cloning doesn't occur when validation fails
+- Confirm repository is cleaned up when validation fails
+
+Execution Order (Fixed in Code Review):
+1. Clone repository
+2. Detect language from repository files
+3. Validate toolchain for detected language
+4. If validation fails: cleanup repository and exit
+5. If validation passes: proceed with analysis
 
 NOTE: This test will FAIL initially because CLI integration doesn't exist yet (TDD)
 """
@@ -32,13 +39,19 @@ class TestCLIToolchainGate:
 
     @pytest.mark.skipif(not CLI_INTEGRATION_EXISTS, reason="CLI toolchain integration not implemented yet (TDD)")
     def test_cli_validates_tools_before_cloning(self):
-        """Test that CLI validates tools before attempting repository operations.
+        """Test that CLI validates tools after language detection and cleans up on failure.
+
+        Execution Order:
+        1. Clone repository
+        2. Detect language from repository files
+        3. Validate toolchain for detected language
+        4. If validation fails: cleanup repository and exit
 
         Acceptance:
-        - Toolchain validation runs before git clone
+        - Toolchain validation runs after language detection
         - If validation fails, exit code is 1
-        - If validation fails, repository is never cloned
-        - Error message is printed to stderr
+        - If validation fails, repository is cleaned up (no leftover files)
+        - Error message is printed to stderr in Chinese
         """
         # Use a real test repository URL
         test_repo_url = "https://github.com/anthropics/anthropic-sdk-python.git"
