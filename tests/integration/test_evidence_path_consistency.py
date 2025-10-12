@@ -242,6 +242,18 @@ class TestCLIEvidencePathConsistency:
         assert True, "Placeholder for evidence path consistency testing"
 
 
+class TestProgrammaticAPIImport:
+    """Test that programmatic API can be imported successfully."""
+
+    def test_import_evaluate_submission(self):
+        """Test that evaluate_submission can be imported and is callable."""
+        # Import should not raise ImportError
+        from src.cli.evaluate import evaluate_submission
+
+        # Function should be callable
+        assert callable(evaluate_submission), "evaluate_submission should be callable"
+
+
 class TestEndToEndEvidencePathWorkflow:
     """End-to-end integration tests for evidence path workflow."""
 
