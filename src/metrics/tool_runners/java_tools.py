@@ -82,64 +82,66 @@ class JavaToolRunner:
         return result
 
     def run_testing(self, repo_path: str) -> dict[str, Any]:
-        """Run Java tests using Maven or Gradle."""
-        result = {
-            "tests_run": 0,
-            "tests_passed": 0,
-            "tests_failed": 0,
-            "framework": None,
-            "execution_time_seconds": 0.0
-        }
+        """Analyze Java test infrastructure using static analysis.
 
-        # Try Maven first
-        if self._has_maven(repo_path) and self._check_tool_available("mvn"):
-            result["framework"] = "maven"
-            try:
-                cmd_result = subprocess.run(
-                    ["mvn", "test", "-q"],
-                    capture_output=True,
-                    text=True,
-                    timeout=self.timeout_seconds,
-                    cwd=repo_path
-                )
+        This method uses TestInfrastructureAnalyzer to detect test files,
+        configuration, and calculate a score without executing tests.
+        This implements FR-004 through FR-017 for Java repositories.
 
-                # Parse Maven Surefire output
-                output = cmd_result.stdout + cmd_result.stderr
-                result.update(self._parse_maven_test_output(output))
+        Args:
+            repo_path: Path to the repository to analyze
 
-                return result
+        Returns:
+            Dictionary with test_execution structure including:
+            - test_files_detected: Count of detected test files (FR-017)
+            - test_config_detected: Whether test framework config exists (FR-005)
+            - coverage_config_detected: Whether coverage config exists (FR-006)
+            - test_file_ratio: Ratio of test files to total files (FR-010)
+            - calculated_score: Static analysis score 0-25 (FR-018)
+            - tests_run: 0 (static analysis, no execution)
+            - tests_passed: 0 (static analysis, no execution)
+            - tests_failed: 0 (static analysis, no execution)
+            - framework: Inferred framework name
+            - execution_time_seconds: 0.0 (static analysis is instant)
+        """
+        from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
-            except subprocess.TimeoutExpired:
-                result["tests_failed"] = 1
-                result["tests_run"] = 1
-                return result
+        try:
+            # Use static analyzer instead of running tests
+            analyzer = TestInfrastructureAnalyzer()
+            analysis_result = analyzer.analyze(repo_path, "java")
 
-        # Try Gradle
-        elif self._has_gradle(repo_path) and self._check_tool_available("gradle"):
-            result["framework"] = "gradle"
-            try:
-                cmd_result = subprocess.run(
-                    ["gradle", "test", "-q"],
-                    capture_output=True,
-                    text=True,
-                    timeout=self.timeout_seconds,
-                    cwd=repo_path
-                )
+            # Map ALL TestInfrastructureResult fields to test_execution dict
+            # This enables checklist evaluator to award partial credit (T037)
+            result = {
+                "test_files_detected": analysis_result.test_files_detected,  # FR-017
+                "test_config_detected": analysis_result.test_config_detected,  # FR-005
+                "coverage_config_detected": analysis_result.coverage_config_detected,  # FR-006
+                "test_file_ratio": analysis_result.test_file_ratio,  # FR-010
+                "calculated_score": analysis_result.calculated_score,  # FR-018
+                "tests_run": 0,  # Static analysis doesn't run tests
+                "tests_passed": 0,  # Static analysis doesn't run tests
+                "tests_failed": 0,  # Static analysis doesn't run tests
+                "framework": analysis_result.inferred_framework,
+                "execution_time_seconds": 0.0,  # Static analysis is instant
+            }
 
-                # Parse Gradle test output
-                output = cmd_result.stdout + cmd_result.stderr
-                result.update(self._parse_gradle_test_output(output))
+            return result
 
-                return result
-
-            except subprocess.TimeoutExpired:
-                result["tests_failed"] = 1
-                result["tests_run"] = 1
-                return result
-
-        # No build tools available
-        result["framework"] = "none"
-        return result
+        except Exception as e:
+            # Graceful error handling (NFR-001)
+            return {
+                "test_files_detected": 0,
+                "test_config_detected": False,
+                "coverage_config_detected": False,
+                "test_file_ratio": 0.0,
+                "calculated_score": 0,
+                "tests_run": 0,
+                "tests_passed": 0,
+                "tests_failed": 0,
+                "framework": "none",
+                "execution_time_seconds": 0.0,
+            }
 
     def run_build(self, repo_path: str) -> dict[str, Any]:
         """
