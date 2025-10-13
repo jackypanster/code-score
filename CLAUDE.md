@@ -41,6 +41,41 @@ The system consists of three integrated pipelines:
 - **Java**: `checkstyle` (linting), `maven`/`gradle` (testing), `spotbugs` (security)
 - **Go**: `golangci-lint`/`gofmt` (linting), `go test` (testing), `gosec` (security)
 
+### Static Test Infrastructure Analyzer (NEW - COD-8)
+**Purpose**: Zero-execution static analysis of test infrastructure to recover Testing dimension scoring without running code.
+
+**Components** ([specs/004-static-test-infrastructure/](specs/004-static-test-infrastructure/)):
+1. **TestInfrastructureAnalyzer** ([src/metrics/test_infrastructure_analyzer.py](src/metrics/test_infrastructure_analyzer.py)): Core analyzer with multi-language support
+2. **Config Parsers** ([src/metrics/config_parsers/](src/metrics/config_parsers/)): Language-specific configuration file parsers (TOML, JSON, XML, Makefile)
+3. **TestInfrastructureResult** ([src/metrics/models/test_infrastructure.py](src/metrics/models/test_infrastructure.py)): Data model for analysis results
+
+**Key Features**:
+- **Zero Code Execution**: Analyzes files without running tests (<1s, safe)
+- **Multi-Language Detection**: Supports Python, JavaScript, Go, Java with automatic language detection
+- **Score Recovery**: Restores 15-25/25 points in Testing dimension through static analysis
+- **Config Detection**: Identifies test frameworks (pytest, jest, JUnit) and coverage tools
+- **Test File Discovery**: Pattern-based detection (`test_*.py`, `*.test.js`, `*_test.go`, `src/test/java/`)
+
+**Analysis Output** (5 new fields in `test_execution`):
+```json
+{
+  "test_files_detected": 43,           // Number of test files found
+  "test_config_detected": true,        // Framework config exists
+  "coverage_config_detected": false,   // Coverage config exists
+  "test_file_ratio": 0.107,           // Test files / total files
+  "calculated_score": 15              // Static score 0-25
+}
+```
+
+**Scoring Logic**:
+- 5 points: Test files present (`test_files_detected > 0`)
+- 5 points: Test configuration detected (`pytest.ini`, `package.json`, etc.)
+- 5 points: Coverage configuration detected (`.coveragerc`, `jest.config.json`)
+- 0-10 points: Test file ratio bonus (10% = 5pts, 30% = 10pts)
+- Max: 25 points (capped per FR-013)
+
+**Integration**: All 4 tool runners (`python_tools.py`, `javascript_tools.py`, `golang_tools.py`, `java_tools.py`) now use `TestInfrastructureAnalyzer` instead of executing tests, enabling safe, fast analysis.
+
 ### Toolchain Validation Layer (FR-003 Fail-Fast)
 **Purpose**: Pre-flight validation to prevent partial analysis due to missing/outdated tools
 
@@ -188,6 +223,7 @@ uv run pytest tests/contract/ -v
 - **MetricsCollection**: Top-level container for all analysis results
 - **CodeQualityMetrics**: Lint results, build status, dependency audit
 - **TestingMetrics**: Test execution results and coverage data
+- **TestInfrastructureResult** (NEW): Static test infrastructure analysis results (test_files_detected, test_config_detected, coverage_config_detected, test_file_ratio, calculated_score)
 - **DocumentationMetrics**: README analysis and documentation quality
 - **ExecutionMetadata**: Tool execution tracking and performance data
 

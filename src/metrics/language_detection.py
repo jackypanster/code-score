@@ -20,7 +20,12 @@ class LanguageDetector:
 
         self.config_files = {
             "python": ["pyproject.toml", "requirements.txt", "setup.py", "setup.cfg", "Pipfile"],
-            "javascript": ["package.json", "package-lock.json", ".eslintrc.js", "webpack.config.js"],
+            "javascript": [
+                "package.json",
+                "package-lock.json",
+                ".eslintrc.js",
+                "webpack.config.js",
+            ],
             "typescript": ["tsconfig.json", "tslint.json"],
             "java": ["pom.xml", "build.gradle", "build.gradle.kts"],
             "go": ["go.mod", "go.sum"],
@@ -55,12 +60,17 @@ class LanguageDetector:
         total_files = 0
 
         # Analyze file extensions
-        for root, dirs, files in os.walk(repository_path):
+        for _root, dirs, files in os.walk(repository_path):
             # Skip common non-source directories
-            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'target', 'build']]
+            dirs[:] = [
+                d
+                for d in dirs
+                if not d.startswith(".")
+                and d not in ["node_modules", "__pycache__", "target", "build"]
+            ]
 
             for file in files:
-                if file.startswith('.'):
+                if file.startswith("."):
                     continue
 
                 file_path = Path(file)
@@ -80,10 +90,7 @@ class LanguageDetector:
         detected_languages = {}
         for language, count in language_counts.items():
             percentage = (count / total_files * 100) if total_files > 0 else 0
-            detected_languages[language] = {
-                "file_count": count,
-                "percentage": percentage
-            }
+            detected_languages[language] = {"file_count": count, "percentage": percentage}
 
         # Determine primary language
         primary_language = "unknown"
@@ -91,8 +98,9 @@ class LanguageDetector:
 
         if detected_languages:
             # Find language with highest file count
-            primary_language = max(detected_languages.keys(),
-                                 key=lambda lang: detected_languages[lang]["file_count"])
+            primary_language = max(
+                detected_languages.keys(), key=lambda lang: detected_languages[lang]["file_count"]
+            )
 
             # Calculate confidence score
             primary_count = detected_languages[primary_language]["file_count"]
@@ -106,7 +114,41 @@ class LanguageDetector:
             "detected_languages": detected_languages,
             "primary_language": primary_language,
             "confidence_score": confidence_score,
-            "total_files_analyzed": total_files
+            "total_files_analyzed": total_files,
+        }
+
+    def get_languages_above_threshold(
+        self, repository_path: str, threshold: float = 0.20
+    ) -> dict[str, float]:
+        """Get all languages with file count percentage above threshold.
+
+        This method is used for multi-language repository analysis where multiple
+        languages may coexist. Languages below the threshold are filtered out to
+        avoid false positives from minor dependencies.
+
+        Args:
+            repository_path: Path to repository root
+            threshold: Minimum percentage (0.0-1.0) for language to be included
+                      Default is 0.20 (20%) per FR-004a
+
+        Returns:
+            Dictionary mapping language names to their percentages (0.0-1.0)
+            Example: {"python": 0.65, "javascript": 0.25}
+
+        Example:
+            >>> detector = LanguageDetector()
+            >>> languages = detector.get_languages_above_threshold("/path/to/repo")
+            >>> languages
+            {"python": 0.65, "javascript": 0.25}
+        """
+        stats = self.get_language_statistics(repository_path)
+        detected = stats["detected_languages"]
+
+        # Filter languages above threshold and convert percentage to 0.0-1.0 range
+        return {
+            lang: info["percentage"] / 100.0
+            for lang, info in detected.items()
+            if info["percentage"] >= (threshold * 100)
         }
 
     def _calculate_config_bonuses(self, repository_path: str) -> dict[str, float]:

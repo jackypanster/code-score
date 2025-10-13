@@ -58,80 +58,66 @@ class JavaScriptToolRunner:
             return result
 
     def run_testing(self, repo_path: str) -> dict[str, Any]:
-        """Run JavaScript tests using npm test or available framework."""
-        result = {
-            "tests_run": 0,
-            "tests_passed": 0,
-            "tests_failed": 0,
-            "framework": "npm",
-            "execution_time_seconds": 0.0
-        }
+        """Analyze JavaScript test infrastructure using static analysis.
 
-        # Check if package.json exists
-        package_json = Path(repo_path) / "package.json"
-        if not package_json.exists():
-            result["framework"] = "none"
-            return result
+        This method uses TestInfrastructureAnalyzer to detect test files,
+        configuration, and calculate a score without executing tests.
+        This implements FR-002 through FR-017 for JavaScript/TypeScript repositories.
+
+        Args:
+            repo_path: Path to the repository to analyze
+
+        Returns:
+            Dictionary with test_execution structure including:
+            - test_files_detected: Count of detected test files (FR-017)
+            - test_config_detected: Whether test framework config exists (FR-005)
+            - coverage_config_detected: Whether coverage config exists (FR-006)
+            - test_file_ratio: Ratio of test files to total files (FR-010)
+            - calculated_score: Static analysis score 0-25 (FR-018)
+            - tests_run: 0 (static analysis, no execution)
+            - tests_passed: 0 (static analysis, no execution)
+            - tests_failed: 0 (static analysis, no execution)
+            - framework: Inferred framework name
+            - execution_time_seconds: 0.0 (static analysis is instant)
+        """
+        from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
         try:
-            # Try npm test first
-            cmd_result = subprocess.run(
-                ["npm", "test"],
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds,
-                cwd=repo_path
-            )
+            # Use static analyzer instead of running tests
+            analyzer = TestInfrastructureAnalyzer()
+            analysis_result = analyzer.analyze(repo_path, "javascript")
 
-            # Parse test output (basic parsing)
-            output = cmd_result.stdout + cmd_result.stderr
-
-            # Look for Jest output patterns
-            if "jest" in output.lower():
-                result["framework"] = "jest"
-                # Try to extract test counts from Jest output
-                lines = output.split('\n')
-                for line in lines:
-                    if "passed" in line and "total" in line:
-                        try:
-                            # Extract numbers from Jest summary
-                            import re
-                            numbers = re.findall(r'\d+', line)
-                            if len(numbers) >= 2:
-                                result["tests_passed"] = int(numbers[0])
-                                result["tests_run"] = int(numbers[1])
-                                result["tests_failed"] = result["tests_run"] - result["tests_passed"]
-                        except (ValueError, IndexError):
-                            pass
-
-            # Look for Mocha output patterns
-            elif "mocha" in output.lower():
-                result["framework"] = "mocha"
-                # Basic Mocha parsing
-                if "passing" in output:
-                    try:
-                        import re
-                        passing_match = re.search(r'(\d+) passing', output)
-                        failing_match = re.search(r'(\d+) failing', output)
-
-                        if passing_match:
-                            result["tests_passed"] = int(passing_match.group(1))
-                        if failing_match:
-                            result["tests_failed"] = int(failing_match.group(1))
-
-                        result["tests_run"] = result["tests_passed"] + result["tests_failed"]
-                    except (ValueError, AttributeError):
-                        pass
+            # Map ALL TestInfrastructureResult fields to test_execution dict
+            # This enables checklist evaluator to award partial credit (T037)
+            result = {
+                "test_files_detected": analysis_result.test_files_detected,  # FR-017
+                "test_config_detected": analysis_result.test_config_detected,  # FR-005
+                "coverage_config_detected": analysis_result.coverage_config_detected,  # FR-006
+                "test_file_ratio": analysis_result.test_file_ratio,  # FR-010
+                "calculated_score": analysis_result.calculated_score,  # FR-018
+                "tests_run": 0,  # Static analysis doesn't run tests
+                "tests_passed": 0,  # Static analysis doesn't run tests
+                "tests_failed": 0,  # Static analysis doesn't run tests
+                "framework": analysis_result.inferred_framework,
+                "execution_time_seconds": 0.0,  # Static analysis is instant
+            }
 
             return result
 
-        except subprocess.TimeoutExpired:
-            result["tests_failed"] = 1
-            result["tests_run"] = 1
-            return result
-
-        except Exception:
-            return result
+        except Exception as e:
+            # Graceful error handling (NFR-001)
+            return {
+                "test_files_detected": 0,
+                "test_config_detected": False,
+                "coverage_config_detected": False,
+                "test_file_ratio": 0.0,
+                "calculated_score": 0,
+                "tests_run": 0,
+                "tests_passed": 0,
+                "tests_failed": 0,
+                "framework": "none",
+                "execution_time_seconds": 0.0,
+            }
 
     def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using npm audit."""

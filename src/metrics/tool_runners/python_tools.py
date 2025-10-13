@@ -88,58 +88,66 @@ class PythonToolRunner:
         return result
 
     def run_testing(self, repo_path: str) -> dict[str, Any]:
-        """Run Python tests using pytest."""
-        result = {
-            "tests_run": 0,
-            "tests_passed": 0,
-            "tests_failed": 0,
-            "framework": "pytest",
-            "execution_time_seconds": 0.0
-        }
+        """Analyze Python test infrastructure using static analysis.
 
-        if not self._check_tool_available("pytest"):
-            result["framework"] = "none"
-            return result
+        This method uses TestInfrastructureAnalyzer to detect test files,
+        configuration, and calculate a score without executing tests.
+        This implements FR-001 through FR-017 for Python repositories.
+
+        Args:
+            repo_path: Path to the repository to analyze
+
+        Returns:
+            Dictionary with test_execution structure including:
+            - test_files_detected: Count of detected test files (FR-017)
+            - test_config_detected: Whether test framework config exists (FR-005)
+            - coverage_config_detected: Whether coverage config exists (FR-006)
+            - test_file_ratio: Ratio of test files to total files (FR-010)
+            - calculated_score: Static analysis score 0-25 (FR-018)
+            - tests_run: 0 (static analysis, no execution)
+            - tests_passed: 0 (static analysis, no execution)
+            - tests_failed: 0 (static analysis, no execution)
+            - framework: Inferred framework name
+            - execution_time_seconds: 0.0 (static analysis is instant)
+        """
+        from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
         try:
-            # Run pytest with JSON output
-            cmd_result = subprocess.run(
-                ["python", "-m", "pytest", "--tb=short", "-v"],
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds,
-                cwd=repo_path
-            )
+            # Use static analyzer instead of running tests
+            analyzer = TestInfrastructureAnalyzer()
+            analysis_result = analyzer.analyze(repo_path, "python")
 
-            # Parse pytest output
-            output_lines = cmd_result.stdout.split('\n')
-            for line in output_lines:
-                if "passed" in line and "failed" in line:
-                    # Extract test counts from summary line
-                    parts = line.split()
-                    for i, part in enumerate(parts):
-                        if part == "passed":
-                            try:
-                                result["tests_passed"] = int(parts[i-1])
-                            except (ValueError, IndexError):
-                                pass
-                        elif part == "failed":
-                            try:
-                                result["tests_failed"] = int(parts[i-1])
-                            except (ValueError, IndexError):
-                                pass
-
-            result["tests_run"] = result["tests_passed"] + result["tests_failed"]
+            # Map ALL TestInfrastructureResult fields to test_execution dict
+            # This enables checklist evaluator to award partial credit (T037)
+            result = {
+                "test_files_detected": analysis_result.test_files_detected,  # FR-017
+                "test_config_detected": analysis_result.test_config_detected,  # FR-005
+                "coverage_config_detected": analysis_result.coverage_config_detected,  # FR-006
+                "test_file_ratio": analysis_result.test_file_ratio,  # FR-010
+                "calculated_score": analysis_result.calculated_score,  # FR-018
+                "tests_run": 0,  # Static analysis doesn't run tests
+                "tests_passed": 0,  # Static analysis doesn't run tests
+                "tests_failed": 0,  # Static analysis doesn't run tests
+                "framework": analysis_result.inferred_framework,
+                "execution_time_seconds": 0.0,  # Static analysis is instant
+            }
 
             return result
 
-        except subprocess.TimeoutExpired:
-            result["tests_failed"] = 1
-            result["tests_run"] = 1
-            return result
-
-        except Exception:
-            return result
+        except Exception as e:
+            # Graceful error handling (NFR-001)
+            return {
+                "test_files_detected": 0,
+                "test_config_detected": False,
+                "coverage_config_detected": False,
+                "test_file_ratio": 0.0,
+                "calculated_score": 0,
+                "tests_run": 0,
+                "tests_passed": 0,
+                "tests_failed": 0,
+                "framework": "none",
+                "execution_time_seconds": 0.0,
+            }
 
     def run_security_audit(self, repo_path: str) -> dict[str, Any]:
         """Run security audit using pip-audit."""
