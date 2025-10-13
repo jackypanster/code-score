@@ -1,0 +1,173 @@
+# ============================================================================
+# Linear Issue Validation Workflow (Pilot Implementation)
+# ============================================================================
+#
+# Purpose: 强制 PR 与 Linear 卡片关联，确保代码可追溯性
+# Strategy: 方案 2 - Reusable Workflows（当前为试点版本，完整实现）
+#
+# 设计理念：
+# 1. PR 必须在标题中包含 Linear 卡号（如 LINEAR-123）
+# 2. 验收前置：只有通过 Linear 验收的代码才能创建 PR
+# 3. 质量门禁：Linear 是质量检查的地方，GitHub PR 是成果展示的地方
+#
+# 后续迁移计划：
+# 验证通过后，将此工作流抽取为 reusable workflow，存放在组织级别的
+# .github-workflows 仓库，其他项目通过 workflow_call 调用。
+#
+# 参考文档：
+# - Codex × Claude × Linear Workflow Playbook
+# - GitHub Reusable Workflows: https://docs.github.com/actions/using-workflows/reusing-workflows
+# ============================================================================
+
+name: Validate Linear Issue
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-linear:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ========== 步骤 1：提取 Linear ID ==========
+      - name: Extract Linear ID from PR title
+        id: extract
+        run: |
+          echo "🔍 Checking PR title for Linear issue ID..."
+
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+
+          # 提取 LINEAR-XXX 格式的卡号
+          LINEAR_ID=$(echo "$PR_TITLE" | grep -oE 'LINEAR-[0-9]+' || echo "")
+
+          if [ -z "$LINEAR_ID" ]; then
+            echo "❌ Error: PR title must contain a Linear issue ID"
+            echo ""
+            echo "Expected format examples:"
+            echo "  ✓ feat: add user authentication [LINEAR-123]"
+            echo "  ✓ fix: resolve memory leak (LINEAR-456)"
+            echo "  ✓ LINEAR-789 - refactor database layer"
+            echo ""
+            echo "Current PR title: $PR_TITLE"
+            exit 1
+          fi
+
+          echo "linear_id=$LINEAR_ID" >> $GITHUB_OUTPUT
+          echo "✅ Found Linear ID: $LINEAR_ID"
+
+      # ========== 步骤 2：检查 Linear 卡片状态（可选）==========
+      # 需要配置 LINEAR_API_KEY secret 才能启用
+      - name: Check Linear issue status
+        if: ${{ secrets.LINEAR_API_KEY != '' }}
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_ID: ${{ steps.extract.outputs.linear_id }}
+        run: |
+          echo "🔍 Checking Linear issue status..."
+
+          # 构建 GraphQL 查询
+          QUERY='query($id: String!) {
+            issue(id: $id) {
+              state { name }
+              title
+            }
+          }'
+
+          # 调用 Linear API
+          RESPONSE=$(curl -s -X POST https://api.linear.app/graphql \
+            -H "Authorization: $LINEAR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"$QUERY\",\"variables\":{\"id\":\"$LINEAR_ID\"}}")
+
+          # 检查 API 响应
+          if echo "$RESPONSE" | jq -e '.errors' > /dev/null 2>&1; then
+            echo "⚠️  Warning: Failed to fetch Linear issue status"
+            echo "Response: $RESPONSE"
+            echo "Continuing without status check..."
+            exit 0
+          fi
+
+          STATE=$(echo "$RESPONSE" | jq -r '.data.issue.state.name')
+          TITLE=$(echo "$RESPONSE" | jq -r '.data.issue.title')
+
+          echo "Linear Issue: $LINEAR_ID"
+          echo "Title: $TITLE"
+          echo "Status: $STATE"
+
+          # 只允许特定状态的卡片创建 PR（验收前置原则）
+          if [[ "$STATE" != "In Progress" && "$STATE" != "In Review" ]]; then
+            echo ""
+            echo "❌ Error: Linear issue must be in 'In Progress' or 'In Review' state"
+            echo "Current state: $STATE"
+            echo ""
+            echo "根据验收前置原则，只有正在开发或已通过验收的任务才能创建 PR。"
+            echo "请先在 Linear 中将任务状态更新为 'In Progress' 或 'In Review'。"
+            exit 1
+          fi
+
+          echo "✅ Linear issue status is valid"
+
+      # ========== 步骤 3：验证通过，添加标签（可选）==========
+      - name: Add validation label
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['linear-validated']
+              });
+              console.log('✅ Added linear-validated label');
+            } catch (error) {
+              console.log('⚠️  Could not add label:', error.message);
+              // 不要因为标签失败而导致整个检查失败
+            }
+
+      # ========== 步骤 4：添加 Linear 链接到 PR 描述 ==========
+      - name: Add Linear link to PR
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const linearId = '${{ steps.extract.outputs.linear_id }}';
+            const body = context.payload.pull_request.body || '';
+
+            // 检查是否已经包含 Linear 链接
+            if (body.includes('linear.app/issue/')) {
+              console.log('✅ Linear link already present in PR description');
+              return;
+            }
+
+            // 在 PR 描述顶部添加 Linear 链接
+            const linearLink = `\n\n---\n🔗 **Related Linear Issue:** [${linearId}](https://linear.app/issue/${linearId})\n---\n\n`;
+            const newBody = linearLink + body;
+
+            try {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                body: newBody
+              });
+              console.log('✅ Added Linear link to PR description');
+            } catch (error) {
+              console.log('⚠️  Could not update PR description:', error.message);
+            }
+
+      # ========== 最终总结 ==========
+      - name: Summary
+        if: success()
+        run: |
+          echo "=========================================="
+          echo "✅ Linear Issue Validation Passed"
+          echo "=========================================="
+          echo "Linear ID: ${{ steps.extract.outputs.linear_id }}"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo ""
+          echo "此 PR 符合 Linear 验收前置原则，可以继续合并流程。"
+          echo "=========================================="
