@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Build') {
+            steps {
+                sh 'make build'
+            }
+        }
+        
+        stage('Lint') {
+            steps {
+                sh 'make lint'
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sh 'make deploy'
+            }
+        }
+    }
+}

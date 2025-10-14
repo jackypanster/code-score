@@ -1,0 +1,16 @@
+name: Malformed Workflow
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run tests
+        run: pytest
+      invalid_key without proper indentation
+        and: malformed YAML structure

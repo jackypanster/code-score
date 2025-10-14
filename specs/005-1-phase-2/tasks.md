@@ -349,7 +349,7 @@ Use Python ABC (abstract base class).
 
 ---
 
-### T019 [P] - Implement TravisParser
+### T019 [P] - Implement TravisParser ✅
 **File**: `src/metrics/ci_parsers/travis_parser.py`
 **Description**: Implement TravisParser(CIParser) with:
 1. `parse(config_path: Path) -> Optional[List[TestStepInfo]]`
@@ -364,7 +364,7 @@ Use Python ABC (abstract base class).
 
 ---
 
-### T020 [P] - Implement JenkinsParser
+### T020 [P] - Implement JenkinsParser ✅
 **File**: `src/metrics/ci_parsers/jenkins_parser.py`
 **Description**: Implement JenkinsParser(CIParser) with:
 1. `parse(config_path: Path) -> Optional[List[TestStepInfo]]`

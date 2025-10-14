@@ -1,0 +1,43 @@
+stages:
+  - test
+  - security
+
+python_tests:
+  image: python:3.11
+  stage: test
+  script:
+    - pip install pytest pytest-cov
+    - pytest --cov=src --coverage-report=xml
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+
+javascript_tests:
+  image: node:18
+  stage: test
+  script:
+    - npm install
+    - npm test
+    - npm run test:integration
+  artifacts:
+    reports:
+      junit: junit.xml
+
+go_tests:
+  image: golang:1.21
+  stage: test
+  script:
+    - go test ./...
+    - go test -race -coverprofile=coverage.out
+
+java_tests:
+  image: maven:3.9-eclipse-temurin-17
+  stage: test
+  script:
+    - mvn test
+    - ./gradlew test
+
+security_scan:
+  stage: security
+  script:
+    - sonar-scanner -Dsonar.projectKey=myproject
+  after_script:
+    - echo "Coverage report uploaded to SonarQube"

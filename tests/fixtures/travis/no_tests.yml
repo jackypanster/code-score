@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - "18"
+
+script:
+  - npm run build
+  - npm run lint
+
+deploy:
+  provider: heroku
+  app: my-app
+  on:
+    branch: main

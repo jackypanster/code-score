@@ -1,0 +1,50 @@
+version: 2.1
+
+orbs:
+  coveralls: coveralls/coveralls@2.2.1
+
+jobs:
+  python-tests:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - run: pip install pytest pytest-cov
+      - run: pytest --cov=src --cov-report=xml
+      - store_test_results:
+          path: test-results
+
+  javascript-tests:
+    docker:
+      - image: cimg/node:18.0
+    steps:
+      - checkout
+      - run: npm install
+      - run: npm test
+      - run: npm run test:e2e
+      - coveralls/upload
+
+  go-tests:
+    docker:
+      - image: cimg/go:1.21
+    steps:
+      - checkout
+      - run: go test ./...
+      - run: go test -race -coverprofile=coverage.out
+
+  java-tests:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - run: mvn test
+      - run: ./gradlew test --no-daemon
+
+workflows:
+  version: 2
+  test-all:
+    jobs:
+      - python-tests
+      - javascript-tests
+      - go-tests
+      - java-tests

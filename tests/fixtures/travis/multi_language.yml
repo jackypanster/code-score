@@ -1,0 +1,22 @@
+matrix:
+  include:
+    - language: python
+      python: "3.11"
+      script: pytest --cov=src --cov-report=xml
+      after_success: codecov
+
+    - language: node_js
+      node_js: "18"
+      script:
+        - npm test
+        - npm run test:e2e
+
+    - language: go
+      go: "1.21"
+      script: go test ./...
+
+    - language: java
+      jdk: openjdk17
+      script:
+        - mvn test
+        - ./gradlew test

@@ -19,5 +19,14 @@ from src.metrics.ci_parsers.base import CIParser
 from src.metrics.ci_parsers.circleci_parser import CircleCIParser
 from src.metrics.ci_parsers.github_actions_parser import GitHubActionsParser
 from src.metrics.ci_parsers.gitlab_ci_parser import GitLabCIParser
+from src.metrics.ci_parsers.jenkins_parser import JenkinsParser
+from src.metrics.ci_parsers.travis_parser import TravisParser
 
-__all__ = ["CIParser", "GitHubActionsParser", "GitLabCIParser", "CircleCIParser"]
+__all__ = [
+    "CIParser",
+    "GitHubActionsParser",
+    "GitLabCIParser",
+    "CircleCIParser",
+    "TravisParser",
+    "JenkinsParser",
+]

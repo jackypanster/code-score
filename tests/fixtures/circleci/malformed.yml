@@ -1,0 +1,19 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - run:
+          name: Run tests
+          command: pytest
+      invalid_key_here
+        broken: yaml structure
+        - another malformed line
+
+workflows:
+  test-workflow
+    jobs:
+      missing colon here

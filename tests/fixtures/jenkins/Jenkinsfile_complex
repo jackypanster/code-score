@@ -1,0 +1,37 @@
+// Complex Jenkinsfile with multiple test frameworks
+pipeline {
+    agent any
+    
+    environment {
+        TEST_ENV = 'ci'
+    }
+    
+    stages {
+        stage('Python Tests') {
+            steps {
+                script {
+                    sh 'python -m pytest tests/unit'
+                }
+            }
+        }
+        
+        stage('Go Tests') {
+            steps {
+                sh 'go test ./...'
+            }
+        }
+        
+        stage('Node Tests') {
+            steps {
+                sh 'npm test'
+                sh 'npm run test:integration'
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'codecov --token ${CODECOV_TOKEN}'
+        }
+    }
+}
