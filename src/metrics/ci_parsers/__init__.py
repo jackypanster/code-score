@@ -16,5 +16,6 @@ Constitutional Compliance:
 """
 
 from src.metrics.ci_parsers.base import CIParser
+from src.metrics.ci_parsers.github_actions_parser import GitHubActionsParser
 
-__all__ = ["CIParser"]
+__all__ = ["CIParser", "GitHubActionsParser"]

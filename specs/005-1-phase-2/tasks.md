@@ -300,7 +300,7 @@ Use Python ABC (abstract base class).
 
 ---
 
-### T016 [P] - Implement GitHubActionsParser
+### T016 [P] - Implement GitHubActionsParser ✅
 **File**: `src/metrics/ci_parsers/github_actions_parser.py`
 **Description**: Implement GitHubActionsParser(CIParser) with:
 1. `parse(config_path: Path) -> Optional[List[TestStepInfo]]`
