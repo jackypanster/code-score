@@ -77,8 +77,8 @@ class TestTetrisWebAnalysis:
         # The melcor76/tetris repo is a Python project
         result = analyzer.analyze(str(tetris_web_repo_path), "python")
 
-        # Should detect zero test files
-        assert result.test_files_detected == 0, "Should detect zero test files"
+        # Should detect zero test files (Phase 1 result)
+        assert result.static_infrastructure.test_files_detected == 0, "Should detect zero test files"
 
     def test_no_test_configuration_detected(self, tetris_web_repo_path: Path):
         """Test that analyzer finds no test framework configuration."""
@@ -87,15 +87,15 @@ class TestTetrisWebAnalysis:
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(tetris_web_repo_path), "python")
 
-        # Should not detect test config
+        # Should not detect test config (Phase 1 result)
         assert (
-            result.test_config_detected is False
+            result.static_infrastructure.test_config_detected is False
         ), "Should not find test configuration"
         assert (
-            result.coverage_config_detected is False
+            result.static_infrastructure.coverage_config_detected is False
         ), "Should not find coverage configuration"
         assert (
-            result.inferred_framework == "none"
+            result.static_infrastructure.inferred_framework == "none"
         ), "Framework should be 'none' for no tests"
 
     def test_zero_test_file_ratio(self, tetris_web_repo_path: Path):
@@ -105,48 +105,51 @@ class TestTetrisWebAnalysis:
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(tetris_web_repo_path), "python")
 
-        # Should have 0.0 test file ratio
-        assert result.test_file_ratio == 0.0, "Test file ratio should be 0.0"
+        # Should have 0.0 test file ratio (Phase 1 result)
+        assert result.static_infrastructure.test_file_ratio == 0.0, "Test file ratio should be 0.0"
 
     def test_score_zero_or_minimal(self, tetris_web_repo_path: Path):
-        """Test that score is 0-5 points for repos with no test infrastructure."""
+        """Test that score is 0 points for repos with no test infrastructure."""
         from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(tetris_web_repo_path), "python")
 
-        # Expected score: 0 points
-        # - 0 points: no test files (FR-007 not met)
-        # - 0 points: no test config (FR-008 not met)
-        # - 0 points: no coverage config (FR-009 not met)
-        # - 0 points: no ratio bonus (FR-011, FR-012 not met)
-        # Total: 0 points
+        # Expected combined score: 0 points
+        # Phase 1: 0 points (no test files, no config)
+        # Phase 2: 0 points (no CI config)
+        # Combined: 0 points
 
-        assert result.calculated_score <= 5, "Score should be 0-5 for no tests"
-        assert result.calculated_score == 0, "Expected score 0 for tetris-web"
+        assert result.combined_score <= 5, "Score should be 0-5 for no tests"
+        assert result.combined_score == 0, "Expected combined score 0 for no test infrastructure"
 
     def test_negative_case_schema_compliance(self, tetris_web_repo_path: Path):
-        """Test that negative case output still matches schema contract."""
+        """Test that negative case output still matches schema contract (TestAnalysis)."""
         from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(tetris_web_repo_path), "python")
 
-        # Verify all contract fields present even for negative case
-        assert hasattr(result, "test_files_detected")
-        assert hasattr(result, "test_config_detected")
-        assert hasattr(result, "coverage_config_detected")
-        assert hasattr(result, "test_file_ratio")
-        assert hasattr(result, "calculated_score")
-        assert hasattr(result, "inferred_framework")
+        # Verify TestAnalysis structure
+        assert hasattr(result, "static_infrastructure"), "Should have static_infrastructure"
+        assert hasattr(result, "ci_configuration"), "Should have ci_configuration (can be None)"
+        assert hasattr(result, "combined_score"), "Should have combined_score"
+        assert hasattr(result, "score_breakdown"), "Should have score_breakdown"
 
-        # Verify values for negative case
-        assert result.test_files_detected == 0
-        assert result.test_config_detected is False
-        assert result.coverage_config_detected is False
-        assert result.test_file_ratio == 0.0
-        assert result.calculated_score == 0
-        assert result.inferred_framework == "none"
+        # Verify Phase 1 (static infrastructure) fields
+        static = result.static_infrastructure
+        assert static.test_files_detected == 0
+        assert static.test_config_detected is False
+        assert static.coverage_config_detected is False
+        assert static.test_file_ratio == 0.0
+        assert static.calculated_score == 0
+        assert static.inferred_framework == "none"
+
+        # Verify Phase 2 (CI configuration) is None or has 0 score
+        assert result.ci_configuration is None or result.ci_configuration.calculated_score == 0
+
+        # Verify combined score is 0
+        assert result.combined_score == 0
 
     def test_graceful_handling_of_no_infrastructure(self, tetris_web_repo_path: Path):
         """Test that analyzer handles repos with no test infrastructure gracefully (NFR-001)."""

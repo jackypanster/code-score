@@ -29,7 +29,7 @@ dev = [
 ]
 
 [project.scripts]
-code-score = "src.cli.main:main"
+code-score = "src.cli.main:cli"
 
 [build-system]
 requires = ["hatchling"]

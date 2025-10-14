@@ -1,5 +1,6 @@
 """Main CLI interface for Code Score metrics collection."""
 
+import logging
 import sys
 from pathlib import Path
 
@@ -14,30 +15,38 @@ from ..metrics.tool_executor import ToolExecutor
 from ..metrics.toolchain_manager import ToolchainManager
 
 
-@click.command()
-@click.argument('repository_url')
-@click.argument('commit_sha', required=False)
-@click.option('--output-dir', default='./output', help='Output directory for results')
-@click.option('--format', 'output_format', default='both',
-              type=click.Choice(['json', 'markdown', 'both']),
-              help='Output format')
-@click.option('--timeout', default=300, help='Analysis timeout in seconds')
-@click.option('--verbose', is_flag=True, help='Enable verbose logging')
-@click.option('--skip-toolchain-check', is_flag=True, default=False, help='Skip toolchain validation (emergency bypass)')
-@click.option('--enable-checklist', type=bool, default=True, help='Enable checklist evaluation (default: enabled)')
-@click.option('--checklist-config', help='Path to checklist configuration YAML file')
-@click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
-@click.option('--llm-template', help='Path to custom LLM prompt template')
-def main(repository_url: str, commit_sha: str | None, output_dir: str,
-         output_format: str, timeout: int, verbose: bool, skip_toolchain_check: bool,
-         enable_checklist: bool, checklist_config: str | None,
-         generate_llm_report: bool, llm_template: str | None) -> None:
+def _run_analysis(repository_url: str, commit_sha: str | None, output_dir: str,
+                  output_format: str, timeout: int, verbose: bool, log_level: str,
+                  skip_toolchain_check: bool, enable_checklist: bool, checklist_config: str | None,
+                  generate_llm_report: bool, llm_template: str | None) -> None:
     """
-    Analyze code quality metrics for a Git repository.
+    Internal function to run code quality analysis.
 
-    REPOSITORY_URL: Git repository URL to analyze
-    COMMIT_SHA: Optional specific commit to analyze
+    This is the core implementation called by the CLI commands.
     """
+    # Configure logging based on log_level (FR-027)
+    # Map log levels: minimal → WARNING, standard → INFO, detailed → DEBUG
+    # --verbose flag overrides to detailed for backward compatibility
+    if verbose:
+        log_level = 'detailed'
+
+    log_level_map = {
+        'minimal': logging.WARNING,
+        'standard': logging.INFO,
+        'detailed': logging.DEBUG
+    }
+
+    # Configure root logger
+    logging.basicConfig(
+        level=log_level_map[log_level],
+        format='%(levelname)s - %(name)s - %(message)s',
+        force=True  # Override any existing configuration
+    )
+
+    # Update verbose flag to match log_level for CLI progress messages
+    # This ensures --log-level detailed shows the same output as --verbose
+    verbose = (log_level == 'detailed')
+
     # Initialize error handling and cleanup
     error_handler = get_error_handler(verbose=verbose)
     cleanup_manager = get_cleanup_manager()
@@ -286,6 +295,41 @@ def main(repository_url: str, commit_sha: str | None, output_dir: str,
         sys.exit(1)
 
 
+@click.command()
+@click.argument('repository_url')
+@click.argument('commit_sha', required=False)
+@click.option('--output-dir', default='./output', help='Output directory for results')
+@click.option('--format', 'output_format', default='both',
+              type=click.Choice(['json', 'markdown', 'both']),
+              help='Output format')
+@click.option('--timeout', default=300, help='Analysis timeout in seconds')
+@click.option('--verbose', is_flag=True, help='Enable verbose logging (deprecated: use --log-level detailed)')
+@click.option('--log-level', type=click.Choice(['minimal', 'standard', 'detailed']), default='standard',
+              help='Logging level: minimal (WARNING), standard (INFO), detailed (DEBUG)')
+@click.option('--skip-toolchain-check', is_flag=True, default=False, help='Skip toolchain validation (emergency bypass)')
+@click.option('--enable-checklist', type=bool, default=True, help='Enable checklist evaluation (default: enabled)')
+@click.option('--checklist-config', help='Path to checklist configuration YAML file')
+@click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
+@click.option('--llm-template', help='Path to custom LLM prompt template')
+def main(repository_url: str, commit_sha: str | None, output_dir: str,
+         output_format: str, timeout: int, verbose: bool, log_level: str,
+         skip_toolchain_check: bool, enable_checklist: bool, checklist_config: str | None,
+         generate_llm_report: bool, llm_template: str | None) -> None:
+    """
+    Analyze code quality metrics for a Git repository.
+
+    REPOSITORY_URL: Git repository URL to analyze
+    COMMIT_SHA: Optional specific commit to analyze
+    """
+    # Call the internal implementation
+    _run_analysis(repository_url=repository_url, commit_sha=commit_sha,
+                  output_dir=output_dir, output_format=output_format,
+                  timeout=timeout, verbose=verbose, log_level=log_level,
+                  skip_toolchain_check=skip_toolchain_check, enable_checklist=enable_checklist,
+                  checklist_config=checklist_config, generate_llm_report=generate_llm_report,
+                  llm_template=llm_template)
+
+
 @click.group()
 def cli() -> None:
     """Code Score - Git Repository Metrics Collection Tool."""
@@ -295,24 +339,35 @@ def cli() -> None:
 @cli.command()
 @click.argument('repository_url')
 @click.argument('commit_sha', required=False)
-@click.option('--output-dir', default='./output')
+@click.option('--output-dir', default='./output', help='Output directory for results')
 @click.option('--format', 'output_format', default='both',
-              type=click.Choice(['json', 'markdown', 'both']))
-@click.option('--timeout', default=300)
-@click.option('--verbose', is_flag=True)
-@click.option('--enable-checklist', type=bool, default=True)
+              type=click.Choice(['json', 'markdown', 'both']),
+              help='Output format')
+@click.option('--timeout', default=300, help='Analysis timeout in seconds')
+@click.option('--verbose', is_flag=True, help='Enable verbose logging (deprecated: use --log-level detailed)')
+@click.option('--log-level', type=click.Choice(['minimal', 'standard', 'detailed']), default='standard',
+              help='Logging level: minimal (WARNING), standard (INFO), detailed (DEBUG)')
+@click.option('--skip-toolchain-check', is_flag=True, default=False, help='Skip toolchain validation (emergency bypass)')
+@click.option('--enable-checklist', type=bool, default=True, help='Enable checklist evaluation (default: enabled)')
 @click.option('--checklist-config', help='Path to checklist configuration YAML file')
 @click.option('--generate-llm-report', is_flag=True, default=False, help='Generate human-readable LLM report using Gemini after analysis')
 @click.option('--llm-template', help='Path to custom LLM prompt template')
 def analyze(repository_url: str, commit_sha: str | None, output_dir: str,
-           output_format: str, timeout: int, verbose: bool, enable_checklist: bool, checklist_config: str | None,
+           output_format: str, timeout: int, verbose: bool, log_level: str,
+           skip_toolchain_check: bool, enable_checklist: bool, checklist_config: str | None,
            generate_llm_report: bool, llm_template: str | None) -> None:
-    """Analyze a Git repository for code quality metrics."""
-    # This is the same as main() but accessible via 'code-score analyze'
+    """
+    Analyze code quality metrics for a Git repository.
+
+    REPOSITORY_URL: Git repository URL to analyze
+    COMMIT_SHA: Optional specific commit to analyze
+    """
+    # Delegate to main command to ensure consistent behavior
     ctx = click.Context(main)
     ctx.invoke(main, repository_url=repository_url, commit_sha=commit_sha,
                output_dir=output_dir, output_format=output_format,
-               timeout=timeout, verbose=verbose, enable_checklist=enable_checklist,
+               timeout=timeout, verbose=verbose, log_level=log_level,
+               skip_toolchain_check=skip_toolchain_check, enable_checklist=enable_checklist,
                checklist_config=checklist_config, generate_llm_report=generate_llm_report,
                llm_template=llm_template)
 
@@ -367,8 +422,15 @@ def detect_language(repository_url: str) -> None:
 
 
 if __name__ == '__main__':
-    # Support both direct execution and 'python -m src.cli.main'
-    if len(sys.argv) == 1:
+    # Support both legacy and modern CLI invocations
+    # Check if any subcommand is present in arguments
+    subcommands = ['analyze', 'evaluate', 'llm-report', 'version', 'detect-language']
+    has_subcommand = any(arg in subcommands for arg in sys.argv[1:])
+
+    if has_subcommand:
+        # Modern: python -m src.cli.main analyze <repo_url>
         cli()
     else:
+        # Legacy: python -m src.cli.main <repo_url>
+        #         python -m src.cli.main --verbose <repo_url>
         main()

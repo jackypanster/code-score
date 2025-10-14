@@ -4,6 +4,7 @@ Coordinates detection and parsing of CI configurations across multiple platforms
 """
 
 import logging
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
@@ -41,14 +42,20 @@ class CIConfigAnalyzer:
         Returns:
             CIConfigResult with platform detection and scoring
         """
+        # Start timing (FR-027: detailed level)
+        start_time = time.time()
+
         if not repo_path.exists() or not repo_path.is_dir():
             raise ValueError(f"Repository path does not exist: {repo_path}")
+
+        self.logger.debug(f"Starting CI configuration analysis for: {repo_path}")
 
         # Detect CI platforms
         detected_platforms = self._detect_ci_platforms(repo_path)
 
         if not detected_platforms:
             # No CI configuration found
+            self.logger.info("No CI configuration detected")
             return CIConfigResult(
                 platform=None,
                 config_file_path=None,
@@ -61,9 +68,14 @@ class CIConfigAnalyzer:
                 parse_errors=[]
             )
 
+        # Log detected platforms (standard level)
+        platform_names = ', '.join(detected_platforms.keys())
+        self.logger.info(f"Detected CI platforms: {platform_names}")
+
         # Parse all detected platforms
         platform_results = {}
         for platform_name, config_path in detected_platforms.items():
+            self.logger.debug(f"Parsing workflow file: {config_path}")
             parser = self.parsers[platform_name]
             try:
                 test_steps = parser.parse(config_path)
@@ -72,8 +84,10 @@ class CIConfigAnalyzer:
                         'config_path': config_path,
                         'test_steps': test_steps
                     }
+                    self.logger.debug(f"Successfully parsed {platform_name}: {len(test_steps)} test steps found")
             except Exception as e:
-                self.logger.warning(f"Failed to parse {platform_name}: {e}")
+                # Parse error (minimal level - WARNING)
+                self.logger.warning(f"Parse error in {config_path}: {e}")
 
         if not platform_results:
             # All parsers failed
@@ -126,7 +140,20 @@ class CIConfigAnalyzer:
         if test_job_count >= 2:
             score += 3
 
-        return CIConfigResult(
+        final_score = min(score, 13)
+
+        # Log analysis results (standard level)
+        self.logger.info(
+            f"CI analysis complete: platform={best_platform}, "
+            f"test_steps={len(test_steps)}, coverage_tools={len(coverage_tools)}, "
+            f"test_jobs={test_job_count}, score={final_score}"
+        )
+
+        # Log execution time (detailed level)
+        execution_time = time.time() - start_time
+        self.logger.debug(f"CI analysis execution time: {execution_time:.3f} seconds")
+
+        result = CIConfigResult(
             platform=best_platform,
             config_file_path=str(config_path.relative_to(repo_path)),
             has_test_steps=has_test_steps,
@@ -134,9 +161,14 @@ class CIConfigAnalyzer:
             has_coverage_upload=has_coverage_upload,
             coverage_tools=coverage_tools,
             test_job_count=test_job_count,
-            calculated_score=min(score, 13),
+            calculated_score=final_score,
             parse_errors=[]
         )
+
+        # Log final score (minimal level - always visible as INFO in standard mode)
+        self.logger.info(f"Final CI score: {final_score}/13")
+
+        return result
 
     def _detect_ci_platforms(self, repo_path: Path) -> Dict[str, Path]:
         """Detect CI platforms by checking for config files."""

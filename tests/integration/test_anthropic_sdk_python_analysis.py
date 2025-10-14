@@ -69,9 +69,9 @@ class TestAnthropicSdkPythonAnalysis:
         result = analyzer.analyze(str(anthropic_sdk_repo_path), "python")
 
         # Should detect multiple test files
-        assert result.test_files_detected > 0, "Should detect test files in tests/ directory"
+        assert result.static_infrastructure.test_files_detected > 0, "Should detect test files in tests/ directory"
         assert (
-            result.test_files_detected >= 10
+            result.static_infrastructure.test_files_detected >= 10
         ), "anthropic-sdk-python has many test files"
 
     def test_finds_pytest_configuration(self, anthropic_sdk_repo_path: Path):
@@ -83,10 +83,10 @@ class TestAnthropicSdkPythonAnalysis:
 
         # Should detect pytest config
         assert (
-            result.test_config_detected is True
+            result.static_infrastructure.test_config_detected is True
         ), "Should find pytest config in pyproject.toml"
         assert (
-            result.inferred_framework == "pytest"
+            result.static_infrastructure.inferred_framework == "pytest"
         ), "Should infer pytest as test framework"
 
     def test_calculates_test_file_ratio(self, anthropic_sdk_repo_path: Path):
@@ -97,13 +97,13 @@ class TestAnthropicSdkPythonAnalysis:
         result = analyzer.analyze(str(anthropic_sdk_repo_path), "python")
 
         # Should have reasonable test file ratio
-        assert result.test_file_ratio > 0.0, "Should calculate non-zero test file ratio"
+        assert result.static_infrastructure.test_file_ratio > 0.0, "Should calculate non-zero test file ratio"
         assert (
-            result.test_file_ratio <= 1.0
+            result.static_infrastructure.test_file_ratio <= 1.0
         ), "Test file ratio should not exceed 100%"
         # anthropic-sdk-python likely has 10-30% test coverage
         assert (
-            0.05 <= result.test_file_ratio <= 0.40
+            0.05 <= result.static_infrastructure.test_file_ratio <= 0.40
         ), "Expected ratio in reasonable range"
 
     def test_score_in_expected_range(self, anthropic_sdk_repo_path: Path):
@@ -124,40 +124,40 @@ class TestAnthropicSdkPythonAnalysis:
         # If the repository structure changes, this test will detect it.
 
         assert (
-            result.calculated_score >= 10
+            result.combined_score >= 10
         ), "Should get at least 10 points (tests + config)"
         assert (
-            result.calculated_score <= 25
+            result.combined_score <= 25
         ), "Score capped at 25 points (FR-013)"
 
         # Specific assertion based on actual anthropic-sdk-python structure
         # Score should be 15 (tests + pytest config + 10-30% ratio, no coverage config)
         assert (
-            15 <= result.calculated_score <= 20
-        ), f"Expected score 15-20 for anthropic-sdk-python, got {result.calculated_score}"
+            15 <= result.combined_score <= 20
+        ), f"Expected score 15-20 for anthropic-sdk-python, got {result.combined_score}"
 
     def test_output_schema_matches_contract(self, anthropic_sdk_repo_path: Path):
-        """Test that analyzer output matches TestInfrastructureResult contract (T004)."""
+        """Test that analyzer output matches TestAnalysis contract (T004)."""
         from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(anthropic_sdk_repo_path), "python")
 
         # Verify all contract fields present
-        assert hasattr(result, "test_files_detected")
-        assert hasattr(result, "test_config_detected")
-        assert hasattr(result, "coverage_config_detected")
-        assert hasattr(result, "test_file_ratio")
-        assert hasattr(result, "calculated_score")
-        assert hasattr(result, "inferred_framework")
+        assert hasattr(result.static_infrastructure, "test_files_detected")
+        assert hasattr(result.static_infrastructure, "test_config_detected")
+        assert hasattr(result.static_infrastructure, "coverage_config_detected")
+        assert hasattr(result.static_infrastructure, "test_file_ratio")
+        assert hasattr(result, "combined_score")
+        assert hasattr(result.static_infrastructure, "inferred_framework")
 
         # Verify types
-        assert isinstance(result.test_files_detected, int)
-        assert isinstance(result.test_config_detected, bool)
-        assert isinstance(result.coverage_config_detected, bool)
-        assert isinstance(result.test_file_ratio, float)
-        assert isinstance(result.calculated_score, int)
-        assert isinstance(result.inferred_framework, str)
+        assert isinstance(result.static_infrastructure.test_files_detected, int)
+        assert isinstance(result.static_infrastructure.test_config_detected, bool)
+        assert isinstance(result.static_infrastructure.coverage_config_detected, bool)
+        assert isinstance(result.static_infrastructure.test_file_ratio, float)
+        assert isinstance(result.combined_score, int)
+        assert isinstance(result.static_infrastructure.inferred_framework, str)
 
     def test_performance_within_target(self, anthropic_sdk_repo_path: Path):
         """Test that analysis completes within performance target (FR-014)."""

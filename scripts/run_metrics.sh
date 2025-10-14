@@ -219,14 +219,14 @@ fi
 
 # Execute the Python CLI with error handling
 if [[ "$VERBOSE" == "true" ]]; then
-    echo "Executing: uv run python -m src.cli.main ${CMD_ARGS[*]}"
+    echo "Executing: uv run python -m src.cli.main analyze ${CMD_ARGS[*]}"
     echo ""
 fi
 
 # Run the analysis
 # Temporarily disable exit-on-error to handle errors gracefully
 set +e
-uv run python -m src.cli.main "${CMD_ARGS[@]}"
+uv run python -m src.cli.main analyze "${CMD_ARGS[@]}"
 exit_code=$?
 set -e
 
