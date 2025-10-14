@@ -1,0 +1,43 @@
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@3.2.4
+
+executors:
+  python-executor:
+    docker:
+      - image: cimg/python:3.11
+
+jobs:
+  unit-tests:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements.txt
+      - run:
+          name: Run unit tests
+          command: pytest --cov=src tests/unit
+      - codecov/upload:
+          file: coverage.xml
+
+  integration-tests:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements.txt
+      - run:
+          name: Run integration tests
+          command: python -m pytest tests/integration
+
+workflows:
+  version: 2
+  test-workflow:
+    jobs:
+      - unit-tests
+      - integration-tests:
+          requires:
+            - unit-tests

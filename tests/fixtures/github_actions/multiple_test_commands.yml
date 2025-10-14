@@ -1,0 +1,36 @@
+name: Multi-Language Tests
+
+on: [push, pull_request]
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python tests
+        run: python -m pytest tests/
+
+  javascript-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: JS unit tests
+        run: npm test
+      - name: JS integration tests
+        run: npm run test:integration
+
+  go-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Go tests
+        run: go test ./...
+
+  java-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Maven tests
+        run: mvn test
+      - name: Upload coverage
+        uses: coveralls/github-action@v2

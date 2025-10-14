@@ -1,0 +1,16 @@
+# Travis CI 1.0 legacy format
+language: ruby
+
+rvm:
+  - 2.7
+  - 3.0
+
+before_script:
+  - bundle install
+
+script:
+  - bundle exec rake test
+  - bundle exec rspec
+
+after_success:
+  - coveralls

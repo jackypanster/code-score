@@ -58,11 +58,14 @@ class GolangToolRunner:
             return result
 
     def run_testing(self, repo_path: str) -> dict[str, Any]:
-        """Analyze Go test infrastructure using static analysis.
+        """Analyze Go test infrastructure using static analysis (Phase 1 + Phase 2).
 
-        This method uses TestInfrastructureAnalyzer to detect test files,
-        configuration, and calculate a score without executing tests.
-        This implements FR-003 through FR-017 for Go repositories.
+        This method uses TestInfrastructureAnalyzer to perform two-phase analysis:
+        - Phase 1: Static test file detection (0-25 points)
+        - Phase 2: CI configuration analysis (0-13 points)
+        - Combined: min(Phase 1 + Phase 2, 35) with score breakdown
+
+        This implements FR-003 through FR-020 for Go repositories.
 
         Args:
             repo_path: Path to the repository to analyze
@@ -73,38 +76,74 @@ class GolangToolRunner:
             - test_config_detected: Whether test framework config exists (FR-005)
             - coverage_config_detected: Whether coverage config exists (FR-006)
             - test_file_ratio: Ratio of test files to total files (FR-010)
-            - calculated_score: Static analysis score 0-25 (FR-018)
+            - calculated_score: Combined Phase 1+2 score 0-35 (FR-018, FR-020)
             - tests_run: 0 (static analysis, no execution)
             - tests_passed: 0 (static analysis, no execution)
             - tests_failed: 0 (static analysis, no execution)
             - framework: Inferred framework name
             - execution_time_seconds: 0.0 (static analysis is instant)
+            - ci_platform: Detected CI platform (Phase 2)
+            - ci_score: CI configuration contribution (Phase 2)
+            - phase1_score: Static infrastructure contribution
+            - phase2_score: CI configuration contribution
         """
+        import logging
         from src.metrics.test_infrastructure_analyzer import TestInfrastructureAnalyzer
 
-        try:
-            # Use static analyzer instead of running tests
-            analyzer = TestInfrastructureAnalyzer()
-            analysis_result = analyzer.analyze(repo_path, "go")
+        logger = logging.getLogger(__name__)
 
-            # Map ALL TestInfrastructureResult fields to test_execution dict
-            # This enables checklist evaluator to award partial credit (T037)
+        try:
+            # Use static analyzer for Phase 1 + Phase 2 analysis
+            analyzer = TestInfrastructureAnalyzer(enable_ci_analysis=True)
+            test_analysis = analyzer.analyze(repo_path, "go")
+
+            # Log score breakdown at DEBUG level (per T025 requirement)
+            logger.debug(
+                f"Test analysis score breakdown for Go repository at {repo_path}: "
+                f"Phase1={test_analysis.score_breakdown.phase1_contribution}, "
+                f"Phase2={test_analysis.score_breakdown.phase2_contribution}, "
+                f"Combined={test_analysis.combined_score} "
+                f"(raw_total={test_analysis.score_breakdown.raw_total}, "
+                f"truncated={test_analysis.score_breakdown.truncated_points})"
+            )
+
+            # Extract Phase 1 (static infrastructure) fields
+            static = test_analysis.static_infrastructure
+
+            # Extract Phase 2 (CI configuration) fields
+            ci_platform = None
+            ci_score = 0
+            if test_analysis.ci_configuration:
+                ci_platform = test_analysis.ci_configuration.platform
+                ci_score = test_analysis.ci_configuration.calculated_score
+
+            # Map TestAnalysis to test_execution dict with combined_score
+            # This enables checklist evaluator to use the capped 35-point score
             result = {
-                "test_files_detected": analysis_result.test_files_detected,  # FR-017
-                "test_config_detected": analysis_result.test_config_detected,  # FR-005
-                "coverage_config_detected": analysis_result.coverage_config_detected,  # FR-006
-                "test_file_ratio": analysis_result.test_file_ratio,  # FR-010
-                "calculated_score": analysis_result.calculated_score,  # FR-018
+                # Phase 1 fields (FR-003 to FR-017)
+                "test_files_detected": static.test_files_detected,  # FR-017
+                "test_config_detected": static.test_config_detected,  # FR-005
+                "coverage_config_detected": static.coverage_config_detected,  # FR-006
+                "test_file_ratio": static.test_file_ratio,  # FR-010
+                "framework": static.inferred_framework,
+                # Phase 2 fields (FR-018 to FR-020)
+                "ci_platform": ci_platform,  # FR-019
+                "ci_score": ci_score,  # FR-020
+                # Combined scoring
+                "calculated_score": test_analysis.combined_score,  # FR-018 (capped at 35)
+                "phase1_score": test_analysis.score_breakdown.phase1_contribution,
+                "phase2_score": test_analysis.score_breakdown.phase2_contribution,
+                # Static analysis metadata
                 "tests_run": 0,  # Static analysis doesn't run tests
                 "tests_passed": 0,  # Static analysis doesn't run tests
                 "tests_failed": 0,  # Static analysis doesn't run tests
-                "framework": analysis_result.inferred_framework,
                 "execution_time_seconds": 0.0,  # Static analysis is instant
             }
 
             return result
 
         except Exception as e:
+            logger.error(f"Test analysis failed for Go repository at {repo_path}: {e}")
             # Graceful error handling (NFR-001)
             return {
                 "test_files_detected": 0,
@@ -117,6 +156,10 @@ class GolangToolRunner:
                 "tests_failed": 0,
                 "framework": "none",
                 "execution_time_seconds": 0.0,
+                "ci_platform": None,
+                "ci_score": 0,
+                "phase1_score": 0,
+                "phase2_score": 0,
             }
 
     def run_security_audit(self, repo_path: str) -> dict[str, Any]:

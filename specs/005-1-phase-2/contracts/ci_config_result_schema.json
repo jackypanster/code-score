@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://code-score.dev/schemas/ci_config_result.json",
+  "title": "CIConfigResult",
+  "description": "CI/CD configuration analysis result for Code Score Phase 2 (COD-9)",
+  "type": "object",
+  "required": [
+    "platform",
+    "has_test_steps",
+    "test_commands",
+    "has_coverage_upload",
+    "coverage_tools",
+    "test_job_count",
+    "calculated_score",
+    "parse_errors"
+  ],
+  "properties": {
+    "platform": {
+      "description": "Detected CI/CD platform name, or null if no CI configuration found",
+      "type": ["string", "null"],
+      "enum": ["github_actions", "gitlab_ci", "circleci", "travis_ci", "jenkins", null]
+    },
+    "config_file_path": {
+      "description": "Relative path to CI configuration file from repository root",
+      "type": ["string", "null"],
+      "examples": [".github/workflows/test.yml", ".gitlab-ci.yml", ".circleci/config.yml"]
+    },
+    "has_test_steps": {
+      "description": "True if at least one test execution step detected (FR-015)",
+      "type": "boolean"
+    },
+    "test_commands": {
+      "description": "List of detected test commands (e.g., 'pytest --cov=src', 'npm test')",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "has_coverage_upload": {
+      "description": "True if coverage upload or reporting tool detected (FR-016)",
+      "type": "boolean"
+    },
+    "coverage_tools": {
+      "description": "List of detected coverage tools (e.g., 'codecov', 'coveralls', 'sonarqube')",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["codecov", "coveralls", "sonarqube", "other"]
+      },
+      "uniqueItems": true
+    },
+    "test_job_count": {
+      "description": "Number of distinct test jobs detected (FR-017)",
+      "type": "integer",
+      "minimum": 0
+    },
+    "calculated_score": {
+      "description": "Phase 2 CI analysis score contribution (0-13 points, per FR-015 to FR-018)",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 13
+    },
+    "parse_errors": {
+      "description": "List of parse error messages (empty if successful, per FR-022)",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "platform": "github_actions",
+      "config_file_path": ".github/workflows/test.yml",
+      "has_test_steps": true,
+      "test_commands": ["pytest --cov=src tests/unit", "npm test"],
+      "has_coverage_upload": true,
+      "coverage_tools": ["codecov"],
+      "test_job_count": 2,
+      "calculated_score": 13,
+      "parse_errors": []
+    },
+    {
+      "platform": null,
+      "config_file_path": null,
+      "has_test_steps": false,
+      "test_commands": [],
+      "has_coverage_upload": false,
+      "coverage_tools": [],
+      "test_job_count": 0,
+      "calculated_score": 0,
+      "parse_errors": []
+    },
+    {
+      "platform": "gitlab_ci",
+      "config_file_path": ".gitlab-ci.yml",
+      "has_test_steps": false,
+      "test_commands": [],
+      "has_coverage_upload": false,
+      "coverage_tools": [],
+      "test_job_count": 0,
+      "calculated_score": 0,
+      "parse_errors": ["YAMLError: mapping values are not allowed here"]
+    }
+  ]
+}

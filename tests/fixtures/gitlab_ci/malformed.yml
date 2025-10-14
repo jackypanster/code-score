@@ -1,0 +1,12 @@
+image: python:3.11
+
+stages:
+  - test
+
+test_job:
+  stage: test
+  script:
+    - pytest tests/
+  invalid_key_without_proper_indentation
+    malformed: YAML structure here
+    - another broken line

@@ -51,7 +51,7 @@ class TestPythonTestFileDetection:
         result = analyzer.analyze(str(python_repo_structure), "python")
 
         # Should detect 3 test files
-        assert result.test_files_detected == 3, "Should detect all 3 test files"
+        assert result.static_infrastructure.test_files_detected == 3, "Should detect all 3 test files"
 
     def test_matches_test_prefix_pattern(self, python_repo_structure: Path):
         """Test that test_*.py pattern is matched (FR-001)."""
@@ -61,7 +61,7 @@ class TestPythonTestFileDetection:
         # Analyzer should internally match test_module.py and test_another.py
         result = analyzer.analyze(str(python_repo_structure), "python")
 
-        assert result.test_files_detected >= 2, "Should detect test_*.py files"
+        assert result.static_infrastructure.test_files_detected >= 2, "Should detect test_*.py files"
 
     def test_matches_test_suffix_pattern(self, python_repo_structure: Path):
         """Test that *_test.py pattern is matched (FR-001)."""
@@ -71,7 +71,7 @@ class TestPythonTestFileDetection:
         # Analyzer should match utils_test.py
         result = analyzer.analyze(str(python_repo_structure), "python")
 
-        assert result.test_files_detected >= 1, "Should detect *_test.py files"
+        assert result.static_infrastructure.test_files_detected >= 1, "Should detect *_test.py files"
 
     def test_ignores_non_test_files(self, python_repo_structure: Path):
         """Test that non-test Python files are not counted as tests."""
@@ -81,7 +81,7 @@ class TestPythonTestFileDetection:
         result = analyzer.analyze(str(python_repo_structure), "python")
 
         # Should not count main.py and helper.py as test files
-        assert result.test_files_detected == 3, "Should only count test files, not source files"
+        assert result.static_infrastructure.test_files_detected == 3, "Should only count test files, not source files"
 
 
 @pytest.mark.unit
@@ -114,7 +114,7 @@ class TestJavaScriptTestFileDetection:
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(javascript_repo_structure), "javascript")
 
-        assert result.test_files_detected >= 1, "Should detect files in __tests__/ directory"
+        assert result.static_infrastructure.test_files_detected >= 1, "Should detect files in __tests__/ directory"
 
     def test_matches_test_js_pattern(self, javascript_repo_structure: Path):
         """Test that *.test.js pattern is matched (FR-002)."""
@@ -124,7 +124,7 @@ class TestJavaScriptTestFileDetection:
         result = analyzer.analyze(str(javascript_repo_structure), "javascript")
 
         # Should detect app.test.js and utils.test.ts
-        assert result.test_files_detected >= 2, "Should detect *.test.js files"
+        assert result.static_infrastructure.test_files_detected >= 2, "Should detect *.test.js files"
 
     def test_matches_spec_js_pattern(self, javascript_repo_structure: Path):
         """Test that *.spec.js pattern is matched (FR-002)."""
@@ -134,7 +134,7 @@ class TestJavaScriptTestFileDetection:
         result = analyzer.analyze(str(javascript_repo_structure), "javascript")
 
         # Should detect component.spec.js
-        assert result.test_files_detected >= 1, "Should detect *.spec.js files"
+        assert result.static_infrastructure.test_files_detected >= 1, "Should detect *.spec.js files"
 
     def test_handles_typescript_variants(self, javascript_repo_structure: Path):
         """Test that TypeScript .ts variants are detected (FR-002)."""
@@ -144,7 +144,7 @@ class TestJavaScriptTestFileDetection:
         result = analyzer.analyze(str(javascript_repo_structure), "javascript")
 
         # Should detect utils.test.ts
-        assert result.test_files_detected == 3, "Should detect TypeScript test files"
+        assert result.static_infrastructure.test_files_detected == 3, "Should detect TypeScript test files"
 
 
 @pytest.mark.unit
@@ -175,7 +175,7 @@ class TestGoTestFileDetection:
         result = analyzer.analyze(str(go_repo_structure), "go")
 
         # Should detect main_test.go and utils_test.go
-        assert result.test_files_detected == 2, "Should detect *_test.go files"
+        assert result.static_infrastructure.test_files_detected == 2, "Should detect *_test.go files"
 
     def test_ignores_non_test_go_files(self, go_repo_structure: Path):
         """Test that non-test Go files are not counted as tests."""
@@ -185,7 +185,7 @@ class TestGoTestFileDetection:
         result = analyzer.analyze(str(go_repo_structure), "go")
 
         # Should not count main.go and helper.go
-        assert result.test_files_detected == 2, "Should only count test files"
+        assert result.static_infrastructure.test_files_detected == 2, "Should only count test files"
 
 
 @pytest.mark.unit
@@ -220,7 +220,7 @@ class TestJavaTestFileDetection:
         result = analyzer.analyze(str(java_repo_structure), "java")
 
         # Should detect AppTest.java and UtilsTest.java
-        assert result.test_files_detected == 2, "Should detect files in src/test/java/ directory"
+        assert result.static_infrastructure.test_files_detected == 2, "Should detect files in src/test/java/ directory"
 
     def test_counts_java_files_in_test_directory(self, java_repo_structure: Path):
         """Test that .java files in test directory are counted."""
@@ -229,7 +229,7 @@ class TestJavaTestFileDetection:
         analyzer = TestInfrastructureAnalyzer()
         result = analyzer.analyze(str(java_repo_structure), "java")
 
-        assert result.test_files_detected == 2, "Should count .java files in test dir"
+        assert result.static_infrastructure.test_files_detected == 2, "Should count .java files in test dir"
 
     def test_ignores_main_java_files(self, java_repo_structure: Path):
         """Test that files in src/main/java/ are not counted as tests."""
@@ -239,7 +239,7 @@ class TestJavaTestFileDetection:
         result = analyzer.analyze(str(java_repo_structure), "java")
 
         # Should not count App.java from src/main/java/
-        assert result.test_files_detected == 2, "Should only count test files, not main files"
+        assert result.static_infrastructure.test_files_detected == 2, "Should only count test files, not main files"
 
 
 if __name__ == "__main__":

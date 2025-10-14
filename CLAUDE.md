@@ -166,7 +166,7 @@ uv run pytest --cov=src --cov-report=html
   --verbose
 
 # Programmatic usage
-uv run python -m src.cli.main https://github.com/user/repo.git --verbose
+uv run python -m src.cli.main analyze https://github.com/user/repo.git --verbose
 
 # Checklist evaluation commands
 uv run python -m src.cli.evaluate output/submission.json --verbose
@@ -256,7 +256,7 @@ uv run pytest tests/contract/ -v
 ### CLI Command Structure
 The tool provides three main CLI commands ([src/cli/](src/cli/)):
 
-1. **Main Analysis** ([main.py](src/cli/main.py)): `uv run python -m src.cli.main <repo_url>`
+1. **Main Analysis** ([main.py](src/cli/main.py)): `uv run python -m src.cli.main analyze <repo_url>`
    - Entry point for repository analysis
    - Coordinates metrics collection and optional checklist evaluation
    - Can trigger LLM report generation via `--generate-llm-report` flag

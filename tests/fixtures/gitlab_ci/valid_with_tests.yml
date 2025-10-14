@@ -1,0 +1,40 @@
+image: python:3.11
+
+stages:
+  - test
+  - coverage
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
+unit_tests:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pytest --cov=src tests/unit
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+integration_tests:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - python -m pytest tests/integration
+  only:
+    - merge_requests
+    - main
+
+upload_coverage:
+  stage: coverage
+  script:
+    - pip install codecov
+    - codecov upload
+  dependencies:
+    - unit_tests
