@@ -284,7 +284,7 @@ Use substring matching (not regex per research.md).
 
 ---
 
-### T015 - Create CIParser base interface
+### T015 - Create CIParser base interface ✅
 **File**: `src/metrics/ci_parsers/base.py`
 **Description**: Implement abstract base class CIParser with:
 1. Abstract method `parse(config_path: Path) -> Optional[List[TestStepInfo]]`
