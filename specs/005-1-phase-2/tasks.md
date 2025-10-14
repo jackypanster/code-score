@@ -269,7 +269,7 @@ Use hardcoded TEST_COMMANDS list: ["pytest", "python -m pytest", "npm test", "np
 
 ---
 
-### T014 [P] - Create CoverageToolMatcher
+### T014 [P] - Create CoverageToolMatcher ✅
 **File**: `src/metrics/pattern_matchers/coverage_tool_matcher.py`
 **Description**: Implement CoverageToolMatcher class with methods:
 1. `detect_coverage_tools(steps: List[str]) -> List[str]`: Detect codecov, coveralls, sonarqube
