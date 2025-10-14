@@ -12,7 +12,9 @@ Constitutional Compliance:
 import logging
 from pathlib import Path
 
+from src.metrics.ci_config_analyzer import CIConfigAnalyzer
 from src.metrics.config_parsers import json_parser, makefile_parser, toml_parser, xml_parser
+from src.metrics.models.ci_config import ScoreBreakdown, TestAnalysis
 from src.metrics.models.test_infrastructure import TestInfrastructureResult
 
 logger = logging.getLogger(__name__)
@@ -25,8 +27,14 @@ class TestInfrastructureAnalyzer:
     configuration files across Python, JavaScript, Go, and Java repositories.
     """
 
-    def __init__(self) -> None:
-        """Initialize the analyzer."""
+    def __init__(self, enable_ci_analysis: bool = True) -> None:
+        """Initialize the analyzer.
+
+        Args:
+            enable_ci_analysis: Enable Phase 2 CI configuration analysis (default: True)
+        """
+        self.enable_ci_analysis = enable_ci_analysis
+        self.ci_analyzer = CIConfigAnalyzer() if enable_ci_analysis else None
         self.test_patterns = {
             "python": {
                 "directories": ["tests"],
@@ -40,8 +48,13 @@ class TestInfrastructureAnalyzer:
             "java": {"directories": ["src/test/java"], "file_patterns": ["*.java"]},
         }
 
-    def analyze(self, repo_path: str, language: str | list[str]) -> TestInfrastructureResult:
-        """Analyze test infrastructure for a repository.
+    def analyze(self, repo_path: str, language: str | list[str]) -> TestAnalysis:
+        """Analyze test infrastructure for a repository (Phase 1 + Phase 2).
+
+        Performs two-phase analysis:
+        - Phase 1: Static test infrastructure detection (0-25 points)
+        - Phase 2: CI configuration analysis (0-13 points, if enabled)
+        - Combined: min(phase1 + phase2, 35) with score breakdown
 
         Supports both single-language and multi-language analysis:
         - Single language: Analyze for that language only
@@ -52,25 +65,34 @@ class TestInfrastructureAnalyzer:
             language: Primary language or list of languages (python, javascript, go, java)
 
         Returns:
-            TestInfrastructureResult with detected infrastructure and calculated score
+            TestAnalysis with Phase 1+2 results and combined score
 
         Example:
             >>> analyzer = TestInfrastructureAnalyzer()
-            >>> # Single language
             >>> result = analyzer.analyze("/path/to/repo", "python")
-            >>> result.calculated_score
+            >>> result.combined_score  # Phase 1 + Phase 2 capped at 35
+            28
+            >>> result.score_breakdown.phase1_contribution
             20
-            >>> # Multi-language (returns max score)
-            >>> result = analyzer.analyze("/path/to/repo", ["python", "javascript"])
-            >>> result.calculated_score
-            25
+            >>> result.score_breakdown.phase2_contribution
+            10
         """
-        # Handle multi-language case (FR-004a, Clarification 2)
+        # Phase 1: Static infrastructure analysis
         if isinstance(language, list):
-            return self._analyze_multi_language(repo_path, language)
+            phase1_result = self._analyze_multi_language(repo_path, language)
+        else:
+            phase1_result = self._analyze_single_language(repo_path, language)
 
-        # Single language analysis
-        return self._analyze_single_language(repo_path, language)
+        # Phase 2: CI configuration analysis (if enabled)
+        phase2_result = None
+        if self.enable_ci_analysis and self.ci_analyzer:
+            try:
+                phase2_result = self.ci_analyzer.analyze_ci_config(Path(repo_path))
+            except Exception as e:
+                logger.warning(f"CI analysis failed: {e}, continuing with Phase 1 only")
+
+        # Combine Phase 1 and Phase 2
+        return self._create_test_analysis(phase1_result, phase2_result)
 
     def _analyze_single_language(self, repo_path: str, language: str) -> TestInfrastructureResult:
         """Analyze test infrastructure for a single language.
@@ -501,3 +523,39 @@ class TestInfrastructureAnalyzer:
         }
 
         return framework_map.get(language, "none")
+
+    def _create_test_analysis(
+        self,
+        phase1_result: TestInfrastructureResult,
+        phase2_result
+    ) -> TestAnalysis:
+        """Create TestAnalysis combining Phase 1 and Phase 2 results.
+
+        Args:
+            phase1_result: Static infrastructure analysis result
+            phase2_result: CI configuration analysis result (or None)
+
+        Returns:
+            TestAnalysis with combined scores and breakdown
+        """
+        phase1_score = phase1_result.calculated_score
+        phase2_score = phase2_result.calculated_score if phase2_result else 0
+
+        raw_total = phase1_score + phase2_score
+        capped_total = min(raw_total, 35)
+        truncated_points = raw_total - capped_total
+
+        score_breakdown = ScoreBreakdown(
+            phase1_contribution=phase1_score,
+            phase2_contribution=phase2_score,
+            raw_total=raw_total,
+            capped_total=capped_total,
+            truncated_points=truncated_points
+        )
+
+        return TestAnalysis(
+            static_infrastructure=phase1_result,
+            ci_configuration=phase2_result,
+            combined_score=capped_total,
+            score_breakdown=score_breakdown
+        )
