@@ -17,5 +17,6 @@ Constitutional Compliance:
 
 from src.metrics.ci_parsers.base import CIParser
 from src.metrics.ci_parsers.github_actions_parser import GitHubActionsParser
+from src.metrics.ci_parsers.gitlab_ci_parser import GitLabCIParser
 
-__all__ = ["CIParser", "GitHubActionsParser"]
+__all__ = ["CIParser", "GitHubActionsParser", "GitLabCIParser"]

@@ -318,7 +318,7 @@ Use Python ABC (abstract base class).
 
 ---
 
-### T017 [P] - Implement GitLabCIParser
+### T017 [P] - Implement GitLabCIParser ✅
 **File**: `src/metrics/ci_parsers/gitlab_ci_parser.py`
 **Description**: Implement GitLabCIParser(CIParser) with:
 1. `parse(config_path: Path) -> Optional[List[TestStepInfo]]`
