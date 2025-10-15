@@ -4,6 +4,8 @@
 
 This document describes the API interfaces and core components of the Code Score system, including both metrics collection and checklist evaluation functionality.
 
+> 🔁 **MVP Notice**: All testing-related scores are inferred from static repository evidence gathered by `TestInfrastructureAnalyzer`. Fields such as `test_execution.calculated_score`, `test_files_detected`, and `ci_platform` reflect detected artifacts; Code Score does not execute target repository tests yet.
+
 ## Core Components
 
 ### 1. ChecklistEvaluator

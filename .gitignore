@@ -6,3 +6,4 @@ __pycache__/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+.gemini/

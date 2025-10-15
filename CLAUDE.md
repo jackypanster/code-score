@@ -36,10 +36,10 @@ The system consists of three integrated pipelines:
 4. **Output Formatter**: Generates final_report.md and generation_metadata.json
 
 ### Multi-Language Tool Runners
-- **Python**: `ruff`/`flake8` (linting), `pytest` (testing), `pip-audit` (security)
-- **JavaScript/TypeScript**: `eslint` (linting), `jest`/`mocha` (testing), `npm audit` (security)
-- **Java**: `checkstyle` (linting), `maven`/`gradle` (testing), `spotbugs` (security)
-- **Go**: `golangci-lint`/`gofmt` (linting), `go test` (testing), `gosec` (security)
+- **Python**: `ruff`/`flake8` (linting), `pip-audit` (security), static test inference via `TestInfrastructureAnalyzer`
+- **JavaScript/TypeScript**: `eslint` (linting), `npm audit` (security), static test inference via `TestInfrastructureAnalyzer`
+- **Java**: `checkstyle` (linting), `spotbugs` (security), static test inference via `TestInfrastructureAnalyzer`
+- **Go**: `golangci-lint`/`gofmt` (linting), `gosec` (security), static test inference via `TestInfrastructureAnalyzer`
 
 ### Static Test Infrastructure Analyzer (NEW - COD-8)
 **Purpose**: Zero-execution static analysis of test infrastructure to recover Testing dimension scoring without running code.
@@ -52,27 +52,28 @@ The system consists of three integrated pipelines:
 **Key Features**:
 - **Zero Code Execution**: Analyzes files without running tests (<1s, safe)
 - **Multi-Language Detection**: Supports Python, JavaScript, Go, Java with automatic language detection
-- **Score Recovery**: Restores 15-25/25 points in Testing dimension through static analysis
+- **Score Recovery**: Recovers up to 35/35 testing points via static signals (`phase1_score + phase2_score`)
 - **Config Detection**: Identifies test frameworks (pytest, jest, JUnit) and coverage tools
 - **Test File Discovery**: Pattern-based detection (`test_*.py`, `*.test.js`, `*_test.go`, `src/test/java/`)
 
-**Analysis Output** (5 new fields in `test_execution`):
+**Analysis Output**（关键字段均来自静态分析）:
 ```json
 {
   "test_files_detected": 43,           // Number of test files found
   "test_config_detected": true,        // Framework config exists
   "coverage_config_detected": false,   // Coverage config exists
-  "test_file_ratio": 0.107,           // Test files / total files
-  "calculated_score": 15              // Static score 0-25
+  "test_file_ratio": 0.107,            // Test files / total files
+  "calculated_score": 27,              // Phase1+Phase2 static score capped at 35 (FR-020)
+  "phase1_score": 18,                  // Static infrastructure contribution
+  "phase2_score": 9,                   // CI configuration contribution
+  "ci_platform": "github_actions"      // Detected CI provider when available
 }
 ```
 
 **Scoring Logic**:
-- 5 points: Test files present (`test_files_detected > 0`)
-- 5 points: Test configuration detected (`pytest.ini`, `package.json`, etc.)
-- 5 points: Coverage configuration detected (`.coveragerc`, `jest.config.json`)
-- 0-10 points: Test file ratio bonus (10% = 5pts, 30% = 10pts)
-- Max: 25 points (capped per FR-013)
+- **Phase 1 (0-25)**: Awarded for test files, framework configs, coverage configs, and test-file ratio bonus
+- **Phase 2 (0-10)**: Awards CI metadata, pipeline robustness, and repeatability signals
+- **Combined Score (≤35)**: `phase1_score + phase2_score`, capped to comply with FR-020
 
 **Integration**: All 4 tool runners (`python_tools.py`, `javascript_tools.py`, `golang_tools.py`, `java_tools.py`) now use `TestInfrastructureAnalyzer` instead of executing tests, enabling safe, fast analysis.
 

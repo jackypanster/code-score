@@ -18,6 +18,8 @@ You are an expert software engineer reviewing a code repository. Based on the au
 - **Testing**: {{category_scores.testing.score}}/{{category_scores.testing.max_points}} ({{category_scores.testing.percentage}}%)
 - **Documentation**: {{category_scores.documentation.score}}/{{category_scores.documentation.max_points}} ({{category_scores.documentation.percentage}}%)
 
+> ℹ️ Testing scores reflect **static evidence** found in the repository (test suites, coverage tooling, CI metadata). No target-project tests were executed during this run.
+
 ## Evaluation Results
 
 ### ✅ Strengths ({{met_items|length}} criteria met)

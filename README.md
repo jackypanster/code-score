@@ -12,7 +12,7 @@ Automated Git repository quality analysis with AI-powered reporting.
 
 Code Score analyzes any public Git repository and generates comprehensive quality reports across three integrated pipelines:
 
-1. **Metrics Collection** - Automated linting, testing, and security analysis
+1. **Metrics Collection** - Automated linting, build checks, security scanning, and static test infrastructure inspection
 2. **Checklist Evaluation** - 11-item quality scoring with evidence tracking
 3. **LLM Report Generation** - AI-powered narrative reports via Gemini
 
@@ -25,6 +25,7 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 - **Evidence-based scoring** with 11-item quality checklist
 - **AI-generated narrative reports** using Gemini
 - **Standardized JSON/Markdown output** with schema validation
+- **Static test inference** for MVP: detects test suites/CI metadata without executing user tests
 - **Performance optimized** for large repositories (500MB limit)
 
 ## Prerequisites
@@ -37,10 +38,12 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 ### Optional Analysis Tools
 
 The tool automatically detects and uses language-specific tools:
-- **Python**: `ruff` (linting), `pytest` (testing), `pip-audit` (security), `uv build`/`python -m build` (build validation)
-- **JavaScript**: `eslint` (linting), `jest` (testing), `npm audit` (security), `npm`/`yarn` (build validation)
-- **Java**: `checkstyle` (linting), `maven`/`gradle` (testing & build), `spotbugs` (security)
-- **Go**: `golangci-lint` (linting), `go test` (testing), `gosec` (security), `go build` (build validation)
+- **Python**: `ruff` (linting), `pip-audit` (security), `uv build`/`python -m build` (build validation)
+- **JavaScript**: `eslint` (linting), `npm audit` (security), `npm`/`yarn` (build validation)
+- **Java**: `checkstyle` (linting), `spotbugs` (security), `maven`/`gradle` (build validation)
+- **Go**: `golangci-lint` (linting), `gosec` (security), `go build` (build validation)
+
+> 🧪 **Testing in MVP**: We do **not** execute repository test suites yet. The testing dimension is scored from statically detected test files, framework configs, coverage tooling, and CI metadata. Please ensure these artifacts live in the target repository (e.g., `tests/`, `coverage/`, CI workflow files, saved test reports) so Code Score can credit them.
 
 ## Installation
 
@@ -111,6 +114,12 @@ uv run python -m src.cli.llm_report output/score_input.json \
   --output ./report.md
 ```
 
+## Testing Evidence (MVP)
+
+- **Commit the artifacts**: Include `tests/` directories, framework configs (e.g., `pytest.ini`, `package.json` scripts), CI workflows, and the most recent test/coverage reports inside the repository. Code Score only inspects the repository contents.
+- **Static-only scoring**: During the MVP, testing scores are inferred from these artifacts (`test_execution.calculated_score`, `coverage_config_detected`, `ci_platform`, etc.). We do not execute the target project's tests yet.
+- **Future roadmap**: A secure test runner will arrive in the next milestone to execute suites and validate submitted reports against real runs.
+
 ## Output Files
 
 ### Metrics Collection
@@ -164,7 +173,21 @@ uv run python -m src.cli.llm_report output/score_input.json \
       "dependency_audit": {"vulnerabilities_found": 0, "tool_used": "pip-audit"}
     },
     "testing": {
-      "test_execution": {"tests_run": 45, "tests_passed": 43, "framework": "pytest"}
+      "test_execution": {
+        "test_files_detected": 18,
+        "test_config_detected": true,
+        "coverage_config_detected": true,
+        "test_file_ratio": 0.14,
+        "framework": "pytest",
+        "ci_platform": "github_actions",
+        "ci_score": 8,
+        "calculated_score": 26,
+        "phase1_score": 18,
+        "phase2_score": 8,
+        "tests_run": 0,
+        "tests_passed": 0,
+        "tests_failed": 0
+      }
     },
     "documentation": {
       "readme_present": true,
@@ -222,7 +245,7 @@ The 11-item checklist evaluates across three dimensions:
 | Dimension | Points | Criteria |
 |-----------|--------|----------|
 | **Code Quality** | 40 | Static linting, builds, security scans, documentation |
-| **Testing** | 35 | Automated tests, coverage, integration tests |
+| **Testing** | 35 | Static evidence of automated tests, coverage tooling, CI metadata |
 | **Documentation** | 25 | README guide, setup instructions, API docs |
 
 ## Performance Limits

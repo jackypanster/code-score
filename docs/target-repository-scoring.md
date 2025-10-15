@@ -10,10 +10,10 @@ Code Score reviews external（“target”）仓库，并依据固定的检查�
 | 代码质量 | Build/Package Success | 10 | 构建或打包命令成功执行 | Python: `uv build` → `python -m build` 回退；JS: `npm run build` / `yarn build`；Go: `go build ./...`；Java: `mvn compile` / `gradle compileJava` | ✓ 所有语言 `run_build()` 已实现并接入 metrics；Python/JS/Go/Java 全部支持，结果写入 `build_success` 和 `build_details` 字段 |
 | 代码质量 | Dependency Security Scan | 8 | 依赖审计无未解决的高危漏洞 | Python: `pip-audit`；JS: `npm audit --json`；Go: `osv-scanner`；Java: OWASP Dependency Check | ✓ 各语言 `run_security_audit` 已写入执行逻辑；缺工具时返回 `tool_used=none` |
 | 代码质量 | Core Module Documentation | 7 | README 描述架构、目录、入口 | README 解析 | ✓ `tool_executor._analyze_documentation` 产出，结果落在 `readme_quality_score` 等字段 |
-| 测试 | Automated Test Execution | 15 | 自动化测试执行并通过 | Python: `pytest`；JS: `npm test`（解析 Jest/Mocha）；Go: `go test -json`；Java: `mvn test` / `gradle test` | ✓ 相应 `run_testing` 已接入，记录 `tests_run/tests_passed` 等 |
-| 测试 | Coverage or Core Test Evidence | 10 | 覆盖率 ≥60%，或提交关键测试证据 | 覆盖率报告（`pytest --cov`、`jest --coverage`、`go test -cover` 等） | △ 当前收集逻辑未自动生成 `coverage_report`，需用户提供或后续补采集器 |
-| 测试 | Integration/Smoke Test Scripts | 6 | 提供集成/冒烟测试脚本及运行结果 | 测试框架运行日志 | △ 依赖 `test_execution` 中的测试数量判断，尚未区分冒烟/单元的语义 |
-| 测试 | Test Result Documentation | 4 | 提供日志或 CI link 证明测试通过 | Pipeline execution 日志 | △ 仅记录 `tests_passed`、`execution.errors`，未来可拓展附加产物上报 |
+| 测试 | Automated Test Execution | 15 | 仓库内检测到结构化自动化测试目录、框架配置、CI 触发脚本 | 静态分析 (`tests/`、`pytest.ini`、`package.json` scripts、`pom.xml` test 配置、CI workflow) | △ MVP 阶段仅通过 TestInfrastructureAnalyzer 统计 `test_files_detected/test_config_detected/calculated_score`，不直接运行测试 |
+| 测试 | Coverage or Core Test Evidence | 10 | 存在覆盖率配置或近一次覆盖率报告快照 | 静态分析 (`coverage.xml`、`jest.config.js`、`go tool cover` 配置、`reports/coverage/` 等) | △ 依赖 `coverage_config_detected` 与仓库中保存的报告；暂不解析实时覆盖率数值 |
+| 测试 | Integration/Smoke Test Scripts | 6 | 发现集成/冒烟测试目录或框架 Hooks | 静态分析 (命名模式、`tests/integration/`、端到端脚本、CI job) | △ 根据 `framework`、`test_files_detected` 与 `ci_platform` 推测存在性 |
+| 测试 | Test Result Documentation | 4 | 仓库包含最近一次 CI/测试结果记录 | 静态分析 (`.github/workflows/`、`ci/`, `reports/test-results/`、`ci_platform`) | △ 通过 `ci_platform/ci_score` 判断；未来 runner 会核对真实日志 |
 | 文档 | README Quick Start Guide | 12 | README 说明概览、安装、命令、样例 | README 解析 | ✓ README 解析器产出 `setup_instructions/usage_examples` |
 | 文档 | Configuration & Environment Setup | 7 | 标注必要环境变量或配置文件 | README / `.env.example` 检查 | ✓ 同 README 解析逻辑覆盖 |
 | 文档 | API/Interface Usage Documentation | 6 | 提供 API/CLI/UI 入口与示例 | README/API 文档检查 | ✓ README/`docs/` 目录存在即记为可用；可继续细化判定 |
@@ -22,15 +22,18 @@ Code Score reviews external（“target”）仓库，并依据固定的检查�
 
 状态图例：✓ 已接入；△ 部分落地或存在明显缺口；✗ 尚未实现。
 
+> 🔬 **MVP 声明**：当前测试维度完全依赖仓库内的静态证据（测试目录、配置、CI 工作流、历史报告）。Code Score 暂不执行目标仓库的测试命令，因此请将最新的测试/覆盖率报告与配置文件一并提交到仓库中，以便获得准确评分。后续里程碑会引入隔离 Runner，届时将对这些证据进行实测校验。
+
 ## 证据采集流程
 - **Metrics Pipeline**（`src/metrics/submission_pipeline.py`）：克隆目标仓库、识别语言，并通过 `tool_runners/` 调度 linter、测试、审计工具，将结果汇总到 `output/submission.json`。
+- **TestInfrastructureAnalyzer**（`src/metrics/test_infrastructure_analyzer.py`）：在测试维度产出 `test_files_detected/test_config_detected/coverage_config_detected/ci_platform/calculated_score` 等静态指标，全部来源于仓库内文件。
 - **Checklist Evaluator**（`src/metrics/scoring_mapper.py`、`checklist_evaluator.py`）：读取 metrics 输出，依据 `specs/contracts/checklist_mapping.yaml` 中的判定条件生成评分。
 - **LLM Reports**（`src/llm/`）：可选的叙事报告，只消费既有分数，不新增评分逻辑。
 
 ## 仓库自检指南
 1. **Lint & Format**：在本地执行适配工具（如 `ruff check`、`npm run lint`、`golangci-lint run`），确保阻断级问题为 0。
 2. **保持可构建**：维护清晰的构建脚本，在干净环境验证命令成功运行（`uv build`、`npm ci && npm run build`、`mvn verify`）。
-3. **自动化测试**：保证指令无需人工输入即可跑通，默认目标是 ≥60% 行覆盖；若不足请在文档中说明原因与补救计划。
+3. **自动化测试**：确保测试脚本、框架配置、CI workflow、最新覆盖率/测试报告（如 `coverage.xml`、`reports/test-results/`）已经提交到仓库；否则 TestInfrastructureAnalyzer 无法识别并会降低得分。
 4. **文档同步架构**：定期更新 README，覆盖项目概览、目录说明、安装步骤、快速起步命令、常用配置。
 5. **安全扫描结果可复现**：在 CI 中保存 `pip-audit`、`npm audit` 等输出并记录处置动作，避免高危漏洞累积。
 

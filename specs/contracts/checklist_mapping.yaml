@@ -75,71 +75,77 @@ checklist_items:
     name: "Automated Test Execution"
     dimension: "testing"
     max_points: 15
-    description: "At least one type of automated test executes and passes in CI, or test infrastructure is detected"
+    description: "Static analysis detects a maintained automated test suite and runnable configuration"
     evaluation_criteria:
       met:
-        - test_execution.tests_run > 0 AND test_execution.tests_passed > 0
-        - test_execution.tests_failed == 0
+        - test_execution.calculated_score >= 25
+        - test_execution.test_config_detected == true
       partial:
-        - test_execution.tests_run > 0 BUT test_execution.tests_failed > 0
-        - test_execution.tests_run == 0 AND test_execution.test_files_detected > 0
+        - test_execution.calculated_score >= 10
+        - test_execution.test_files_detected >= 3
       unmet:
-        - test_execution.tests_run == 0 AND test_execution.test_files_detected == 0
+        - test_execution.test_files_detected == 0
+        - test_execution.test_config_detected == false AND test_execution.calculated_score < 10
     metrics_mapping:
       source_path: "$.metrics.testing.test_execution"
-      required_fields: ["tests_run", "tests_passed", "tests_failed", "test_files_detected"]
+      required_fields: ["test_files_detected", "test_config_detected", "calculated_score"]
 
   - id: "testing_coverage"
     name: "Coverage or Core Test Evidence"
     dimension: "testing"
     max_points: 10
-    description: "Coverage >=60% or core functionality test list with execution proof or static test infrastructure"
+    description: "Repository documents coverage tooling or core test evidence discoverable via static analysis"
     evaluation_criteria:
       met:
+        - test_execution.coverage_config_detected == true
         - coverage_report.coverage_percentage >= 60
       partial:
-        - coverage_report.coverage_percentage >= 30 OR (coverage_report == null AND test_execution.tests_run >= 5)
-        - coverage_report == null AND test_execution.tests_run == 0 AND test_execution.test_files_detected >= 5
+        - coverage_report.coverage_percentage >= 30
+        - test_execution.coverage_config_detected == false AND test_execution.test_files_detected >= 5
       unmet:
-        - coverage_report.coverage_percentage < 30 AND test_execution.tests_run < 5 AND test_execution.test_files_detected < 5
+        - test_execution.coverage_config_detected == false AND test_execution.test_files_detected < 5
+        - coverage_report == null AND test_execution.coverage_config_detected == false
     metrics_mapping:
       source_path: "$.metrics.testing"
-      required_fields: ["test_execution", "coverage_report"]
+      required_fields: ["test_execution"]
 
   - id: "testing_integration"
     name: "Integration/Smoke Test Scripts"
     dimension: "testing"
     max_points: 6
-    description: "Provides 2-3 typical scenario integration or smoke test scripts with results, or test files detected"
+    description: "Static analysis confirms integration/smoke style tests or framework hooks are present"
     evaluation_criteria:
       met:
-        - test_execution.framework != "none" AND test_execution.tests_run >= 3
-        - test_execution.execution_time_seconds > 0
+        - test_execution.framework != "none" AND test_execution.test_files_detected >= 3
+        - test_execution.ci_platform != null AND test_execution.ci_platform != ""
       partial:
-        - test_execution.tests_run >= 1 AND test_execution.tests_run < 3
-        - test_execution.tests_run == 0 AND test_execution.test_files_detected >= 3
+        - test_execution.framework != "none" AND test_execution.test_files_detected >= 1
+        - test_execution.calculated_score >= 5
       unmet:
-        - test_execution.tests_run == 0 AND test_execution.test_files_detected < 3 AND test_execution.framework == "none"
+        - test_execution.framework == "none" AND test_execution.test_files_detected < 1
     metrics_mapping:
       source_path: "$.metrics.testing.test_execution"
-      required_fields: ["framework", "tests_run", "execution_time_seconds", "test_files_detected"]
+      required_fields: ["framework", "test_files_detected", "ci_platform", "calculated_score"]
 
   - id: "testing_results"
     name: "Test Result Documentation"
     dimension: "testing"
     max_points: 4
-    description: "Provides CI pipeline link or execution log archive proving test success"
+    description: "Repository includes CI or automation metadata demonstrating test execution intent"
     evaluation_criteria:
       met:
-        - test_execution.tests_passed > 0 AND execution.errors == []
+        - test_execution.ci_platform != null AND test_execution.ci_score >= 5
+        - execution.errors == []
       partial:
-        - test_execution.tests_passed > 0 BUT execution.warnings.length > 0
+        - test_execution.ci_score > 0
+        - execution.warnings.length > 0
       unmet:
-        - test_execution.tests_passed == 0 OR execution.errors.length > 0
+        - test_execution.ci_score == 0 AND test_execution.ci_platform == null
+        - execution.errors.length > 0
     metrics_mapping:
       source_path: "$.metrics.testing.test_execution"
       fallback_path: "$.execution"
-      required_fields: ["tests_passed"]
+      required_fields: ["ci_score"]
 
   # Documentation Dimension (25 points total)
   - id: "documentation_readme"
