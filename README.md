@@ -14,7 +14,7 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 
 1. **Metrics Collection** - Automated linting, build checks, security scanning, and static test infrastructure inspection
 2. **Checklist Evaluation** - 11-item quality scoring with evidence tracking
-3. **LLM Report Generation** - AI-powered narrative reports via Gemini
+3. **LLM Report Generation** - AI-powered narrative reports via DeepSeek
 
 **Use Cases**: Hackathon judging, code review automation, project quality assessment
 
@@ -23,7 +23,7 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 - **Multi-language support** (Python, JavaScript/TypeScript, Java, Go)
 - **Automated build validation** across all supported languages
 - **Evidence-based scoring** with 11-item quality checklist
-- **AI-generated narrative reports** using Gemini
+- **AI-generated narrative reports** using DeepSeek
 - **Standardized JSON/Markdown output** with schema validation
 - **Static test inference** for MVP: detects test suites/CI metadata without executing user tests
 - **Performance optimized** for large repositories (500MB limit)
@@ -33,7 +33,7 @@ Code Score analyzes any public Git repository and generates comprehensive qualit
 - **Python 3.11+**
 - **UV package manager**: Install from [astral.sh/uv](https://astral.sh/uv)
 - **Git**: For repository cloning
-- **Gemini CLI** (optional): For AI report generation - [setup guide](https://ai.google.dev/gemini-api/docs/quickstart)
+- **llm CLI with DeepSeek** (optional): For AI report generation - [setup guide](https://llm.datasette.io/)
 
 ### Optional Analysis Tools
 
@@ -93,11 +93,15 @@ uv run python -m src.cli.evaluate output/submission.json --verbose
 
 ### AI Report Generation
 
-**Setup Gemini** (one-time):
+**Setup llm CLI with DeepSeek** (one-time):
 ```bash
-# Install Gemini CLI and set API key
-export GEMINI_API_KEY="your-api-key-here"
-gemini --version  # Verify installation
+# Install llm CLI and DeepSeek plugin
+uv tool install llm
+llm install llm-deepseek
+
+# Set API key
+export DEEPSEEK_API_KEY="your-api-key-here"
+llm --version  # Verify installation
 ```
 
 **Generate Reports**:
@@ -292,8 +296,8 @@ code-score/
 - Increase with `--timeout 600` or check repository size
 
 **LLM generation fails**
-- Verify Gemini CLI: `which gemini`
-- Check API key: `echo $GEMINI_API_KEY`
+- Verify llm CLI: `which llm`
+- Check API key: `echo $DEEPSEEK_API_KEY`
 - Use validation mode: `uv run python -m src.cli.llm_report --validate-only`
 
 **Missing analysis tools**
@@ -304,7 +308,7 @@ code-score/
 ## Configuration
 
 ### Environment Variables
-- `GEMINI_API_KEY`: Required for LLM report generation
+- `DEEPSEEK_API_KEY`: Required for LLM report generation
 - `METRICS_OUTPUT_DIR`: Override default output directory
 - `METRICS_TOOL_TIMEOUT`: Override tool timeout (seconds)
 

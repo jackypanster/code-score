@@ -9,7 +9,7 @@ Code Score is a parameterized Git repository metrics collection tool with integr
 The system consists of three integrated pipelines:
 1. **Metrics Collection Pipeline**: Collects raw quality metrics (linting, testing, documentation)
 2. **Checklist Evaluation Pipeline**: Evaluates metrics against 11-item quality checklist with evidence tracking
-3. **LLM Report Generation Pipeline**: Transforms structured data into human-readable narrative reports using Gemini
+3. **LLM Report Generation Pipeline**: Transforms structured data into human-readable narrative reports using DeepSeek
 
 ## Core Architecture
 
@@ -32,7 +32,7 @@ The system consists of three integrated pipelines:
 **LLM Report Generation Pipeline**: **Template → Build → Execute → Format**
 1. **TemplateLoader** ([src/llm/template_loader.py](src/llm/template_loader.py)): Loads and validates Jinja2 templates from specs/prompts/
 2. **PromptBuilder** ([src/llm/prompt_builder.py](src/llm/prompt_builder.py)): Constructs prompts from score_input.json and templates
-3. **ReportGenerator** ([src/llm/report_generator.py](src/llm/report_generator.py)): Executes Gemini CLI for report generation
+3. **ReportGenerator** ([src/llm/report_generator.py](src/llm/report_generator.py)): Executes llm CLI for report generation
 4. **Output Formatter**: Generates final_report.md and generation_metadata.json
 
 ### Multi-Language Tool Runners
@@ -236,7 +236,7 @@ uv run pytest tests/contract/ -v
 - **CategoryBreakdown**: Score summaries by dimension (Code Quality, Testing, Documentation)
 
 ### LLM Models ([src/llm/models/](src/llm/models/))
-- **LLMProviderConfig**: Configuration for LLM providers (Gemini settings, timeouts, API keys)
+- **LLMProviderConfig**: Configuration for LLM providers (LLM provider settings, timeouts, API keys)
 - **ReportTemplate**: Template metadata and validation for Jinja2 templates
 - **GeneratedReport**: Container for generated reports with metadata and statistics
 
@@ -270,7 +270,7 @@ The tool provides three main CLI commands ([src/cli/](src/cli/)):
 3. **LLM Report** ([llm_report.py](src/cli/llm_report.py)): `uv run python -m src.cli.llm_report <score_input_json>`
    - Generates human-readable reports from evaluation data
    - Supports custom templates and output paths
-   - Requires Gemini CLI and GEMINI_API_KEY
+   - Requires llm CLI and DEEPSEEK_API_KEY
 
 ## Constitutional Principles
 
@@ -342,7 +342,7 @@ The evaluation system uses a rule-based approach with evidence tracking:
 ### Environment Variables
 - `METRICS_OUTPUT_DIR`: Default output directory override
 - `METRICS_TOOL_TIMEOUT`: Default timeout override in seconds
-- `GEMINI_API_KEY`: Required for LLM report generation (Gemini provider)
+- `DEEPSEEK_API_KEY`: Required for LLM report generation (DeepSeek provider)
 
 ### Tool Detection Logic
 - Check tool availability before execution
@@ -364,8 +364,8 @@ The evaluation system uses a rule-based approach with evidence tracking:
 - **Missing tool dependencies**: Install language-specific tools or use `--verbose` for details
 - **Schema validation errors**: Check JSON output structure against contract tests
 - **LLM report generation failures**:
-  - Verify Gemini CLI is installed: `which gemini`
-  - Check `GEMINI_API_KEY` environment variable is set: `echo $GEMINI_API_KEY`
+  - Verify llm CLI is installed: `which llm`
+  - Check `DEEPSEEK_API_KEY` environment variable is set: `echo $DEEPSEEK_API_KEY`
   - Ensure score_input.json exists and is valid
   - Use `--validate-only` flag to test prerequisites without generating report
 
@@ -377,7 +377,7 @@ The evaluation system uses a rule-based approach with evidence tracking:
 - Run contract tests to validate output format compliance: `uv run pytest tests/contract/ -v`
 - Validate checklist configuration: `uv run python -c "from src.metrics.checklist_loader import ChecklistLoader; print(ChecklistLoader().validate_checklist_config())"`
 - Test LLM report generation in validation mode: `uv run python -m src.cli.llm_report output/score_input.json --validate-only`
-- Check Gemini CLI availability: `which gemini` or `gemini --version`
+- Check llm CLI availability: `which llm` or `llm --version`
 
 ## Key Implementation Notes
 
@@ -389,14 +389,14 @@ Evidence files are organized by dimension (`evidence/code_quality/`, `evidence/t
 - The `evaluate` CLI command ([src/cli/evaluate.py](src/cli/evaluate.py)) can run independently on existing submission.json files
 - The `llm-report` CLI command ([src/cli/llm_report.py](src/cli/llm_report.py)) generates reports from score_input.json files
 - The main analysis pipeline can optionally run checklist evaluation (default: enabled)
-- LLM report generation requires Gemini CLI installation and GEMINI_API_KEY environment variable
+- LLM report generation requires llm CLI installation and DEEPSEEK_API_KEY environment variable
 - Schema validation ensures compatibility between all pipeline phases
 
 ### LLM Report Generation Details
 **Prerequisites:**
-- Gemini CLI must be installed and available in PATH
-- `GEMINI_API_KEY` environment variable must be set
-- Currently only Gemini provider is supported (OpenAI/Claude support planned)
+- llm CLI must be installed and available in PATH
+- `DEEPSEEK_API_KEY` environment variable must be set
+- Currently only DeepSeek provider is supported (OpenAI/Claude support planned)
 
 **Template System:**
 - Templates use Jinja2 syntax and are located in [specs/prompts/](specs/prompts/)
@@ -409,7 +409,7 @@ Evidence files are organized by dimension (`evidence/code_quality/`, `evidence/t
 - `generation_metadata.json`: Generation statistics and provider information
 
 **Performance:**
-- Typical generation time: 10-30 seconds (Gemini)
+- Typical generation time: 10-30 seconds (DeepSeek)
 - Large evaluations are automatically truncated to fit context window
 - Timeout defaults to provider-specific values (customizable via `--timeout`)
-- 使用Google Gemini 2.5 Pro Preview (gemini-2.5-pro-preview-03-25)模型进行测试，如果有问题请及时提出！
+- 使用DeepSeek Coder (deepseek-coder)模型进行测试，如果有问题请及时提出！

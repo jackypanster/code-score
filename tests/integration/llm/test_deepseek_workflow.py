@@ -195,7 +195,7 @@ class TestDeepSeekReportGeneration:
         """
         Test that DeepSeek workflow contains no Gemini references.
 
-        This test will FAIL until T019 (remove Gemini references) is complete.
+        Validates that T019 (remove Gemini references) was completed successfully.
         """
         generator = ReportGenerator()
         output_path = str(tmp_path / "report.md")

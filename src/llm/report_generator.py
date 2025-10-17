@@ -33,7 +33,7 @@ class ReportGeneratorError(Exception):
 
 
 class LLMProviderError(ReportGeneratorError):
-    """Exception raised when Gemini fails."""
+    """Exception raised when LLM provider fails."""
     pass
 
 
@@ -61,7 +61,7 @@ class ReportGenerator:
     def generate_report(self, score_input_path: str,
                        output_path: str | None = None,
                        template_path: str | None = None,
-                       provider: str = "gemini",
+                       provider: str = "deepseek",
                        verbose: bool = False,
                        timeout: int | None = None) -> dict[str, Any]:
         """
@@ -76,7 +76,7 @@ class ReportGenerator:
             score_input_path: Path to score_input.json file containing evaluation results
             output_path: Output path for generated report (default: None for in-memory only)
             template_path: Path to Jinja2 template file (uses default if None)
-            provider: LLM provider name ("gemini" only)
+            provider: LLM provider name (default: "deepseek")
             verbose: Enable detailed logging and progress tracking
             timeout: Override default timeout for LLM API calls (10-300 seconds)
 
@@ -95,14 +95,14 @@ class ReportGenerator:
             ReportGeneratorError: If any step in the generation pipeline fails
             LLMProviderError: If external LLM service is unavailable or returns errors
             FileNotFoundError: If score_input_path or template_path don't exist
-            ValueError: If timeout is out of range or Gemini configuration is invalid
+            ValueError: If timeout is out of range or provider configuration is invalid
 
         Examples:
             >>> generator = ReportGenerator()
             >>> result = generator.generate_report(
             ...     score_input_path="output/score_input.json",
             ...     output_path="reports/final_report.md",
-            ...     provider="gemini",
+            ...     provider="deepseek",
             ...     verbose=True
             ... )
             >>> print(f"Generated report in {result['generation_time_seconds']:.2f}s")
@@ -215,7 +215,14 @@ class ReportGenerator:
         # Validate environment
         missing_vars = config.validate_environment()
         if missing_vars:
-            raise LLMProviderError(f"Missing environment variables for {provider}: {', '.join(missing_vars)}")
+            # Enhanced error message with setup guidance
+            error_msg = (
+                f"Missing required environment variables for {provider}: "
+                f"{', '.join(missing_vars)}\n"
+                f"Please set {missing_vars[0]} for {provider.title()} authentication.\n"
+                f"Installation guide: https://llm.datasette.io/en/stable/setup.html"
+            )
+            raise LLMProviderError(error_msg)
 
         return config
 
@@ -224,6 +231,9 @@ class ReportGenerator:
         import threading
 
         try:
+            # Validate prompt length before calling llm CLI
+            provider_config.validate_prompt_length(prompt)
+
             # Build CLI command
             cmd = provider_config.build_cli_command(prompt)
             logger.debug(f"Executing LLM command: {cmd[0]} [args hidden for security]")
@@ -256,7 +266,7 @@ class ReportGenerator:
 
                 response = result.stdout.strip()
                 if not response:
-                    raise LLMProviderError("Empty response from Gemini")
+                    raise LLMProviderError("Empty response from LLM provider")
 
                 logger.debug(f"LLM response: {len(response)} characters")
                 return response
@@ -304,6 +314,10 @@ class ReportGenerator:
                 f"LLM provider CLI not found: {provider_config.cli_command[0]}. "
                 f"Ensure {provider_config.provider_name} CLI is installed and in PATH."
             )
+
+        except ValueError:
+            # Let ValueError propagate (e.g., context window validation)
+            raise
 
         except Exception as e:
             raise LLMProviderError(f"Unexpected error calling LLM: {e}")
@@ -413,6 +427,36 @@ class ReportGenerator:
             raise ReportGeneratorError(f"Failed to save report: {e}")
 
 
+    def _check_llm_cli_available(self) -> tuple[bool, str | None]:
+        """
+        Check if llm CLI is installed and accessible.
+
+        Returns:
+            (is_available, version_or_error_message)
+        """
+        import shutil
+
+        # Check PATH
+        if not shutil.which('llm'):
+            return False, "llm CLI not found in PATH"
+
+        # Verify executable
+        try:
+            result = subprocess.run(
+                ['llm', '--version'],
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            version = result.stdout.strip()
+            return True, version
+        except subprocess.TimeoutExpired:
+            return False, "llm CLI check timed out"
+        except FileNotFoundError:
+            return False, "llm CLI not found"
+        except Exception as e:
+            return False, f"llm CLI check failed: {e}"
+
     def validate_prerequisites(self, provider: str) -> dict[str, Any]:
         """
         Validate that all prerequisites are met for report generation.
@@ -432,6 +476,12 @@ class ReportGenerator:
         }
 
         try:
+            # Check llm CLI availability
+            llm_available, llm_version = self._check_llm_cli_available()
+            if not llm_available:
+                results['issues'].append(f"llm CLI not available: {llm_version}")
+                results['valid'] = False
+
             # Check provider configuration
             if provider in self._default_providers:
                 provider_config = self._default_providers[provider]
@@ -475,7 +525,7 @@ class ReportGenerator:
 
     def get_available_providers(self) -> list[dict[str, Any]]:
         """
-        Get list of available providers with status (Gemini only).
+        Get list of available providers with status.
 
         Returns:
             List of provider information dictionaries

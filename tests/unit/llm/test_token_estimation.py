@@ -25,7 +25,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",  # Using gemini to avoid validator issues before T009
+            provider_name="deepseek",  # Using deepseek as default provider
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -50,7 +50,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -72,7 +72,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -88,12 +88,12 @@ class TestTokenEstimation:
         Verify token estimation for large prompts (close to context window limits).
 
         DeepSeek context window: 8192 tokens = 32768 characters
-        Gemini context window: 1048576 tokens = 4194304 characters
+        DeepSeek context window: 1048576 tokens = 4194304 characters
 
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -120,7 +120,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -143,7 +143,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -180,7 +180,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -209,7 +209,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -238,7 +238,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=None  # No context window set
@@ -258,7 +258,7 @@ class TestTokenEstimation:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -285,7 +285,7 @@ class TestTokenEstimationEdgeCases:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -309,7 +309,7 @@ class TestTokenEstimationEdgeCases:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -328,10 +328,10 @@ class TestTokenEstimationEdgeCases:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
-            context_window=1048576  # Gemini's large context window
+            context_window=1048576  # Large context window
         )
 
         # Very long string (100,000 characters = 25,000 tokens)
@@ -362,9 +362,8 @@ class TestTokenEstimationIntegration:
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
         providers = [
-            ("gemini", 1048576),
-            # These will fail until T009 removes whitelist, but test is ready
-            # ("deepseek", 8192),
+            ("deepseek", 8192),
+            # Additional providers can be added as needed
             # ("openai", 128000),
             # ("anthropic", 200000)
         ]
@@ -397,19 +396,19 @@ class TestTokenEstimationIntegration:
         # Different context windows
         configs = [
             LLMProviderConfig(
-                provider_name="gemini",
+                provider_name="deepseek",
                 cli_command=["llm"],
                 model_name="test",
                 context_window=1024
             ),
             LLMProviderConfig(
-                provider_name="gemini",
+                provider_name="deepseek",
                 cli_command=["llm"],
                 model_name="test",
                 context_window=8192
             ),
             LLMProviderConfig(
-                provider_name="gemini",
+                provider_name="deepseek",
                 cli_command=["llm"],
                 model_name="test",
                 context_window=1048576

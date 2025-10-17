@@ -23,7 +23,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",  # Using gemini to avoid validator issues before T009
+            provider_name="deepseek",  # Using deepseek as default provider
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -42,7 +42,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -61,7 +61,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -86,7 +86,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -102,7 +102,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -121,7 +121,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -140,7 +140,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=None  # No context window set
@@ -159,7 +159,7 @@ class TestPromptLengthValidation:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=128  # Very small context window
@@ -176,15 +176,15 @@ class TestPromptLengthValidation:
 
     def test_validate_prompt_length_large_context_window(self):
         """
-        Verify validation works with large context windows (Gemini-style).
+        Verify validation works with large context windows (large context window).
 
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
-            context_window=1048576  # Gemini's 1M token context window
+            context_window=1048576  # Large 1M token context window
         )
 
         # Very large prompt: 100000 chars ≈ 25000 tokens (well within 1M limit)
@@ -207,7 +207,7 @@ class TestPromptLengthValidationErrorMessages:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -219,7 +219,7 @@ class TestPromptLengthValidationErrorMessages:
             config.validate_prompt_length(huge_prompt)
 
         error = str(exc_info.value)
-        assert "gemini" in error.lower(), "Error should mention provider name"
+        assert "deepseek" in error.lower(), "Error should mention provider name"
 
     def test_error_message_readable_format(self):
         """
@@ -228,7 +228,7 @@ class TestPromptLengthValidationErrorMessages:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -251,35 +251,35 @@ class TestPromptLengthValidationErrorMessages:
 
     def test_error_message_different_limits(self):
         """
-        Verify error messages show correct limits for different providers.
+        Verify error messages show correct limits for different context windows.
 
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
-        # DeepSeek with 8192 token limit
-        deepseek_config = LLMProviderConfig(
-            provider_name="gemini",  # Will be deepseek after T009
+        # Small context window (8192 tokens)
+        small_window_config = LLMProviderConfig(
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="deepseek-coder",
             context_window=8192
         )
 
-        # Gemini with 1M token limit
-        gemini_config = LLMProviderConfig(
-            provider_name="gemini",
+        # Large context window (1M tokens)
+        large_window_config = LLMProviderConfig(
+            provider_name="deepseek",
             cli_command=["llm"],
-            model_name="gemini-2.5-pro",
+            model_name="test-model-large",
             context_window=1048576
         )
 
         huge_prompt = "x" * 40000  # 10000 tokens
 
-        # DeepSeek should reject (10000 > 8192)
-        with pytest.raises(ValueError) as exc_info_deepseek:
-            deepseek_config.validate_prompt_length(huge_prompt)
-        assert "8192" in str(exc_info_deepseek.value)
+        # Small window should reject (10000 > 8192)
+        with pytest.raises(ValueError) as exc_info_small:
+            small_window_config.validate_prompt_length(huge_prompt)
+        assert "8192" in str(exc_info_small.value)
 
-        # Gemini should accept (10000 < 1048576)
-        gemini_config.validate_prompt_length(huge_prompt)  # No exception
+        # Large window should accept (10000 < 1048576)
+        large_window_config.validate_prompt_length(huge_prompt)  # No exception
 
 
 class TestPromptLengthValidationIntegration:
@@ -293,7 +293,7 @@ class TestPromptLengthValidationIntegration:
         T013 (validate_prompt_length) are implemented.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -322,7 +322,7 @@ class TestPromptLengthValidationIntegration:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -348,7 +348,7 @@ class TestPromptLengthValidationIntegration:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -395,7 +395,7 @@ class TestPromptLengthValidationEdgeCases:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -421,7 +421,7 @@ class TestPromptLengthValidationEdgeCases:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -440,7 +440,7 @@ class TestPromptLengthValidationEdgeCases:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
@@ -459,7 +459,7 @@ class TestPromptLengthValidationEdgeCases:
         This test will FAIL until T013 adds validate_prompt_length() method.
         """
         config = LLMProviderConfig(
-            provider_name="gemini",
+            provider_name="deepseek",
             cli_command=["llm"],
             model_name="test-model",
             context_window=8192
