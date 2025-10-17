@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLMProviderConfig",
+  "description": "Configuration schema for LLM provider with llm CLI interface",
+  "type": "object",
+  "required": ["provider_name", "cli_command"],
+  "properties": {
+    "provider_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Provider identifier (lowercase alphanumeric + underscore, no whitelist restriction)",
+      "examples": ["deepseek", "openai", "anthropic"]
+    },
+    "cli_command": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "description": "Base CLI command as array (e.g., ['llm'])",
+      "examples": [["llm"], ["llm", "chat"]]
+    },
+    "model_name": {
+      "type": ["string", "null"],
+      "description": "Model identifier for -m parameter (e.g., 'deepseek-coder', 'gpt-4')",
+      "examples": ["deepseek-coder", "deepseek-chat", "gpt-4-turbo"]
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 300,
+      "default": 90,
+      "description": "Maximum time to wait for LLM response (10-300 seconds)"
+    },
+    "max_tokens": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Maximum response length in tokens (provider-specific, null for auto)",
+      "examples": [2048, 4096, 8192]
+    },
+    "temperature": {
+      "type": ["number", "null"],
+      "minimum": 0.0,
+      "maximum": 2.0,
+      "description": "Sampling temperature for response generation (0.0-2.0)",
+      "examples": [0.0, 0.1, 0.7, 1.0]
+    },
+    "environment_variables": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Z][A-Z0-9_]*$": {
+          "type": "string",
+          "description": "Environment variable value or 'required' marker"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Required environment variables (uppercase names only)",
+      "examples": [
+        {"DEEPSEEK_API_KEY": "required"},
+        {"OPENAI_API_KEY": "required", "OPENAI_ORG_ID": "optional"}
+      ]
+    },
+    "additional_args": {
+      "type": "object",
+      "patternProperties": {
+        "^-{1,2}[a-z][a-z0-9-]*$": {
+          "type": ["string", "integer", "number", "boolean", "null"],
+          "description": "Argument value (null for standalone flags)"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Provider-specific CLI arguments (must start with - or --)",
+      "examples": [
+        {"--temperature": "0.5", "--max-tokens": "1024"},
+        {"--stream": null}
+      ]
+    },
+    "supports_streaming": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether provider supports streaming responses"
+    },
+    "context_window": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Maximum context window size in tokens",
+      "examples": [8192, 128000, 1048576]
+    }
+  },
+  "examples": [
+    {
+      "provider_name": "deepseek",
+      "cli_command": ["llm"],
+      "model_name": "deepseek-coder",
+      "timeout_seconds": 90,
+      "max_tokens": null,
+      "temperature": 0.1,
+      "environment_variables": {
+        "DEEPSEEK_API_KEY": "required"
+      },
+      "additional_args": {},
+      "supports_streaming": false,
+      "context_window": 8192
+    },
+    {
+      "provider_name": "openai",
+      "cli_command": ["llm"],
+      "model_name": "gpt-4-turbo",
+      "timeout_seconds": 60,
+      "temperature": 0.7,
+      "environment_variables": {
+        "OPENAI_API_KEY": "required"
+      },
+      "additional_args": {
+        "--max-tokens": "4096"
+      },
+      "supports_streaming": true,
+      "context_window": 128000
+    }
+  ],
+  "definitions": {
+    "removal_notes": {
+      "description": "Fields removed during Gemini → llm CLI migration",
+      "removed_fields": [],
+      "note": "No fields were removed, only validation rules changed (provider_name whitelist removed)"
+    },
+    "changed_defaults": {
+      "provider_name": {
+        "old": "gemini (hardcoded)",
+        "new": "deepseek (default in get_default_configs())"
+      },
+      "cli_command": {
+        "old": ["gemini"],
+        "new": ["llm"]
+      },
+      "model_name": {
+        "old": "gemini-2.5-pro",
+        "new": "deepseek-coder"
+      },
+      "context_window": {
+        "old": 1048576,
+        "new": 8192,
+        "impact": "Requires prompt length validation (FR-014)"
+      },
+      "environment_variables": {
+        "old": {"GEMINI_API_KEY": "required"},
+        "new": {"DEEPSEEK_API_KEY": "required"}
+      },
+      "additional_args": {
+        "old": {"--approval-mode": "yolo", "--debug": null},
+        "new": {},
+        "note": "Gemini-specific arguments removed"
+      }
+    }
+  }
+}

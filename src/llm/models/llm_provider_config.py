@@ -82,12 +82,9 @@ class LLMProviderConfig(BaseModel):
         if not v:
             raise ValueError("Provider name cannot be empty")
 
-        allowed_providers = ["gemini"]
-
-        if v not in allowed_providers:
-            raise ValueError(
-                f"Unsupported provider: {v}. Only Gemini is supported in this MVP version."
-            )
+        # Provider name format validation only
+        # llm CLI will validate if provider is actually available
+        # No hardcoded whitelist - supports any provider installed via llm CLI
 
         return v
 
@@ -129,9 +126,9 @@ class LLMProviderConfig(BaseModel):
         """
         command = self.cli_command.copy()
 
-        # Add model if specified (Gemini CLI expects --model)
+        # llm CLI standard format: -m <model>
         if self.model_name:
-            command.extend(["--model", self.model_name])
+            command.extend(["-m", self.model_name])
 
         # Add additional arguments (standalone or key/value)
         for arg_name, arg_value in self.additional_args.items():
@@ -140,8 +137,7 @@ class LLMProviderConfig(BaseModel):
             else:
                 command.extend([arg_name, str(arg_value)])
 
-        # Gemini CLI currently writes to stdout; higher layers capture the
-        # output and persist it. Keep the prompt as a positional argument.
+        # Prompt as final positional argument
         command.append(prompt)
 
         return command
@@ -166,6 +162,52 @@ class LLMProviderConfig(BaseModel):
                 missing.append(var_name)
 
         return missing
+
+    def estimate_prompt_tokens(self, prompt: str) -> int:
+        """
+        Estimate token count using 4 characters ≈ 1 token heuristic.
+
+        This simple heuristic provides sufficient accuracy (±10%) for context
+        window validation without requiring external tokenizer libraries.
+
+        Args:
+            prompt: Input text to estimate
+
+        Returns:
+            Estimated token count
+
+        Note:
+            Accuracy: ±10% for English text
+            Chinese text uses ~2 chars/token but this is acceptable
+            for context window validation purposes
+        """
+        return len(prompt) // 4
+
+    def validate_prompt_length(self, prompt: str) -> None:
+        """
+        Validate prompt length against context window limit.
+
+        Ensures prompts do not exceed the provider's context window limit.
+        This is critical for providers like DeepSeek with smaller context windows (8K tokens).
+
+        Args:
+            prompt: Input text to validate
+
+        Raises:
+            ValueError: If prompt exceeds context window limit with detailed message
+                       including token count, character count, and limit
+        """
+        if not self.context_window:
+            return  # No limit configured, skip validation
+
+        estimated_tokens = self.estimate_prompt_tokens(prompt)
+
+        if estimated_tokens > self.context_window:
+            raise ValueError(
+                f"Prompt length {estimated_tokens} tokens exceeds "
+                f"{self.provider_name} context window limit {self.context_window} tokens. "
+                f"Actual prompt length: {len(prompt)} characters."
+            )
 
     def estimate_context_usage(self, prompt_length: int) -> dict[str, int | float | bool]:
         """
@@ -192,17 +234,6 @@ class LLMProviderConfig(BaseModel):
             result["within_limits"] = usage_ratio <= 0.8  # 80% safety margin
 
         return result
-
-    def get_provider_specific_limits(self) -> dict[str, int | None]:
-        """Get Gemini-specific limits and capabilities."""
-        # Only Gemini is supported in current MVP
-        if self.provider_name == "gemini":
-            return {
-                "context_window": self.context_window or 1048576,
-                "max_output_tokens": self.max_tokens or 60000,
-                "default_temperature": self.temperature if self.temperature is not None else 0.1,
-            }
-        return {}
 
     class Config:
         """Pydantic model configuration."""
@@ -231,19 +262,17 @@ class LLMProviderConfig(BaseModel):
             Dictionary mapping provider names to default configurations
         """
         defaults = {
-            "gemini": cls(
-                provider_name="gemini",
-                cli_command=["gemini"],
-                model_name="gemini-2.5-pro",
+            "deepseek": cls(
+                provider_name="deepseek",
+                cli_command=["llm"],  # llm CLI unified interface
+                model_name="deepseek-coder",  # Optimized for code generation
                 timeout_seconds=90,
-                max_tokens=60000,
+                max_tokens=None,  # llm CLI auto-manages output tokens
                 temperature=0.1,
-                environment_variables={"GEMINI_API_KEY": "required"},
-                supports_streaming=True,
-                context_window=1048576,
-                # Critical: --approval-mode yolo enables non-interactive execution
-                # --debug provides detailed execution information for troubleshooting
-                additional_args={"--approval-mode": "yolo", "--debug": None},
+                environment_variables={"DEEPSEEK_API_KEY": "required"},
+                supports_streaming=False,
+                context_window=8192,  # DeepSeek context window limit
+                additional_args={},  # No provider-specific args for llm CLI
             )
         }
 

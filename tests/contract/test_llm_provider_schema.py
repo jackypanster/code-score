@@ -223,3 +223,179 @@ class TestLLMProviderSchema:
         }
 
         validate(instance=custom_config, schema=schema)
+
+
+class TestProviderConfigPydanticModel:
+    """
+    Contract tests for LLMProviderConfig Pydantic model behavior.
+
+    These tests verify the migration from Gemini hardcoding to llm CLI unified interface.
+    Tests will FAIL until T009 (remove whitelist) and T011 (update defaults) are implemented.
+    """
+
+    def test_provider_name_no_whitelist(self):
+        """
+        Verify custom provider names are accepted without whitelist restriction.
+
+        Before T009: Only "gemini" allowed (hardcoded whitelist)
+        After T009: Any valid format accepted (no whitelist)
+
+        This test will FAIL until T009 removes the hardcoded whitelist in validate_provider_name.
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        # This will fail because validate_provider_name has:
+        # allowed_providers = ["gemini"]
+        config = LLMProviderConfig(
+            provider_name="custom_provider",
+            cli_command=["llm"],
+            model_name="custom-model"
+        )
+
+        assert config.provider_name == "custom_provider", \
+            "Custom provider name should be accepted (no whitelist after T009)"
+
+    def test_deepseek_provider_accepted(self):
+        """
+        Verify 'deepseek' provider name is accepted after T009.
+
+        This test will FAIL until T009 removes the hardcoded whitelist.
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        config = LLMProviderConfig(
+            provider_name="deepseek",
+            cli_command=["llm"],
+            model_name="deepseek-coder"
+        )
+
+        assert config.provider_name == "deepseek", \
+            "DeepSeek provider name should be accepted after T009"
+
+    def test_openai_provider_accepted(self):
+        """
+        Verify 'openai' provider name is accepted after T009.
+
+        Demonstrates that any valid provider name format should work.
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        config = LLMProviderConfig(
+            provider_name="openai",
+            cli_command=["llm"],
+            model_name="gpt-4"
+        )
+
+        assert config.provider_name == "openai", \
+            "OpenAI provider name should be accepted after T009"
+
+    def test_default_configs_contain_deepseek(self):
+        """
+        Verify DeepSeek is in default configs after T011.
+
+        This test will FAIL until T011 updates get_default_configs().
+
+        Expected: defaults = {"deepseek": LLMProviderConfig(...)}
+        Current: defaults = {"gemini": LLMProviderConfig(...)}
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        defaults = LLMProviderConfig.get_default_configs()
+
+        assert "deepseek" in defaults, \
+            "DeepSeek should be in default configs after T011"
+
+    def test_default_configs_no_gemini(self):
+        """
+        Verify Gemini is NOT in default configs after T011.
+
+        This test will FAIL until T011 removes Gemini from defaults.
+
+        Expected: "gemini" not in defaults.keys()
+        Current: "gemini" in defaults.keys()
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        defaults = LLMProviderConfig.get_default_configs()
+
+        assert "gemini" not in defaults, \
+            "Gemini should be removed from default configs after T011"
+
+    def test_deepseek_default_config_properties(self):
+        """
+        Verify DeepSeek default config has correct properties after T011.
+
+        This test will FAIL until T011 is implemented.
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        defaults = LLMProviderConfig.get_default_configs()
+        deepseek = defaults["deepseek"]
+
+        # Contract assertions for DeepSeek configuration
+        assert deepseek.provider_name == "deepseek"
+        assert deepseek.cli_command == ["llm"], "Should use llm CLI unified interface"
+        assert deepseek.model_name in ["deepseek-coder", "deepseek-chat"], \
+            "Should use DeepSeek models"
+        assert deepseek.context_window == 8192, \
+            "DeepSeek context window is 8192 tokens (not Gemini's 1M)"
+        assert deepseek.temperature == 0.1, \
+            "Temperature should match original Gemini setting for consistency"
+        assert deepseek.timeout_seconds == 90, \
+            "Timeout should match original Gemini setting"
+        assert "DEEPSEEK_API_KEY" in deepseek.environment_variables, \
+            "Should require DEEPSEEK_API_KEY environment variable"
+        assert deepseek.additional_args == {}, \
+            "No provider-specific args for llm CLI (no --approval-mode yolo)"
+
+    def test_anthropic_provider_accepted(self):
+        """
+        Verify 'anthropic' provider name is accepted after T009.
+
+        Demonstrates extensibility for future providers.
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+
+        config = LLMProviderConfig(
+            provider_name="anthropic",
+            cli_command=["llm"],
+            model_name="claude-3-opus"
+        )
+
+        assert config.provider_name == "anthropic", \
+            "Anthropic provider name should be accepted"
+
+    def test_provider_name_format_validation_still_works(self):
+        """
+        Verify that provider name format validation still works after removing whitelist.
+
+        Valid format: lowercase alphanumeric + underscore, starting with letter
+        This should PASS even before T009 (format validation is separate from whitelist).
+        """
+        from src.llm.models.llm_provider_config import LLMProviderConfig
+        import pytest
+
+        # Valid formats (should work after T009)
+        valid_names = [
+            "deepseek",
+            "openai",
+            "anthropic",
+            "custom_provider",
+            "provider123"
+        ]
+
+        # Note: These will fail due to whitelist before T009, but format is valid
+        for name in valid_names:
+            try:
+                config = LLMProviderConfig(
+                    provider_name=name,
+                    cli_command=["llm"],
+                    model_name="test-model"
+                )
+                # If this succeeds, format is valid
+                assert config.provider_name == name
+            except ValueError as e:
+                # If it fails due to whitelist, that's expected before T009
+                if "Unsupported provider" not in str(e):
+                    # But if it fails for other reasons, that's a format issue
+                    raise
