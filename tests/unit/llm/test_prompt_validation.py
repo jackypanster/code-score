@@ -29,7 +29,7 @@ class TestPromptLengthValidation:
             context_window=8192
         )
 
-        # Normal prompt: 1000 chars ≈ 250 tokens (well within 8192 limit)
+        # Normal prompt: 1000 chars ≈ 500 tokens (well within 8192 limit)
         prompt = "x" * 1000
 
         # Should not raise any exception
@@ -48,8 +48,8 @@ class TestPromptLengthValidation:
             context_window=8192
         )
 
-        # Large prompt: 40000 chars ≈ 10000 tokens (exceeds 8192 limit)
-        huge_prompt = "x" * 40000
+        # Large prompt: 20000 chars ≈ 10000 tokens (exceeds 8192 limit)
+        huge_prompt = "x" * 20000
 
         with pytest.raises(ValueError, match="exceeds.*8192"):
             config.validate_prompt_length(huge_prompt)
@@ -67,7 +67,7 @@ class TestPromptLengthValidation:
             context_window=8192
         )
 
-        huge_prompt = "x" * 40000  # 40000 chars ≈ 10000 tokens
+        huge_prompt = "x" * 20000  # 40000 chars ≈ 10000 tokens
 
         with pytest.raises(ValueError) as exc_info:
             config.validate_prompt_length(huge_prompt)
@@ -77,7 +77,7 @@ class TestPromptLengthValidation:
         # Error message should include all relevant information
         assert "10000 tokens" in error, "Should show estimated token count"
         assert "8192" in error, "Should show context window limit"
-        assert "40000 characters" in error, "Should show actual character count"
+        assert "20000 characters" in error, "Should show actual character count"
 
     def test_validate_prompt_length_empty_prompt(self):
         """
@@ -108,8 +108,8 @@ class TestPromptLengthValidation:
             context_window=8192
         )
 
-        # Exactly 8192 tokens = 32768 characters
-        boundary_prompt = "x" * 32768
+        # Exactly 8192 tokens = 16384 characters
+        boundary_prompt = "x" * 16384
 
         # Should not raise (8192 tokens == 8192 limit)
         config.validate_prompt_length(boundary_prompt)
@@ -127,8 +127,8 @@ class TestPromptLengthValidation:
             context_window=8192
         )
 
-        # 8193 tokens = 32772 characters (1 token over limit)
-        over_boundary_prompt = "x" * 32772
+        # 8193 tokens = 16386 characters (1 token over limit)
+        over_boundary_prompt = "x" * 16386
 
         with pytest.raises(ValueError, match="exceeds"):
             config.validate_prompt_length(over_boundary_prompt)
@@ -165,11 +165,11 @@ class TestPromptLengthValidation:
             context_window=128  # Very small context window
         )
 
-        # 100 chars ≈ 25 tokens (within 128 limit)
+        # 100 chars ≈ 50 tokens (within 128 limit)
         small_prompt = "x" * 100
         config.validate_prompt_length(small_prompt)
 
-        # 1000 chars ≈ 250 tokens (exceeds 128 limit)
+        # 1000 chars ≈ 500 tokens (exceeds 128 limit)
         large_prompt = "x" * 1000
         with pytest.raises(ValueError):
             config.validate_prompt_length(large_prompt)
@@ -187,11 +187,11 @@ class TestPromptLengthValidation:
             context_window=1048576  # Large 1M token context window
         )
 
-        # Very large prompt: 100000 chars ≈ 25000 tokens (well within 1M limit)
+        # Very large prompt: 100000 chars ≈ 50000 tokens (well within 1M limit)
         large_prompt = "x" * 100000
         config.validate_prompt_length(large_prompt)
 
-        # Extremely large prompt: 5000000 chars ≈ 1250000 tokens (exceeds 1M)
+        # Extremely large prompt: 5000000 chars ≈ 2500000 tokens (exceeds 1M)
         extremely_large_prompt = "x" * 5000000
         with pytest.raises(ValueError):
             config.validate_prompt_length(extremely_large_prompt)
@@ -213,7 +213,7 @@ class TestPromptLengthValidationErrorMessages:
             context_window=8192
         )
 
-        huge_prompt = "x" * 40000
+        huge_prompt = "x" * 20000
 
         with pytest.raises(ValueError) as exc_info:
             config.validate_prompt_length(huge_prompt)
@@ -234,7 +234,7 @@ class TestPromptLengthValidationErrorMessages:
             context_window=8192
         )
 
-        huge_prompt = "x" * 40000
+        huge_prompt = "x" * 20000
 
         with pytest.raises(ValueError) as exc_info:
             config.validate_prompt_length(huge_prompt)
@@ -271,7 +271,7 @@ class TestPromptLengthValidationErrorMessages:
             context_window=1048576
         )
 
-        huge_prompt = "x" * 40000  # 10000 tokens
+        huge_prompt = "x" * 20000  # 10000 tokens
 
         # Small window should reject (10000 > 8192)
         with pytest.raises(ValueError) as exc_info_small:
@@ -302,7 +302,7 @@ class TestPromptLengthValidationIntegration:
         # This test verifies the integration between the two methods
         # validate_prompt_length should call estimate_prompt_tokens internally
 
-        prompt = "x" * 40000  # 10000 tokens
+        prompt = "x" * 20000  # 10000 tokens
 
         # Manual calculation
         estimated_tokens = config.estimate_prompt_tokens(prompt)
@@ -335,7 +335,7 @@ class TestPromptLengthValidationIntegration:
             config.validate_prompt_length(prompt)
 
         # Multiple validations of over-limit prompt should all fail
-        huge_prompt = "x" * 40000  # 10000 tokens, over limit
+        huge_prompt = "x" * 20000  # 10000 tokens, over limit
 
         for _ in range(10):
             with pytest.raises(ValueError):

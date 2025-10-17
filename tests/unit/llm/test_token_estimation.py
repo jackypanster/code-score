@@ -32,16 +32,16 @@ class TestTokenEstimation:
         )
 
         # 4 characters = 1 token
-        assert config.estimate_prompt_tokens("1234") == 1, \
-            "4 characters should equal 1 token"
+        assert config.estimate_prompt_tokens("1234") == 2, \
+            "4 characters should equal 2 tokens"
 
         # 1000 characters = 250 tokens
-        assert config.estimate_prompt_tokens("x" * 1000) == 250, \
-            "1000 characters should equal 250 tokens"
+        assert config.estimate_prompt_tokens("x" * 1000) == 500, \
+            "1000 characters should equal 500 tokens"
 
         # 8 characters = 2 tokens
-        assert config.estimate_prompt_tokens("12345678") == 2, \
-            "8 characters should equal 2 tokens"
+        assert config.estimate_prompt_tokens("12345678") == 4, \
+            "8 characters should equal 4 tokens"
 
     def test_estimate_prompt_tokens_empty_string(self):
         """
@@ -78,17 +78,17 @@ class TestTokenEstimation:
             context_window=8192
         )
 
-        assert config.estimate_prompt_tokens("a") == 0, "1 char = 0 tokens"
-        assert config.estimate_prompt_tokens("ab") == 0, "2 chars = 0 tokens"
-        assert config.estimate_prompt_tokens("abc") == 0, "3 chars = 0 tokens"
-        assert config.estimate_prompt_tokens("abcd") == 1, "4 chars = 1 token"
+        assert config.estimate_prompt_tokens("a") == 0, "1 char = 0 tokens (1//2=0)"
+        assert config.estimate_prompt_tokens("ab") == 1, "2 chars = 1 token (2//2=1)"
+        assert config.estimate_prompt_tokens("abc") == 1, "3 chars = 1 token (3//2=1)"
+        assert config.estimate_prompt_tokens("abcd") == 2, "4 chars = 2 tokens (4//2=2)"
 
     def test_estimate_prompt_tokens_large_prompts(self):
         """
         Verify token estimation for large prompts (close to context window limits).
 
-        DeepSeek context window: 8192 tokens = 32768 characters
-        DeepSeek context window: 1048576 tokens = 4194304 characters
+        DeepSeek context window: 8192 tokens = 16384 characters (with //2)
+        DeepSeek context window: 1048576 tokens = 2097152 characters (with //2)
 
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
@@ -99,15 +99,15 @@ class TestTokenEstimation:
             context_window=8192
         )
 
-        # 8000 tokens (close to DeepSeek limit)
-        prompt_8000_tokens = "x" * 32000
+        # 16000 tokens (close to DeepSeek limit)
+        prompt_8000_tokens = "x" * 16000
         assert config.estimate_prompt_tokens(prompt_8000_tokens) == 8000, \
-            "32000 characters should equal 8000 tokens"
+            "16000 characters should equal 8000 tokens"
 
         # 10000 tokens (exceeds DeepSeek limit)
-        prompt_10000_tokens = "x" * 40000
+        prompt_10000_tokens = "x" * 20000
         assert config.estimate_prompt_tokens(prompt_10000_tokens) == 10000, \
-            "40000 characters should equal 10000 tokens"
+            "20000 characters should equal 10000 tokens"
 
     def test_estimate_prompt_tokens_chinese_text(self):
         """
@@ -130,11 +130,11 @@ class TestTokenEstimation:
         chinese_text = "这是一个测试提示这是一个测试提示"  # 16 chars
         estimated = config.estimate_prompt_tokens(chinese_text)
 
-        # With 4 chars/token heuristic: 16 // 4 = 4 tokens
-        # Actual for Chinese might be ~8 tokens (2 chars/token)
-        # But we accept the simplified heuristic
-        assert estimated == 4, \
-            "16 Chinese characters should estimate 4 tokens (may underestimate)"
+        # With 2 chars/token heuristic: 16 // 2 = 8 tokens
+        # Actual for Chinese is ~8 tokens (2 chars/token) - now accurate!
+        # Conservative heuristic matches Chinese reality
+        assert estimated == 8, \
+            "16 Chinese characters should estimate 8 tokens (accurate for Chinese)"
 
     def test_estimate_prompt_tokens_mixed_content(self):
         """
@@ -166,7 +166,7 @@ class TestTokenEstimation:
 
         estimated = config.estimate_prompt_tokens(mixed_prompt)
         actual_length = len(mixed_prompt)
-        expected = actual_length // 4
+        expected = actual_length // 2
 
         assert estimated == expected, \
             f"Mixed content {actual_length} chars should equal {expected} tokens"
@@ -225,7 +225,7 @@ class TestTokenEstimation:
             "Token estimation should be deterministic"
 
         # Verify expected value
-        expected = len(prompt) // 4
+        expected = len(prompt) // 2
         assert results[0] == expected, \
             f"Expected {expected} tokens, got {results[0]}"
 
@@ -248,8 +248,8 @@ class TestTokenEstimation:
         prompt = "x" * 1000
         estimated = config.estimate_prompt_tokens(prompt)
 
-        assert estimated == 250, \
-            "Token estimation should work without context_window set"
+        assert estimated == 500, \
+            "Token estimation should work without context_window set (500 tokens)"
 
     def test_estimate_prompt_tokens_unicode_characters(self):
         """
@@ -269,7 +269,7 @@ class TestTokenEstimation:
         estimated = config.estimate_prompt_tokens(unicode_text)
 
         # Python's len() counts Unicode code points correctly
-        expected = len(unicode_text) // 4
+        expected = len(unicode_text) // 2
 
         assert estimated == expected, \
             f"Unicode text {len(unicode_text)} chars should equal {expected} tokens"
@@ -297,10 +297,10 @@ class TestTokenEstimationEdgeCases:
         newlines = "\n\n\n\n"  # 4 newlines
         mixed = "  \t\n"  # 4 mixed whitespace
 
-        assert config.estimate_prompt_tokens(spaces) == 1, "4 spaces = 1 token"
-        assert config.estimate_prompt_tokens(tabs) == 1, "4 tabs = 1 token"
-        assert config.estimate_prompt_tokens(newlines) == 1, "4 newlines = 1 token"
-        assert config.estimate_prompt_tokens(mixed) == 1, "4 mixed whitespace = 1 token"
+        assert config.estimate_prompt_tokens(spaces) == 2, "4 spaces = 2 tokens"
+        assert config.estimate_prompt_tokens(tabs) == 2, "4 tabs = 2 tokens"
+        assert config.estimate_prompt_tokens(newlines) == 2, "4 newlines = 2 tokens"
+        assert config.estimate_prompt_tokens(mixed) == 2, "4 mixed whitespace = 2 tokens"
 
     def test_estimate_prompt_tokens_special_characters(self):
         """
@@ -318,8 +318,8 @@ class TestTokenEstimationEdgeCases:
         special = "!@#$%^&*()_+-=[]{}|;:',.<>?/"  # 29 special characters
         estimated = config.estimate_prompt_tokens(special)
 
-        assert estimated == 7, \
-            "29 special characters should equal 7 tokens"
+        assert estimated == 14, \
+            "29 special characters should equal 14 tokens"
 
     def test_estimate_prompt_tokens_very_long_string(self):
         """
@@ -338,8 +338,8 @@ class TestTokenEstimationEdgeCases:
         very_long = "x" * 100000
         estimated = config.estimate_prompt_tokens(very_long)
 
-        assert estimated == 25000, \
-            "100000 characters should equal 25000 tokens"
+        assert estimated == 50000, \
+            "100000 characters should equal 50000 tokens"
 
         # Verify performance is still acceptable for large strings
         start = time.time()
@@ -380,8 +380,8 @@ class TestTokenEstimationIntegration:
 
             estimated = config.estimate_prompt_tokens(prompt)
 
-            assert estimated == 250, \
-                f"Token estimation for {provider_name} should be 250 tokens"
+            assert estimated == 500, \
+                f"Token estimation for {provider_name} should be 500 tokens"
 
     def test_estimate_prompt_tokens_relationship_with_context_window(self):
         """
@@ -391,7 +391,7 @@ class TestTokenEstimationIntegration:
 
         This test will FAIL until T012 adds estimate_prompt_tokens() method.
         """
-        prompt = "x" * 1000  # 250 tokens
+        prompt = "x" * 1000  # 500 tokens
 
         # Different context windows
         configs = [
@@ -420,5 +420,5 @@ class TestTokenEstimationIntegration:
         # All should return the same estimate
         assert len(set(estimates)) == 1, \
             "Token estimation should be independent of context_window"
-        assert estimates[0] == 250, \
-            "All configs should estimate 250 tokens"
+        assert estimates[0] == 500, \
+            "All configs should estimate 500 tokens"

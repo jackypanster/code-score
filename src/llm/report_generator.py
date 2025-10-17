@@ -168,6 +168,12 @@ class ReportGenerator:
                 'template_metadata': generated_report.template_used.dict()
             }
 
+        except ValueError:
+            # Re-raise ValueError (e.g., context window overflow) for fail-fast
+            raise
+        except LLMProviderError:
+            # Re-raise LLMProviderError for proper error handling
+            raise
         except Exception as e:
             logger.error(f"Report generation failed: {e}")
             raise ReportGeneratorError(f"Report generation failed: {e}")

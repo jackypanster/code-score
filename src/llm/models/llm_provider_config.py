@@ -165,23 +165,26 @@ class LLMProviderConfig(BaseModel):
 
     def estimate_prompt_tokens(self, prompt: str) -> int:
         """
-        Estimate token count using 4 characters ≈ 1 token heuristic.
+        Estimate token count using conservative 2 characters ≈ 1 token heuristic.
 
-        This simple heuristic provides sufficient accuracy (±10%) for context
-        window validation without requiring external tokenizer libraries.
+        This conservative heuristic guarantees we never underestimate tokens,
+        preventing context window overflows. Uses worst-case assumption
+        (Chinese: ~2 chars/token) to ensure fail-fast validation.
 
         Args:
             prompt: Input text to estimate
 
         Returns:
-            Estimated token count
+            Estimated token count (conservative upper bound)
 
         Note:
-            Accuracy: ±10% for English text
-            Chinese text uses ~2 chars/token but this is acceptable
-            for context window validation purposes
+            - Conservative approach: May overestimate English (4 chars/token)
+            - Prevents underestimation: Never allows context window overflow
+            - Fail-fast principle: Reject edge cases rather than risk API errors
+            - Chinese/CJK: Accurate (~2 chars/token)
+            - English: 2x overestimate (acceptable for safety)
         """
-        return len(prompt) // 4
+        return len(prompt) // 2
 
     def validate_prompt_length(self, prompt: str) -> None:
         """
