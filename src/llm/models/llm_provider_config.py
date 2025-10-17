@@ -5,6 +5,8 @@ This module defines the LLMProviderConfig Pydantic model for configuring
 external LLM services and CLI command generation.
 """
 
+import math
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -56,6 +58,13 @@ class LLMProviderConfig(BaseModel):
 
     context_window: int | None = Field(
         None, description="Maximum context window size in tokens", gt=0
+    )
+
+    chars_per_token: float = Field(
+        default=1.0,
+        description="Conservative chars-per-token ratio for token estimation (default: 1.0 for maximum safety)",
+        gt=0.0,
+        le=10.0
     )
 
     @classmethod
@@ -165,26 +174,39 @@ class LLMProviderConfig(BaseModel):
 
     def estimate_prompt_tokens(self, prompt: str) -> int:
         """
-        Estimate token count using conservative 2 characters ≈ 1 token heuristic.
+        Estimate token count using ceiling-based conservative heuristic.
 
-        This conservative heuristic guarantees we never underestimate tokens,
-        preventing context window overflows. Uses worst-case assumption
-        (Chinese: ~2 chars/token) to ensure fail-fast validation.
+        This method guarantees we NEVER underestimate tokens by:
+        1. Using math.ceil() to prevent rounding down (e.g., 16385 chars → 16385 tokens, not 16384)
+        2. Using chars_per_token=1.0 as worst-case assumption (1 char = 1 token)
+
+        The default chars_per_token=1.0 is maximally conservative and matches
+        reality for DeepSeek's tokenizer (Qwen family) which treats most
+        Chinese/Japanese characters as 1 token each.
 
         Args:
             prompt: Input text to estimate
 
         Returns:
-            Estimated token count (conservative upper bound)
+            Estimated token count (conservative upper bound, guaranteed ≥ actual)
 
         Note:
-            - Conservative approach: May overestimate English (4 chars/token)
-            - Prevents underestimation: Never allows context window overflow
-            - Fail-fast principle: Reject edge cases rather than risk API errors
-            - Chinese/CJK: Accurate (~2 chars/token)
-            - English: 2x overestimate (acceptable for safety)
+            - **DeepSeek/Qwen tokenizer**: Chinese/Japanese = 1 char/token → accurate with default
+            - **English**: ~4 chars/token → 4x overestimate (acceptable for safety)
+            - **Fail-fast principle**: Better to reject edge cases than allow overflow
+            - **Configurable**: Set chars_per_token > 1 for less conservative estimates
+            - **Ceiling**: Prevents off-by-one errors (16385 chars → 16385 tokens, not 16384)
+
+        Examples:
+            >>> config = LLMProviderConfig(chars_per_token=1.0, ...)  # Default: maximally safe
+            >>> config.estimate_prompt_tokens("测试" * 5000)  # 10000 Chinese chars
+            10000  # Accurate for DeepSeek tokenizer
+
+            >>> config = LLMProviderConfig(chars_per_token=2.0, ...)  # Less conservative
+            >>> config.estimate_prompt_tokens("测试" * 5000)
+            5000  # May underestimate for DeepSeek (actual ≈ 10000)
         """
-        return len(prompt) // 2
+        return math.ceil(len(prompt) / self.chars_per_token)
 
     def validate_prompt_length(self, prompt: str) -> None:
         """
